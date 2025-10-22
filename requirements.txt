@@ -8,8 +8,10 @@ requests==2.31.0
 feedparser==6.0.10
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
+flask-bcrypt
+flask-socketio
+flask-cors
 
-# ML Dependencies (Pre-compiled for Python 3.11)
 numpy==1.24.3
 pandas==2.0.3
 scikit-learn==1.3.0

@@ -1,15 +1,24 @@
 """
 Authentication routes - Login, Signup, Logout
+✅ FIXED: Login redirect validation for Railway deployment
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
+from urllib.parse import urlparse, urljoin
 
 # Import from extensions
 from extensions import db, bcrypt
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def is_safe_url(target):
+    """Check if URL is safe for redirect - prevents open redirect attacks"""
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
@@ -86,7 +95,7 @@ def signup():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login"""
+    """User login - FIXED for Railway deployment"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.user_dashboard'))
     
@@ -114,9 +123,15 @@ def login():
                 login_user(user, remember=remember)
                 flash(f'Welcome back, {user.full_name}!', 'success')
                 
-                # Redirect to next page or dashboard
+                # ✅ FIXED: Better redirect logic with validation
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('dashboard.user_dashboard'))
+                
+                # Validate next_page to prevent open redirect attacks
+                if next_page and is_safe_url(next_page):
+                    return redirect(next_page)
+                else:
+                    # Default redirect to dashboard
+                    return redirect(url_for('dashboard.user_dashboard'))
             else:
                 flash('Invalid email or password.', 'danger')
                 
@@ -152,6 +167,7 @@ def forgot_password():
             user = User.query.filter_by(email=email).first()
             
             if user:
+                # TODO: Send actual password reset email
                 flash('Password reset instructions sent to your email.', 'info')
                 return redirect(url_for('auth.login'))
             else:
@@ -166,7 +182,7 @@ def forgot_password():
 @auth_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    """Edit profile"""
+    """Edit user profile"""
     if request.method == 'POST':
         try:
             current_user.full_name = request.form.get('full_name', current_user.full_name)

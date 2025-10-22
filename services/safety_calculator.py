@@ -1,12 +1,11 @@
 """
 Safety Calculator with ML Model Integration
-Lightweight version for deployment
+Optimized for Render deployment
 """
 import pickle
 import json
-import pandas as pd
-import numpy as np
 import os
+import traceback
 
 class SafetyCalculator:
     
@@ -18,8 +17,12 @@ class SafetyCalculator:
         self.load_ml_model()
     
     def load_ml_model(self):
-        """Load trained ML model"""
+        """Load trained ML model with error handling"""
         try:
+            # Import here to avoid startup errors
+            import pandas as pd
+            import numpy as np
+            
             latest_path = 'ml_models/trained_models/latest_model.json'
             
             if not os.path.exists(latest_path):
@@ -29,6 +32,7 @@ class SafetyCalculator:
             with open(latest_path, 'r') as f:
                 paths = json.load(f)
             
+            # Load model components
             with open(paths['model_path'], 'rb') as f:
                 self.model = pickle.load(f)
             
@@ -42,8 +46,12 @@ class SafetyCalculator:
             
             print(f"✅ ML Model loaded: {paths.get('model_name', 'Unknown')}")
             
+        except ImportError as e:
+            print(f"⚠️ ML libraries not available: {e}")
+            self.model = None
         except Exception as e:
-            print(f"⚠️ ML Model not loaded: {e}")
+            print(f"⚠️ ML Model loading error: {e}")
+            traceback.print_exc()
             self.model = None
     
     def predict_safety_score(self, state, district, **kwargs):
@@ -52,10 +60,12 @@ class SafetyCalculator:
         """
         
         if self.model is None:
-            # Fallback to rule-based scoring
             return self._rule_based_scoring(state, district, **kwargs)
         
         try:
+            import pandas as pd
+            import numpy as np
+            
             # Prepare input data
             input_data = self._prepare_input(state, district, **kwargs)
             
@@ -173,8 +183,10 @@ class SafetyCalculator:
         score = 70  # Base score
         
         # Safe locations
-        safe_cities = ['Goa', 'Shimla', 'Mysore', 'Pondicherry', 'Chandigarh', 'Jaipur']
-        if any(city.lower() in district.lower() or city.lower() in state.lower() for city in safe_cities):
+        safe_cities = ['Goa', 'Shimla', 'Mysore', 'Pondicherry', 'Chandigarh', 
+                      'Jaipur', 'Kochi', 'Udaipur', 'Hampi', 'Ooty']
+        if any(city.lower() in district.lower() or city.lower() in state.lower() 
+               for city in safe_cities):
             score += 15
         
         # Adjust based on features

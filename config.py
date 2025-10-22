@@ -1,6 +1,7 @@
 """
 Configuration settings for YatraSecure
 Production-ready with environment variable support
+✅ FIXED: Session cookies for Railway proxy deployment
 """
 import os
 from datetime import timedelta
@@ -22,7 +23,7 @@ class Config:
     # Supports both SQLite (dev) and PostgreSQL (production)
     DATABASE_URL = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(basedir, "yatra.db")}')
     
-    # Fix for Heroku/Render PostgreSQL URL
+    # Fix for Heroku/Render/Railway PostgreSQL URL
     if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     
@@ -35,9 +36,8 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
     
-    # Session
+    # Session - Base settings
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
-    SESSION_COOKIE_SECURE = False  # Set True in production
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     REMEMBER_COOKIE_DURATION = timedelta(days=30)
@@ -109,21 +109,25 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Production configuration"""
+    """
+    Production configuration
+    ✅ FIXED: Session cookie settings for Railway proxy deployment
+    """
     DEBUG = False
     TESTING = False
     
-    # Strict security for production
-    SESSION_COOKIE_SECURE = True  # HTTPS only
+    # ✅ CRITICAL FIX: Railway proxy uses HTTP internally
+    # Setting SESSION_COOKIE_SECURE=True causes session loss
+    # Railway Metal Edge handles HTTPS externally, but app sees HTTP
+    SESSION_COOKIE_SECURE = False  # Changed from True to False
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Strict'
+    SESSION_COOKIE_SAMESITE = 'Lax'  # Changed from 'Strict' to 'Lax'
     
-    # ✅ FIXED: SECRET_KEY with fallback instead of raising error
+    # Trust proxy headers for Railway
+    PREFERRED_URL_SCHEME = 'https'
+    
+    # SECRET_KEY with fallback instead of raising error
     SECRET_KEY = os.getenv('SECRET_KEY', 'production-fallback-secret-key-change-this-abc123xyz')
-    
-    # ✅ REMOVED: Strict check that was causing deployment failure
-    # The key will always have a value now (either from env or fallback)
-    # For better security, set SECRET_KEY environment variable in Railway
     
     # Production logging
     LOG_LEVEL = 'WARNING'
@@ -145,6 +149,9 @@ class TestingConfig(Config):
     
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
+    
+    # Session settings for testing
+    SESSION_COOKIE_SECURE = False
     
     # Short session for tests
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=5)

@@ -4,7 +4,8 @@ import os
 app = create_app()
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    # Use Railway's PORT environment variable
+    port = int(os.getenv('PORT', 8080))
     app.run(
         debug=False,
         host='0.0.0.0',

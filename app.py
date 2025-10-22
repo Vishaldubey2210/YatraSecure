@@ -2,17 +2,92 @@
 YatraSecure - Main Application Factory
 PRODUCTION VERSION for Railway Deployment
 ✅ Fixed PORT binding for Railway
+✅ Auto-creates dummy users on first run
 """
 
 from flask import Flask, render_template, redirect, url_for
 from flask_socketio import SocketIO
 import os
 import traceback
+from datetime import datetime
 from config import config
 from extensions import db, login_manager, bcrypt
 
 # Global SocketIO instance
 socketio = None
+
+
+def init_dummy_users():
+    """Create dummy users if database is empty - ONE TIME ONLY"""
+    try:
+        from models.user import User
+        
+        # Only run if no users exist
+        user_count = User.query.count()
+        if user_count > 0:
+            print(f"ℹ️  Database already has {user_count} users. Skipping dummy user creation.")
+            return
+        
+        print("\n" + "="*60)
+        print("📝 FIRST RUN: Creating dummy users for testing...")
+        print("="*60)
+        
+        dummy_users = [
+            {
+                'email': 'demo@yatrasecure.com',
+                'password': 'Demo@123',
+                'full_name': 'Demo User',
+                'phone': '9876543210',
+                'is_premium': False
+            },
+            {
+                'email': 'test@test.com',
+                'password': 'Test@123',
+                'full_name': 'Test User',
+                'phone': '8765432109',
+                'is_premium': False
+            },
+            {
+                'email': 'admin@yatrasecure.com',
+                'password': 'Admin@123',
+                'full_name': 'Admin User',
+                'phone': '7654321098',
+                'is_premium': True,
+                'premium_plan': 'annual'
+            }
+        ]
+        
+        for user_data in dummy_users:
+            user = User(
+                email=user_data['email'],
+                password_hash=bcrypt.generate_password_hash(user_data['password']).decode('utf-8'),
+                full_name=user_data['full_name'],
+                phone=user_data.get('phone'),
+                is_premium=user_data.get('is_premium', False),
+                premium_plan=user_data.get('premium_plan'),
+                created_at=datetime.now()
+            )
+            db.session.add(user)
+            print(f"   ✓ Created: {user_data['email']} / {user_data['password']}")
+        
+        db.session.commit()
+        
+        print("\n✅ Dummy users created successfully!")
+        print("\n📋 LOGIN CREDENTIALS:")
+        print("-"*60)
+        print("1. 🆓 Demo User:  demo@yatrasecure.com / Demo@123")
+        print("2. 🆓 Test User:  test@test.com / Test@123")
+        print("3. ⭐ Admin User: admin@yatrasecure.com / Admin@123")
+        print("-"*60)
+        print(f"🌐 Login at: https://web-production-6ec3a.up.railway.app/auth/login")
+        print("="*60 + "\n")
+        
+    except Exception as e:
+        print(f"⚠️  Dummy user creation failed: {e}")
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+
 
 def create_app(config_name=None):
     """Application factory function"""
@@ -85,6 +160,10 @@ def create_app(config_name=None):
         try:
             db.create_all()
             print("✅ Database tables ready")
+            
+            # ✅ NEW: Auto-create dummy users on first run
+            init_dummy_users()
+            
         except Exception as e:
             print(f"⚠️  Database creation warning: {e}")
     
@@ -296,4 +375,3 @@ if __name__ == '__main__':
     print(f"⚠️  Starting on port {port}")
     print("⚠️  For production, use: gunicorn run:app\n")
     app.run(debug=False, host='0.0.0.0', port=port)
-

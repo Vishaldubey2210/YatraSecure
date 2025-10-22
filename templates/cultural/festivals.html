@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Festival Calendar - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: #f4f6f9;
+    }
+    
+    .festivals-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+        padding: 50px;
+        border-radius: 20px;
+        color: white;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 40px rgba(38, 222, 129, 0.3);
+        text-align: center;
+    }
+    
+    .festivals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+    }
+    
+    .festival-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border-left: 5px solid #26de81;
+    }
+    
+    .festival-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+    
+    .festival-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    
+    .festival-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .festival-state {
+        color: #26de81;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: inline-block;
+        background: #e8f5e9;
+        padding: 5px 15px;
+        border-radius: 15px;
+    }
+    
+    .festival-description {
+        color: #666;
+        line-height: 1.7;
+        margin-bottom: 20px;
+    }
+    
+    .festival-meta {
+        display: flex;
+        gap: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #999;
+        font-size: 0.95rem;
+    }
+    
+    .meta-item i {
+        color: #26de81;
+    }
+</style>
+
+<div class="festivals-container">
+    <div class="page-header">
+        <h1><i class="bi bi-calendar-event-fill"></i> Festival Calendar</h1>
+        <p style="font-size: 1.2rem; opacity: 0.9;">
+            Discover and celebrate India's vibrant festivals
+        </p>
+    </div>
+    
+    <div class="festivals-grid">
+        {% if festivals %}
+            {% for festival in festivals %}
+            <div class="festival-card">
+                <div class="festival-icon">
+                    {% if 'Camel' in (festival.name if festival.name is defined else festival['name']) %}🐪
+                    {% elif 'Onam' in (festival.name if festival.name is defined else festival['name']) %}🌾
+                    {% elif 'Carnival' in (festival.name if festival.name is defined else festival['name']) %}🎭
+                    {% elif 'Diwali' in (festival.name if festival.name is defined else festival['name']) %}🪔
+                    {% elif 'Holi' in (festival.name if festival.name is defined else festival['name']) %}🎨
+                    {% else %}🎉
+                    {% endif %}
+                </div>
+                
+                <h3 class="festival-name">
+                    {{ festival.name if festival.name is defined else festival['name'] }}
+                </h3>
+                
+                <span class="festival-state">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    {{ festival.state if festival.state is defined else festival['state'] }}
+                </span>
+                
+                <p class="festival-description">
+                    {{ festival.description if festival.description is defined else festival['description'] }}
+                </p>
+                
+                <div class="festival-meta">
+                    <div class="meta-item">
+                        <i class="bi bi-calendar3"></i>
+                        <span>
+                            {% if use_dummy %}
+                                {{ festival['month'] }}
+                            {% else %}
+                                {{ festival.typical_dates }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-clock"></i>
+                        <span>
+                            {% if use_dummy %}
+                                {{ festival['duration'] }}
+                            {% else %}
+                                {{ festival.duration_days }} days
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-calendar-x" style="font-size: 5rem; color: #ddd;"></i>
+                <h3 class="mt-3">No Festivals Listed</h3>
+                <p class="text-muted">Festival calendar is being updated</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

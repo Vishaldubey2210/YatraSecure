@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}Login - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 50px 0;
+    }
+    
+    .login-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 25px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        overflow: hidden;
+        animation: fadeIn 0.6s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    .login-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 50px 40px;
+        text-align: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255,255,255,0.1);
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { transform: translateX(-100%) rotate(45deg); }
+        50% { transform: translateX(100%) rotate(45deg); }
+    }
+    
+    .shield-icon {
+        width: 100px;
+        height: 100px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 1;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .shield-icon i {
+        font-size: 3rem;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    }
+    
+    .login-header h2 {
+        font-weight: 700;
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .login-header p {
+        opacity: 0.95;
+        font-size: 1.1rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .login-body {
+        padding: 50px 40px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+    
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 25px;
+    }
+    
+    .input-group-custom input {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 15px 20px 15px 55px;
+        font-size: 1.05rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .input-group-custom input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        transform: translateY(-2px);
+        outline: none;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #667eea;
+        font-size: 1.3rem;
+        pointer-events: none;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: color 0.3s ease;
+    }
+    
+    .toggle-password:hover {
+        color: #667eea;
+    }
+    
+    .remember-forgot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .forgot-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .forgot-link:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 16px;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-login::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    .btn-login:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-login i {
+        margin-right: 10px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-login span {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .divider span {
+        padding: 0 20px;
+        color: #999;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .signup-link {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 2px solid #f0f0f0;
+    }
+    
+    .signup-link p {
+        color: #666;
+        margin-bottom: 15px;
+    }
+    
+    .btn-signup-link {
+        display: inline-block;
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 12px 30px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-signup-link:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+    }
+    
+    .alert i {
+        margin-right: 8px;
+    }
+    
+    /* Loading state */
+    .btn-login.loading {
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .btn-login.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="shield-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h2>Welcome Back!</h2>
+                        <p>Secure your journey with us 🛡️</p>
+                    </div>
+                    
+                    <div class="login-body">
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-{{ 'exclamation-triangle-fill' if category == 'danger' else 'info-circle-fill' }}"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
+                            <!-- Email -->
+                            <div class="input-group-custom">
+                                <label class="form-label">
+                                    <i class="bi bi-envelope-fill text-primary"></i> Email Address
+                                </label>
+                                <i class="bi bi-envelope-fill input-icon"></i>
+                                <input type="email" name="email" placeholder="your.email@example.com" required autofocus>
+                            </div>
+                            
+                            <!-- Password -->
+                            <div class="input-group-custom">
+                                <label class="form-label">
+                                    <i class="bi bi-lock-fill text-primary"></i> Password
+                                </label>
+                                <i class="bi bi-lock-fill input-icon"></i>
+                                <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                                <button type="button" class="toggle-password" onclick="togglePassword()">
+                                    <i class="bi bi-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Remember & Forgot -->
+                            <div class="remember-forgot">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                                    <label class="form-check-label" for="remember">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">
+                                    Forgot Password?
+                                </a>
+                            </div>
+                            
+                            <!-- Login Button -->
+                            <button type="submit" class="btn-login" id="loginBtn">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span>Login to Your Account</span>
+                            </button>
+                        </form>
+                        
+                        <!-- Divider -->
+                        <div class="divider">
+                            <span>OR</span>
+                        </div>
+                        
+                        <!-- Signup Link -->
+                        <div class="signup-link">
+                            <p>Don't have an account yet?</p>
+                            <a href="{{ url_for('auth.signup') }}" class="btn-signup-link">
+                                <i class="bi bi-person-plus-fill"></i> Create New Account
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password visibility toggle
+function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('bi-eye');
+        toggleIcon.classList.add('bi-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('bi-eye-slash');
+        toggleIcon.classList.add('bi-eye');
+    }
+}
+
+// Form submit animation
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('loginBtn');
+    btn.classList.add('loading');
+    btn.querySelector('span').textContent = 'Logging in...';
+});
+
+// Input animation
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'scale(1.02)';
+    });
+    
+    input.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'scale(1)';
+    });
+});
+
+// Enter key submit
+document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('loginForm').submit();
+    }
+});
+</script>
+{% endblock %}

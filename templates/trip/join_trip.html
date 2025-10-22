@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Join Trip - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .join-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .join-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 25px;
+        padding: 50px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.6s ease;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .join-icon {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        margin: 0 auto 30px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .join-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-align: center;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    .join-subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 40px;
+        font-size: 1.1rem;
+    }
+    
+    .code-input-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+    
+    .code-digit {
+        width: 60px;
+        height: 70px;
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+    }
+    
+    .code-digit:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        transform: scale(1.1);
+    }
+    
+    .btn-join {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 18px;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-join:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+    
+    .helper-text {
+        text-align: center;
+        color: #999;
+        margin-top: 20px;
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="join-container">
+    <div class="join-card">
+        <div class="join-icon">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        
+        <h2 class="join-title">Join a Trip</h2>
+        <p class="join-subtitle">Enter the trip code shared by your friend</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('trip.join_trip') }}" id="joinForm">
+            <div class="code-input-group">
+                <input type="text" class="code-digit" maxlength="1" id="digit1" required>
+                <input type="text" class="code-digit" maxlength="1" id="digit2" required>
+                <input type="text" class="code-digit" maxlength="1" id="digit3" required>
+                <input type="text" class="code-digit" maxlength="1" id="digit4" required>
+                <input type="text" class="code-digit" maxlength="1" id="digit5" required>
+                <input type="text" class="code-digit" maxlength="1" id="digit6" required>
+            </div>
+            
+            <input type="hidden" name="join_code" id="joinCode">
+            
+            <button type="submit" class="btn-join">
+                <i class="bi bi-check-circle-fill"></i> Join Trip
+            </button>
+        </form>
+        
+        <p class="helper-text">
+            <i class="bi bi-info-circle"></i> Trip code is a 6-character code shared by the trip creator
+        </p>
+    </div>
+</div>
+
+<script>
+const inputs = document.querySelectorAll('.code-digit');
+const form = document.getElementById('joinForm');
+const hiddenInput = document.getElementById('joinCode');
+
+inputs.forEach((input, index) => {
+    input.addEventListener('input', function(e) {
+        const value = e.target.value;
+        
+        if (value.length === 1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+        }
+        
+        updateJoinCode();
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus();
+        }
+    });
+    
+    input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const chars = pastedText.slice(0, 6).split('');
+        
+        chars.forEach((char, i) => {
+            if (inputs[i]) {
+                inputs[i].value = char;
+            }
+        });
+        
+        if (chars.length < 6) {
+            inputs[chars.length].focus();
+        }
+        
+        updateJoinCode();
+    });
+});
+
+function updateJoinCode() {
+    const code = Array.from(inputs).map(input => input.value).join('');
+    hiddenInput.value = code;
+}
+
+form.addEventListener('submit', function(e) {
+    updateJoinCode();
+    if (hiddenInput.value.length !== 6) {
+        e.preventDefault();
+        alert('Please enter complete 6-digit code');
+    }
+});
+
+// Auto-focus first input
+inputs[0].focus();
+</script>
+{% endblock %}

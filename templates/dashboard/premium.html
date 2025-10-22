@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}Premium Plans - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .premium-container {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .premium-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 50px;
+    }
+    
+    .premium-header h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .premium-header p {
+        font-size: 1.3rem;
+        opacity: 0.95;
+    }
+    
+    .demo-notice {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 20px;
+        text-align: center;
+        margin-bottom: 40px;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+    
+    .demo-notice i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+    
+    .plan-card {
+        background: white;
+        border-radius: 25px;
+        padding: 40px 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .plan-card:hover {
+        transform: translateY(-15px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    .plan-card.popular {
+        border: 3px solid #FFD700;
+        transform: scale(1.05);
+    }
+    
+    .popular-badge {
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: white;
+        padding: 8px 40px;
+        font-weight: 700;
+        transform: rotate(45deg);
+        font-size: 0.85rem;
+        box-shadow: 0 4px 15px rgba(255,165,0,0.4);
+        text-transform: uppercase;
+    }
+    
+    .plan-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: white;
+        margin: 0 auto 25px;
+    }
+    
+    .popular .plan-icon {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+    
+    .plan-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #333;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .plan-price {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .price-amount {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+    
+    .price-period {
+        color: #999;
+        font-size: 1.1rem;
+    }
+    
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+    }
+    
+    .plan-features li {
+        padding: 12px 0;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .plan-features i {
+        color: #26de81;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .btn-plan {
+        width: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 15px;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        cursor: pointer;
+    }
+    
+    .btn-plan:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+    
+    .popular .btn-plan {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: #333;
+        font-weight: 700;
+    }
+    
+    .features-section {
+        background: white;
+        border-radius: 25px;
+        padding: 50px;
+        margin-bottom: 50px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .features-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-align: center;
+        color: #333;
+        margin-bottom: 40px;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+    }
+    
+    .feature-item {
+        text-align: center;
+    }
+    
+    .feature-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin: 0 auto 20px;
+    }
+    
+    .feature-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .feature-description {
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .current-plan {
+        background: rgba(38, 222, 129, 0.1);
+        border: 2px solid #26de81;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .current-plan h3 {
+        color: #26de81;
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="premium-container">
+    <div class="premium-header">
+        <h1>⭐ Upgrade to Premium</h1>
+        <p>Unlock unlimited features and travel with complete peace of mind</p>
+    </div>
+    
+    {% if current_user.is_premium_active %}
+    <div class="current-plan">
+        <h3>🎉 You are currently on {{ current_user.premium_plan|upper }} Plan!</h3>
+        <p>Valid until: {{ current_user.premium_end_date.strftime('%B %d, %Y') if current_user.premium_end_date else 'Lifetime' }}</p>
+        <form method="POST" action="{{ url_for('dashboard.cancel_premium') }}" style="display: inline;">
+            <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to cancel your premium subscription?')">
+                Cancel Subscription
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="demo-notice">
+        <i class="bi bi-info-circle-fill"></i>
+        <h4 style="margin: 10px 0;">✨ Demo Mode Active</h4>
+        <p style="margin: 0; font-size: 1.1rem;">Click "Subscribe Now" on any plan to activate instantly - No payment required!</p>
+    </div>
+    {% endif %}
+    
+    <div class="plans-grid">
+        <!-- Basic Plan -->
+        <div class="plan-card">
+            <div class="plan-icon">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+            <h3 class="plan-name">Basic</h3>
+            <div class="plan-price">
+                <span class="price-amount">₹499</span>
+                <div class="price-period">per month</div>
+            </div>
+            <ul class="plan-features">
+                <li><i class="bi bi-check-circle-fill"></i> Create up to 5 trips</li>
+                <li><i class="bi bi-check-circle-fill"></i> Basic safety alerts</li>
+                <li><i class="bi bi-check-circle-fill"></i> Expense tracking</li>
+                <li><i class="bi bi-check-circle-fill"></i> Group management (5 members)</li>
+                <li><i class="bi bi-check-circle-fill"></i> Email support</li>
+            </ul>
+            <form method="POST" action="{{ url_for('dashboard.premium') }}">
+                <input type="hidden" name="plan" value="basic">
+                <button type="submit" class="btn-plan">
+                    {% if current_user.is_premium_active and current_user.premium_plan == 'basic' %}
+                        Current Plan
+                    {% else %}
+                        Subscribe Now
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        
+        <!-- Pro Plan (Popular) -->
+        <div class="plan-card popular">
+            <div class="popular-badge">Most Popular</div>
+            <div class="plan-icon">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <h3 class="plan-name">Pro</h3>
+            <div class="plan-price">
+                <span class="price-amount">₹999</span>
+                <div class="price-period">per month</div>
+            </div>
+            <ul class="plan-features">
+                <li><i class="bi bi-check-circle-fill"></i> Unlimited trips</li>
+                <li><i class="bi bi-check-circle-fill"></i> Advanced safety features</li>
+                <li><i class="bi bi-check-circle-fill"></i> AI itinerary planning</li>
+                <li><i class="bi bi-check-circle-fill"></i> Unlimited group members</li>
+                <li><i class="bi bi-check-circle-fill"></i> Premium booking discounts</li>
+                <li><i class="bi bi-check-circle-fill"></i> 24/7 priority support</li>
+                <li><i class="bi bi-check-circle-fill"></i> Cultural insights</li>
+            </ul>
+            <form method="POST" action="{{ url_for('dashboard.premium') }}">
+                <input type="hidden" name="plan" value="pro">
+                <button type="submit" class="btn-plan">
+                    {% if current_user.is_premium_active and current_user.premium_plan == 'pro' %}
+                        Current Plan
+                    {% else %}
+                        Subscribe Now
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        
+        <!-- Enterprise Plan -->
+        <div class="plan-card">
+            <div class="plan-icon">
+                <i class="bi bi-building"></i>
+            </div>
+            <h3 class="plan-name">Enterprise</h3>
+            <div class="plan-price">
+                <span class="price-amount">₹2,499</span>
+                <div class="price-period">per month</div>
+            </div>
+            <ul class="plan-features">
+                <li><i class="bi bi-check-circle-fill"></i> Everything in Pro</li>
+                <li><i class="bi bi-check-circle-fill"></i> Custom branding</li>
+                <li><i class="bi bi-check-circle-fill"></i> Team collaboration tools</li>
+                <li><i class="bi bi-check-circle-fill"></i> Analytics dashboard</li>
+                <li><i class="bi bi-check-circle-fill"></i> API access</li>
+                <li><i class="bi bi-check-circle-fill"></i> Dedicated account manager</li>
+                <li><i class="bi bi-check-circle-fill"></i> Custom integrations</li>
+            </ul>
+            <form method="POST" action="{{ url_for('dashboard.premium') }}">
+                <input type="hidden" name="plan" value="enterprise">
+                <button type="submit" class="btn-plan">
+                    {% if current_user.is_premium_active and current_user.premium_plan == 'enterprise' %}
+                        Current Plan
+                    {% else %}
+                        Subscribe Now
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        
+        <!-- Annual Plan -->
+        <div class="plan-card">
+            <div class="plan-icon">
+                <i class="bi bi-infinity"></i>
+            </div>
+            <h3 class="plan-name">Annual</h3>
+            <div class="plan-price">
+                <span class="price-amount">₹4,999</span>
+                <div class="price-period">per year</div>
+            </div>
+            <ul class="plan-features">
+                <li><i class="bi bi-check-circle-fill"></i> Save 50% vs Monthly</li>
+                <li><i class="bi bi-check-circle-fill"></i> Everything in Pro</li>
+                <li><i class="bi bi-check-circle-fill"></i> VIP support</li>
+                <li><i class="bi bi-check-circle-fill"></i> Early access to features</li>
+                <li><i class="bi bi-check-circle-fill"></i> Free merchandise</li>
+                <li><i class="bi bi-check-circle-fill"></i> Annual travel report</li>
+            </ul>
+            <form method="POST" action="{{ url_for('dashboard.premium') }}">
+                <input type="hidden" name="plan" value="pro">
+                <button type="submit" class="btn-plan">
+                    Subscribe Now
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="features-section">
+        <h2 class="features-title">🎁 Premium Features</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <h4 class="feature-title">AI Trip Planning</h4>
+                <p class="feature-description">Get personalized itineraries generated by advanced AI based on your preferences</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h4 class="feature-title">Real-Time Safety</h4>
+                <p class="feature-description">Live safety alerts and risk monitoring for your exact location</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h4 class="feature-title">Unlimited Groups</h4>
+                <p class="feature-description">Create and manage unlimited trip groups with all your friends</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-headset"></i>
+                </div>
+                <h4 class="feature-title">Priority Support</h4>
+                <p class="feature-description">24/7 dedicated support team for all your queries and emergencies</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-tags"></i>
+                </div>
+                <h4 class="feature-title">Exclusive Discounts</h4>
+                <p class="feature-description">Save up to 30% on hotel bookings and tour packages</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-globe"></i>
+                </div>
+                <h4 class="feature-title">Cultural Insights</h4>
+                <p class="feature-description">Access local customs, phrases, and cultural tips for every destination</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mb-5">
+        <a href="{{ url_for('dashboard.user_dashboard') }}" class="btn btn-light btn-lg" style="border-radius: 15px; padding: 15px 40px; font-weight: 600;">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

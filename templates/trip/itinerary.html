@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Itinerary - {{ trip.trip_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-list-check"></i> Manage Itinerary</h2>
+            <p class="text-muted">{{ trip.trip_name }} | {{ trip.destination }}</p>
+        </div>
+        <a href="{{ url_for('trip.trip_details', trip_id=trip.trip_id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Trip
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Add Itinerary Item Form -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add Day to Itinerary</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('trip.manage_itinerary', trip_id=trip.trip_id) }}">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Day Number</label>
+                                <input type="number" name="day_number" class="form-control" 
+                                       value="{{ itinerary|length + 1 }}" min="1" required>
+                            </div>
+                            <div class="col-md-9 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="date" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" class="form-control" 
+                                   placeholder="e.g., Baga Beach, Goa" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Activities</label>
+                            <textarea name="activity" class="form-control" rows="3" 
+                                      placeholder="Describe the day's activities..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" name="start_time" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">End Time</label>
+                                <input type="time" name="end_time" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estimated Cost (₹)</label>
+                                <input type="number" name="estimated_cost" class="form-control" 
+                                       placeholder="5000" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" 
+                                      placeholder="Additional notes or reminders..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add to Itinerary
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- AI Itinerary Generator (Premium) -->
+            {% if current_user.is_premium_active %}
+            <div class="card mb-4">
+                <div class="card-header bg-gradient text-white" 
+                     style="background: linear-gradient(135deg, #FFD700, #FFA500);">
+                    <h5 class="mb-0">
+                        <i class="bi bi-robot"></i> AI Itinerary Generator 
+                        <span class="badge bg-light text-dark">Premium</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Let our AI create a personalized itinerary for your trip!</p>
+                    <form method="POST" action="{{ url_for('trip.generate_itinerary', trip_id=trip.trip_id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Select Your Interests</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="adventure" id="int1">
+                                        <label class="form-check-label" for="int1">Adventure</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="culture" id="int2">
+                                        <label class="form-check-label" for="int2">Culture</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="food" id="int3">
+                                        <label class="form-check-label" for="int3">Food</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="nature" id="int4">
+                                        <label class="form-check-label" for="int4">Nature</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="shopping" id="int5">
+                                        <label class="form-check-label" for="int5">Shopping</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="interests" value="relaxation" id="int6">
+                                        <label class="form-check-label" for="int6">Relaxation</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-stars"></i> Generate AI Itinerary
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Existing Itinerary -->
+            {% if itinerary %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar3"></i> Current Itinerary</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in itinerary %}
+                    <div class="itinerary-day-card mb-3">
+                        <div class="day-header">
+                            <h5>Day {{ item.day_number }} - {{ item.date.strftime('%A, %b %d, %Y') }}</h5>
+                            <span class="badge bg-primary">{{ item.location }}</span>
+                        </div>
+                        <div class="day-content">
+                            {% if item.start_time or item.end_time %}
+                            <p class="mb-2">
+                                <i class="bi bi-clock"></i> 
+                                {% if item.start_time %}{{ item.start_time.strftime('%I:%M %p') }}{% endif %}
+                                {% if item.end_time %} - {{ item.end_time.strftime('%I:%M %p') }}{% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if item.activity %}
+                            <p class="mb-2"><strong>Activities:</strong> {{ item.activity }}</p>
+                            {% endif %}
+                            
+                            {% if item.estimated_cost %}
+                            <p class="mb-2">
+                                <i class="bi bi-currency-rupee"></i> 
+                                <strong>Estimated Cost:</strong> {{ item.estimated_cost|currency }}
+                            </p>
+                            {% endif %}
+                            
+                            {% if item.safety_score %}
+                            <p class="mb-0">
+                                <i class="bi bi-shield-check"></i> 
+                                <strong>Safety Score:</strong> 
+                                <span class="badge badge-{{ 'success' if item.safety_score >= 70 else 'warning' }}">
+                                    {{ item.safety_score }}/100
+                                </span>
+                            </p>
+                            {% endif %}
+                            
+                            {% if item.notes %}
+                            <div class="alert alert-info mt-2 mb-0">
+                                <small><i class="bi bi-info-circle"></i> {{ item.notes }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6><i class="bi bi-info-circle"></i> Trip Summary</h6>
+                    <hr>
+                    <p><strong>Duration:</strong> {{ trip.duration_days }} days</p>
+                    <p><strong>Days Planned:</strong> {{ itinerary|length }} / {{ trip.duration_days }}</p>
+                    <p class="mb-0">
+                        <strong>Total Estimated Cost:</strong><br>
+                        <span class="h4">
+                            {% set total_cost = itinerary|sum(attribute='estimated_cost') or 0 %}
+                            {{ total_cost|currency }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h6><i class="bi bi-lightbulb"></i> Tips</h6>
+                    <hr>
+                    <ul class="small">
+                        <li>Plan day-by-day activities</li>
+                        <li>Include buffer time for rest</li>
+                        <li>Check safety scores for locations</li>
+                        <li>Add estimated costs for budgeting</li>
+                        <li>Note down important reminders</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.itinerary-day-card {
+    border: 1px solid var(--gray-light);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.day-header {
+    background: var(--gray-lighter);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.day-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.day-content {
+    padding: 15px;
+}
+</style>
+{% endblock %}

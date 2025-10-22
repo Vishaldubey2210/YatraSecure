@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Safety Report - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-flag"></i> Submit Safety Report</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Your report helps keep fellow travelers safe. 
+                        All submissions are reviewed before being published.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('safety.submit_report') }}">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Location *</label>
+                            <input type="text" name="location" class="form-control" 
+                                   placeholder="e.g., Connaught Place, Delhi" required>
+                            <small class="text-muted">Be as specific as possible</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Report Type *</label>
+                            <select name="report_type" class="form-select" required>
+                                <option value="">Select type...</option>
+                                <option value="scam">Scam / Fraud</option>
+                                <option value="unsafe_area">Unsafe Area</option>
+                                <option value="harassment">Harassment</option>
+                                <option value="overcharging">Overcharging</option>
+                                <option value="positive">Positive Experience</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Severity</label>
+                            <select name="severity" class="form-select">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Description *</label>
+                            <textarea name="description" class="form-control" rows="6" 
+                                      placeholder="Describe your experience in detail..." required></textarea>
+                            <small class="text-muted">Include: What happened? When? Who was involved?</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Latitude (Optional)</label>
+                                <input type="number" name="latitude" class="form-control" 
+                                       step="0.000001" placeholder="28.6139">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Longitude (Optional)</label>
+                                <input type="number" name="longitude" class="form-control" 
+                                       step="0.000001" placeholder="77.2090">
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-primary mb-3" 
+                                onclick="getMyLocation()">
+                            <i class="bi bi-geo-alt"></i> Use My Current Location
+                        </button>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="anonymous">
+                            <label class="form-check-label" for="anonymous">
+                                Submit anonymously (your name will be hidden)
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send"></i> Submit Report
+                            </button>
+                            <a href="{{ url_for('safety.community_reports') }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getMyLocation() {
+    MapHandler.getUserLocation(function(coords) {
+        document.querySelector('input[name="latitude"]').value = coords.lat.toFixed(6);
+        document.querySelector('input[name="longitude"]').value = coords.lon.toFixed(6);
+        YatraSecure.showNotification('Location added!', 'success');
+    });
+}
+</script>
+{% endblock %}

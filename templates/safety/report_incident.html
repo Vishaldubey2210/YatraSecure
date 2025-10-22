@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Report Incident - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .report-container {
+        max-width: 700px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: 25px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .report-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+    
+    .report-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 2.5rem;
+    }
+    
+    .report-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .report-subtitle {
+        color: #666;
+        font-size: 1.05rem;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .info-box {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .info-box h6 {
+        color: #667eea;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .info-box ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #666;
+    }
+</style>
+
+<div class="report-container">
+    <div class="report-card">
+        <div class="report-header">
+            <div class="report-icon">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <h2 class="report-title">Report a Safety Incident</h2>
+            <p class="report-subtitle">Help keep travelers safe by reporting issues</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="info-box">
+            <h6><i class="bi bi-info-circle-fill"></i> What to Report</h6>
+            <ul>
+                <li>Crime incidents (theft, scams, harassment)</li>
+                <li>Safety hazards (road conditions, dangerous areas)</li>
+                <li>Natural disasters or weather warnings</li>
+                <li>Health concerns or disease outbreaks</li>
+            </ul>
+        </div>
+        
+        <form method="POST" action="{{ url_for('safety.report_incident') }}">
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-geo-alt-fill text-primary"></i> Location *
+                </label>
+                <input type="text" name="location" class="form-control" placeholder="Enter the exact location" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-tag-fill text-primary"></i> Incident Type *
+                </label>
+                <select name="report_type" class="form-control" required>
+                    <option value="">Select incident type...</option>
+                    <option value="crime">🚨 Crime (Theft, Scam, Harassment)</option>
+                    <option value="scam">⚠️ Tourist Scam</option>
+                    <option value="harassment">👮 Harassment</option>
+                    <option value="unsafe_area">⛔ Unsafe Area</option>
+                    <option value="road_hazard">🚧 Road Hazard</option>
+                    <option value="natural_disaster">🌊 Natural Disaster</option>
+                    <option value="health">🏥 Health Concern</option>
+                    <option value="other">📋 Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-exclamation-circle-fill text-primary"></i> Severity *
+                </label>
+                <select name="severity" class="form-control" required>
+                    <option value="low">Low - Minor inconvenience</option>
+                    <option value="medium" selected>Medium - Caution advised</option>
+                    <option value="high">High - Serious threat</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-chat-left-text-fill text-primary"></i> Description *
+                </label>
+                <textarea name="description" class="form-control" rows="5" 
+                          placeholder="Please provide detailed information about the incident..." required></textarea>
+                <small class="text-muted">Include when it happened, what happened, and any other relevant details</small>
+            </div>
+            
+            <button type="submit" class="btn-submit">
+                <i class="bi bi-send-fill"></i> Submit Report
+            </button>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('safety.alerts') }}" class="text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to Alerts
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

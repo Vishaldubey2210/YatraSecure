@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}My Trips - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: #f4f6f9;
+    }
+    
+    .trips-container {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px;
+        border-radius: 20px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .page-header h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .btn-new-trip {
+        background: white;
+        color: #667eea;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+    }
+    
+    .btn-new-trip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255,255,255,0.5);
+    }
+    
+    .trips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 30px;
+        margin-top: 30px;
+    }
+    
+    .trip-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    
+    .trip-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-color: #667eea;
+    }
+    
+    .trip-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px;
+        color: white;
+    }
+    
+    .trip-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .trip-destination {
+        opacity: 0.9;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .trip-body {
+        padding: 25px;
+    }
+    
+    .trip-info {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #666;
+    }
+    
+    .info-item i {
+        font-size: 1.2rem;
+        color: #667eea;
+        width: 25px;
+    }
+    
+    .trip-status {
+        display: inline-block;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-active {
+        background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+        color: white;
+    }
+    
+    .status-planning {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .status-completed {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        color: white;
+    }
+    
+    .trip-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+    }
+    
+    .btn-action {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        text-align: center;
+    }
+    
+    .btn-view {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-edit {
+        background: #f8f9fa;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+    
+    .btn-edit:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        color: #ddd;
+        margin-bottom: 20px;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .empty-state h3 {
+        color: #666;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state p {
+        color: #999;
+        margin-bottom: 30px;
+    }
+    
+    .member-count {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8f9fa;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #667eea;
+        width: fit-content;
+    }
+</style>
+
+<div class="trips-container">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-suitcase-fill"></i> My Trips</h2>
+            <p class="mb-0" style="opacity: 0.9;">Manage all your adventures in one place</p>
+        </div>
+        <a href="{{ url_for('trip.create_trip') }}" class="btn btn-new-trip">
+            <i class="bi bi-plus-circle-fill"></i> Create New Trip
+        </a>
+    </div>
+    
+    {% if trips %}
+        <div class="trips-grid">
+            {% for trip in trips %}
+            <div class="trip-card" onclick="window.location='{{ url_for('trip.trip_details', trip_id=trip.trip_id) }}'">
+                <div class="trip-header">
+                    <div class="trip-title">
+                        <i class="bi bi-map-fill"></i>
+                        {{ trip.trip_name }}
+                    </div>
+                    <div class="trip-destination">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        {{ trip.destination }}
+                    </div>
+                </div>
+                
+                <div class="trip-body">
+                    <div class="trip-info">
+                        <div class="info-item">
+                            <i class="bi bi-calendar-range-fill"></i>
+                            <span>{{ trip.start_date.strftime('%b %d') }} - {{ trip.end_date.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-clock-fill"></i>
+                            <span>{{ trip.duration_days }} days</span>
+                        </div>
+                        {% if trip.total_budget %}
+                        <div class="info-item">
+                            <i class="bi bi-wallet2"></i>
+                            <span>₹{{ "{:,.0f}".format(trip.total_budget) }} budget</span>
+                        </div>
+                        {% endif %}
+                        <div class="info-item">
+                            <i class="bi bi-people-fill"></i>
+                            <span class="member-count">
+                                {{ trip.member_count }} {{ 'member' if trip.member_count == 1 else 'members' }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <span class="trip-status status-{{ trip.status }}">
+                        {{ trip.status }}
+                    </span>
+                    
+                    <div class="trip-actions" onclick="event.stopPropagation()">
+                        <a href="{{ url_for('trip.trip_details', trip_id=trip.trip_id) }}" class="btn-action btn-view">
+                            <i class="bi bi-eye-fill"></i> View Details
+                        </a>
+                        <a href="{{ url_for('trip.edit_trip', trip_id=trip.trip_id) }}" class="btn-action btn-edit">
+                            <i class="bi bi-pencil-fill"></i> Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-suitcase"></i>
+            <h3>No trips yet!</h3>
+            <p>Start planning your next adventure with YatraSecure</p>
+            <a href="{{ url_for('trip.create_trip') }}" class="btn btn-new-trip">
+                <i class="bi bi-plus-circle-fill"></i> Create Your First Trip
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

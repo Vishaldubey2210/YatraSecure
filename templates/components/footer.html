@@ -1,0 +1,62 @@
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>YatraSecure</h3>
+                <p>Your trusted companion for safe travel across India. Real-time safety alerts, AI-powered planning, and comprehensive emergency support.</p>
+                <div class="social-links mt-3">
+                    <a href="#" class="me-3"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="me-3"><i class="bi bi-twitter"></i></a>
+                    <a href="#" class="me-3"><i class="bi bi-instagram"></i></a>
+                    <a href="#"><i class="bi bi-linkedin"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('safety.safety_map') }}">Safety Map</a></li>
+                    <li><a href="{{ url_for('safety.alerts') }}">Safety Alerts</a></li>
+                    <li><a href="{{ url_for('booking.browse') }}">Browse Services</a></li>
+                    <li><a href="{{ url_for('dashboard.premium') }}">Premium Plans</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Safety Resources</h3>
+                <ul>
+                    <li><a href="{{ url_for('safety.emergency') }}">Emergency Contacts</a></li>
+                    <li><a href="{{ url_for('safety.scam_database') }}">Scam Database</a></li>
+                    <li><a href="{{ url_for('safety.community_reports') }}">Community Reports</a></li>
+                    <li><a href="#">Travel Guidelines</a></li>
+                    <li><a href="#">Safety Tips</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><i class="bi bi-envelope"></i> support@yatrasecure.com</li>
+                    <li><i class="bi bi-telephone"></i> 1800-YATRA-SAFE</li>
+                    <li><i class="bi bi-geo-alt"></i> New Delhi, India</li>
+                </ul>
+                <div class="mt-3">
+                    <h5>Emergency Helpline</h5>
+                    <a href="tel:112" class="btn btn-danger btn-sm">
+                        <i class="bi bi-telephone-fill"></i> Call 112
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 YatraSecure. All rights reserved. | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Terms of Service</a> | 
+                <a href="#">Cookie Policy</a>
+            </p>
+            <p class="small">Made with ❤️ for safe travel in India</p>
+        </div>
+    </div>
+</footer>

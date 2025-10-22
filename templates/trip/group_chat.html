@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Trip Chat - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    .chat-container {
+        max-width: 900px;
+        margin: 30px auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 20px;
+        border-bottom: 2px solid #e0e0e0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .chat-input {
+        padding: 20px;
+        border-top: 2px solid #e0e0e0;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        margin-bottom: 15px;
+        padding: 12px 18px;
+        border-radius: 18px;
+        position: relative;
+    }
+    
+    .message-bubble.mine {
+        background: #667eea;
+        color: white;
+        margin-left: auto;
+    }
+    
+    .message-bubble.theirs {
+        background: #f1f3f5;
+        color: #333;
+    }
+</style>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h4><i class="bi bi-chat-dots"></i> {{ trip.trip_name }} - Group Chat</h4>
+        <small>{{ trip.members.count() }} members online</small>
+    </div>
+    
+    <div class="chat-messages" id="messages">
+        <!-- Messages will be loaded here -->
+    </div>
+    
+    <div class="chat-input">
+        <div class="input-group">
+            <input type="text" id="messageInput" class="form-control" placeholder="Type a message...">
+            <button class="btn btn-primary" onclick="sendChatMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+// WebSocket Connection
+const socket = io();
+const tripId = {{ trip.trip_id }};
+
+socket.emit('join_room', {trip_id: tripId});
+
+socket.on('new_message', function(data) {
+    addMessageToChat(data);
+});
+
+function sendChatMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    socket.emit('send_message', {
+        trip_id: tripId,
+        message: message
+    });
+    
+    input.value = '';
+}
+
+function addMessageToChat(data) {
+    const messagesDiv = document.getElementById('messages');
+    const isMine = data.user_id === {{ current_user.user_id }};
+    
+    const bubble = document.createElement('div');
+    bubble.className = `message-bubble ${isMine ? 'mine' : 'theirs'}`;
+    bubble.innerHTML = `
+        <strong>${data.user_name}</strong><br>
+        ${data.message}<br>
+        <small style="opacity: 0.7;">${data.timestamp}</small>
+    `;
+    messagesDiv.appendChild(bubble);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+</script>
+{% endblock %}

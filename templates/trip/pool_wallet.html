@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Pool Wallet - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    .wallet-container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 30px;
+    }
+    
+    .wallet-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+    }
+</style>
+
+<div class="wallet-container">
+    <div class="wallet-card">
+        <h2><i class="bi bi-wallet2"></i> Trip Pool Wallet</h2>
+        <h1 class="mb-0">₹{{ total_amount }}</h1>
+        <p>Total Trip Budget</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <h5>Per Person</h5>
+                <h3>₹{{ (total_amount / members_count)|round(2) }}</h3>
+            </div>
+            <div class="col-md-4">
+                <h5>Members</h5>
+                <h3>{{ members_count }}</h3>
+            </div>
+            <div class="col-md-4">
+                <h5>Collected</h5>
+                <h3>₹{{ collected_amount }}</h3>
+            </div>
+        </div>
+        
+        <button class="btn btn-light btn-lg mt-4" onclick="connectWallet()">
+            <i class="bi bi-wallet2"></i> Connect MetaMask
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <h4>Contribution Status</h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Share</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contributionList">
+                        <!-- Will be populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+<script>
+// Web3 Integration
+let provider, signer, contract;
+
+async function connectWallet() {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask!');
+        return;
+    }
+    
+    try {
+        await ethereum.request({ method: 'eth_requestAccounts' });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        
+        const address = await signer.getAddress();
+        console.log('Connected:', address);
+        
+        // Initialize smart contract
+        initContract();
+        
+        alert('Wallet connected successfully!');
+    } catch (error) {
+        console.error(error);
+        alert('Failed to connect wallet');
+    }
+}
+
+async function initContract() {
+    // Pool Wallet Smart Contract
+    const contractAddress = '0x...'; // Deploy your contract
+    const abi = [
+        // Contract ABI here
+    ];
+    
+    contract = new ethers.Contract(contractAddress, abi, signer);
+}
+
+async function contributeToPool() {
+    const amount = ethers.utils.parseEther('{{ (total_amount / members_count)|round(2) }}');
+    
+    try {
+        const tx = await contract.contribute({ value: amount });
+        await tx.wait();
+        
+        alert('Contribution successful!');
+        location.reload();
+    } catch (error) {
+        console.error(error);
+        alert('Contribution failed');
+    }
+}
+</script>
+{% endblock %}

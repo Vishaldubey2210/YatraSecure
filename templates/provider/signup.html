@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Provider Signup - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .signup-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .signup-card {
+        background: white;
+        border-radius: 25px;
+        padding: 50px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .signup-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .signup-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 2.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+    
+    .btn-signup {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-signup:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+</style>
+
+<div class="signup-container">
+    <div class="signup-card">
+        <div class="signup-header">
+            <div class="signup-icon">
+                <i class="bi bi-shop"></i>
+            </div>
+            <h2 style="font-size: 2rem; font-weight: 700; color: #333; margin-bottom: 10px;">
+                Register as Service Provider
+            </h2>
+            <p style="color: #666;">Join YatraSecure and grow your business</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('provider.provider_signup') }}">
+            <div class="form-group">
+                <label class="form-label">Business Name *</label>
+                <input type="text" name="business_name" class="form-control" placeholder="e.g., Royal Hotels" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Service Type *</label>
+                <select name="provider_type" class="form-control" required>
+                    <option value="">Select service type...</option>
+                    <option value="hotel">🏨 Hotel/Accommodation</option>
+                    <option value="guide">🗺️ Tour Guide</option>
+                    <option value="transport">🚗 Transport Service</option>
+                    <option value="restaurant">🍽️ Restaurant</option>
+                    <option value="activity">🎯 Activities/Tours</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input type="email" name="email" class="form-control" placeholder="business@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Phone *</label>
+                <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">City *</label>
+                        <input type="text" name="city" class="form-control" placeholder="Mumbai" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">State *</label>
+                        <select name="state" class="form-control" required>
+                            <option value="">Select state...</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Karnataka">Karnataka</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password *</label>
+                <input type="password" name="password" class="form-control" placeholder="Min 8 characters" required>
+                <small class="text-muted">Must contain uppercase, lowercase, and number</small>
+            </div>
+            
+            <button type="submit" class="btn-signup">
+                <i class="bi bi-check-circle-fill"></i> Register
+            </button>
+        </form>
+        
+        <div class="text-center mt-4">
+            <p>Already have an account? <a href="{{ url_for('provider.provider_login') }}">Login here</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .signup-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 50px 0;
+    }
+    
+    .signup-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 25px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        overflow: hidden;
+        animation: slideUp 0.6s ease;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .signup-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px;
+        text-align: center;
+        color: white;
+    }
+    
+    .signup-header h2 {
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .signup-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .icon-circle i {
+        font-size: 2.5rem;
+    }
+    
+    .signup-body {
+        padding: 40px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .input-icon {
+        position: relative;
+    }
+    
+    .input-icon i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+    
+    .input-icon input {
+        padding-left: 45px;
+    }
+    
+    .btn-signup {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-signup:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-signup i {
+        margin-right: 8px;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 25px 0;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .divider span {
+        padding: 0 15px;
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .login-link a {
+        color: #667eea;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .login-link a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .password-strength {
+        height: 5px;
+        border-radius: 3px;
+        margin-top: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .strength-weak { background: #ff4757; width: 33%; }
+    .strength-medium { background: #ffa502; width: 66%; }
+    .strength-strong { background: #26de81; width: 100%; }
+    
+    /* Floating labels effect */
+    .form-floating label {
+        color: #999;
+    }
+    
+    .form-floating input:focus ~ label,
+    .form-floating input:not(:placeholder-shown) ~ label {
+        color: #667eea;
+    }
+    
+    /* Success animation */
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="signup-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="signup-card">
+                    <div class="signup-header">
+                        <div class="icon-circle">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <h2>Join YatraSecure</h2>
+                        <p>Your journey to safe travel starts here! 🛡️</p>
+                    </div>
+                    
+                    <div class="signup-body">
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-{{ 'exclamation-triangle-fill' if category == 'danger' else 'check-circle-fill' }}"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST" action="{{ url_for('auth.signup') }}" id="signupForm">
+                            <!-- Full Name -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-person-fill text-primary"></i> Full Name *
+                                </label>
+                                <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-envelope-fill text-primary"></i> Email Address *
+                                </label>
+                                <input type="email" name="email" class="form-control" placeholder="your.email@example.com" required>
+                            </div>
+                            
+                            <!-- Phone -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-phone-fill text-primary"></i> Phone Number
+                                </label>
+                                <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210">
+                            </div>
+                            
+                            <!-- Language -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-translate text-primary"></i> Preferred Language
+                                </label>
+                                <select name="preferred_language" class="form-select">
+                                    <option value="English" selected>English 🇬🇧</option>
+                                    <option value="Hindi">हिंदी 🇮🇳</option>
+                                    <option value="Tamil">தமிழ்</option>
+                                    <option value="Telugu">తెలుగు</option>
+                                    <option value="Bengali">বাংলা</option>
+                                    <option value="Marathi">मराठी</option>
+                                    <option value="Gujarati">ગુજરાતી</option>
+                                    <option value="Kannada">ಕನ್ನಡ</option>
+                                    <option value="Malayalam">മലയാളം</option>
+                                    <option value="Punjabi">ਪੰਜਾਬੀ</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-lock-fill text-primary"></i> Password *
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="password" id="password" class="form-control" placeholder="Create a strong password" required minlength="8">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                        <i class="bi bi-eye" id="toggleIcon1"></i>
+                                    </button>
+                                </div>
+                                <div id="passwordStrength" class="password-strength"></div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Min 8 characters with uppercase, lowercase & numbers
+                                </small>
+                            </div>
+                            
+                            <!-- Confirm Password -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-shield-lock-fill text-primary"></i> Confirm Password *
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="confirm_password" id="confirmPassword" class="form-control" placeholder="Re-enter your password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword')">
+                                        <i class="bi bi-eye" id="toggleIcon2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Terms -->
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                                </label>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-signup w-100">
+                                <i class="bi bi-rocket-takeoff-fill"></i> Create My Account
+                            </button>
+                        </form>
+                        
+                        <!-- Login Link -->
+                        <div class="login-link">
+                            <p class="mb-0">
+                                Already have an account? 
+                                <a href="{{ url_for('auth.login') }}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login here
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password visibility toggle
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId === 'password' ? 'toggleIcon1' : 'toggleIcon2');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
+// Password strength indicator
+document.getElementById('password').addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strengthBar = document.getElementById('passwordStrength');
+    let strength = 0;
+    
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    
+    strengthBar.className = 'password-strength';
+    
+    if (strength <= 2) {
+        strengthBar.classList.add('strength-weak');
+    } else if (strength <= 4) {
+        strengthBar.classList.add('strength-medium');
+    } else {
+        strengthBar.classList.add('strength-strong');
+    }
+});
+
+// Form animation on submit
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    const btn = this.querySelector('button[type="submit"]');
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Account...';
+    btn.disabled = true;
+});
+
+// Add floating effect on inputs
+document.querySelectorAll('.form-control, .form-select').forEach(input => {
+    input.addEventListener('focus', function() {
+        this.style.transform = 'scale(1.02)';
+    });
+    
+    input.addEventListener('blur', function() {
+        this.style.transform = 'scale(1)';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Book Your Trip - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    .aggregator-container {
+        max-width: 1400px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+    
+    .booking-category {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .provider-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .provider-card:hover {
+        border-color: #667eea;
+        transform: scale(1.02);
+    }
+    
+    .provider-card.selected {
+        border-color: #26de81;
+        background: #d4edda;
+    }
+</style>
+
+<div class="aggregator-container">
+    <h2><i class="bi bi-cart-check"></i> Book Everything in One Place</h2>
+    <p class="text-muted">AI Agent will handle all bookings automatically</p>
+    
+    <!-- Hotels -->
+    <div class="booking-category">
+        <h3><i class="bi bi-building"></i> Hotels</h3>
+        <div id="hotelOptions">
+            <div class="provider-card" onclick="selectOption('hotel', 1)">
+                <div>
+                    <strong>Marriott Mumbai</strong><br>
+                    <small>via MakeMyTrip • ₹5,500/night</small>
+                </div>
+                <button class="btn btn-sm btn-primary">Select</button>
+            </div>
+            <!-- More options from different websites -->
+        </div>
+    </div>
+    
+    <!-- Flights -->
+    <div class="booking-category">
+        <h3><i class="bi bi-airplane"></i> Flights</h3>
+        <!-- Similar structure -->
+    </div>
+    
+    <!-- Activities -->
+    <div class="booking-category">
+        <h3><i class="bi bi-star"></i> Activities</h3>
+        <!-- Similar structure -->
+    </div>
+    
+    <!-- Pool Wallet -->
+    <div class="booking-category">
+        <h3><i class="bi bi-wallet2"></i> Pool Wallet (Web3)</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Total Amount: ₹25,000</h5>
+                        <p>Split among {{ trip.members.count() }} members</p>
+                        <p class="text-success"><strong>Per person: ₹{{ (25000 / trip.members.count())|round(2) }}</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Contribution Status</h5>
+                        {% for member in trip.members %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ member.user.full_name }}</span>
+                            <span class="badge bg-success">Paid</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <button class="btn btn-success btn-lg" onclick="processAllBookings()">
+            <i class="bi bi-robot"></i> Let AI Agent Book Everything
+        </button>
+    </div>
+</div>
+
+<script>
+function processAllBookings() {
+    // Call AI Agent API
+    fetch('/api/ai-agent/book-all', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            trip_id: {{ trip.trip_id }},
+            selections: getSelectedBookings()
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert('AI Agent is processing all bookings! You will receive confirmation shortly.');
+        window.location.href = '/trip/{{ trip.trip_id }}';
+    });
+}
+</script>
+{% endblock %}

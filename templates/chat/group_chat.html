@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - {{ trip.trip_name }}{% endblock %}
+
+{% block content %}
+<style>
+    body { background: #f4f6f9; }
+    
+    .chat-container {
+        max-width: 1400px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .chat-header {
+        padding: 20px 30px;
+        border-bottom: 2px solid #e0e0e0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-header-info h3 {
+        margin: 0 0 5px 0;
+        font-weight: 700;
+    }
+    
+    .online-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .online-dot {
+        width: 8px;
+        height: 8px;
+        background: #26de81;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .chat-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
+    }
+    
+    .chat-body {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+    
+    .message {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.mine {
+        flex-direction: row-reverse;
+    }
+    
+    .message.ai {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        padding: 15px;
+        border-radius: 15px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+    }
+    
+    .message-content {
+        max-width: 70%;
+    }
+    
+    .message-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+    
+    .sender-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9rem;
+    }
+    
+    .timestamp {
+        font-size: 0.75rem;
+        color: #999;
+    }
+    
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        word-wrap: break-word;
+    }
+    
+    .message.mine .message-bubble {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+    
+    .message.mine .message-header {
+        flex-direction: row-reverse;
+    }
+    
+    .message-media {
+        margin-top: 10px;
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: 300px;
+    }
+    
+    .message-media img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    
+    .message-media video {
+        width: 100%;
+        max-height: 300px;
+    }
+    
+    .location-preview {
+        background: white;
+        padding: 10px;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .location-preview a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .system-message {
+        text-align: center;
+        color: #999;
+        font-size: 0.85rem;
+        margin: 15px 0;
+        padding: 8px;
+        background: rgba(0,0,0,0.03);
+        border-radius: 10px;
+    }
+    
+    .typing-indicator {
+        display: none;
+        padding: 10px 20px;
+        color: #999;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+    
+    .typing-indicator.active {
+        display: block;
+    }
+    
+    .chat-input-area {
+        padding: 20px;
+        border-top: 2px solid #e0e0e0;
+        background: white;
+    }
+    
+    .input-toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .toolbar-btn {
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.2rem;
+    }
+    
+    .toolbar-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .ai-hint {
+        background: linear-gradient(135deg, rgba(38, 222, 129, 0.1), rgba(32, 191, 107, 0.1));
+        border: 2px solid #26de81;
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: #26de81;
+        font-weight: 600;
+    }
+    
+    .chat-sidebar {
+        width: 280px;
+        border-left: 2px solid #e0e0e0;
+        background: white;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    
+    .member-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .member-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .member-avatar {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .member-info {
+        flex: 1;
+    }
+    
+    .member-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #333;
+    }
+    
+    .member-status {
+        font-size: 0.75rem;
+        color: #26de81;
+    }
+    
+    #mediaPreview {
+        display: none;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    
+    #mediaPreview img,
+    #mediaPreview video {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+    }
+</style>
+
+<div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="chat-header-info">
+            <h3><i class="bi bi-chat-dots-fill"></i> {{ trip.trip_name }}</h3>
+            <div class="online-status">
+                <span class="online-dot"></span>
+                <span id="onlineCount">{{ members|length }} members</span>
+            </div>
+        </div>
+        <div class="chat-actions">
+            <button class="action-btn" onclick="startVideoCall()" title="Video Call">
+                <i class="bi bi-camera-video-fill"></i>
+            </button>
+            <button class="action-btn" onclick="startAudioCall()" title="Audio Call">
+                <i class="bi bi-telephone-fill"></i>
+            </button>
+            <a href="{{ url_for('trip.trip_details', trip_id=trip.trip_id) }}" class="action-btn" title="Back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Body -->
+    <div class="chat-body">
+        <!-- Messages Area -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="system-message">
+                Welcome! 👋 Type @yatra to ask AI travel questions
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="chat-sidebar">
+            <h6 class="mb-3"><i class="bi bi-people"></i> Members</h6>
+            {% for member in members %}
+            <div class="member-item">
+                <div class="member-avatar">
+                    {{ member.user.full_name[0].upper() }}
+                </div>
+                <div class="member-info">
+                    <div class="member-name">{{ member.user.full_name }}</div>
+                    <div class="member-status">{{ member.role }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator">
+        <span id="typingUser"></span> is typing...
+    </div>
+    
+    <!-- Input Area -->
+    <div class="chat-input-area">
+        <!-- AI Hint -->
+        <div class="ai-hint">
+            💡 Type <strong>@yatra</strong> to ask AI about travel tips, places, food, etc!
+        </div>
+        
+        <!-- Toolbar -->
+        <div class="input-toolbar">
+            <button class="toolbar-btn" onclick="document.getElementById('mediaInput').click()" title="Upload Media">
+                <i class="bi bi-image"></i>
+            </button>
+            <button class="toolbar-btn" onclick="shareLocation()" title="Share Location">
+                <i class="bi bi-geo-alt-fill"></i>
+            </button>
+            <button class="toolbar-btn" onclick="insertAiTag()" title="Ask AI">
+                <i class="bi bi-robot"></i>
+            </button>
+            <input type="file" id="mediaInput" style="display: none" 
+                   accept="image/*,video/*,audio/*" onchange="handleMediaUpload(event)">
+        </div>
+        
+        <!-- Media Preview -->
+        <div id="mediaPreview"></div>
+        
+        <!-- Message Input -->
+        <div class="input-group">
+            <input type="text" 
+                   id="messageInput" 
+                   class="form-control" 
+                   placeholder="Type a message... (Use @yatra for AI)" 
+                   onkeypress="handleKeyPress(event)"
+                   oninput="handleTyping()">
+            <button class="btn btn-primary" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+const tripId = {{ trip.trip_id }};
+const currentUserId = {{ current_user.user_id }};
+const currentUserName = "{{ current_user.full_name }}";
+
+let uploadedFileUrl = null;
+let uploadedFileType = null;
+
+// Connect to SocketIO
+const socket = io();
+
+// Join trip chat room
+socket.emit('join_trip_chat', {trip_id: tripId});
+
+// Handle new messages
+socket.on('new_message', function(data) {
+    addMessage(data);
+});
+
+// Handle user joined
+socket.on('user_joined', function(data) {
+    addSystemMessage(data.message);
+    updateOnlineCount(data.active_count);
+});
+
+// Handle user left
+socket.on('user_left', function(data) {
+    addSystemMessage(data.message);
+    updateOnlineCount(data.active_count);
+});
+
+// Handle typing
+socket.on('user_typing', function(data) {
+    if (data.user_id !== currentUserId) {
+        showTypingIndicator(data.user_name);
+    }
+});
+
+// Handle video call
+socket.on('video_call_started', function(data) {
+    addSystemMessage(`📹 ${data.message}`);
+});
+
+// Handle audio call
+socket.on('audio_call_started', function(data) {
+    addSystemMessage(`🎤 ${data.message}`);
+});
+
+// Send message
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message && !uploadedFileUrl) return;
+    
+    socket.emit('send_message', {
+        trip_id: tripId,
+        message: message,
+        type: uploadedFileType || 'text',
+        file_url: uploadedFileUrl,
+        file_type: uploadedFileType
+    });
+    
+    input.value = '';
+    uploadedFileUrl = null;
+    uploadedFileType = null;
+    document.getElementById('mediaPreview').style.display = 'none';
+    document.getElementById('mediaPreview').innerHTML = '';
+    hideTypingIndicator();
+}
+
+// Handle Enter key
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Handle typing
+let typingTimeout;
+function handleTyping() {
+    clearTimeout(typingTimeout);
+    socket.emit('typing', {trip_id: tripId});
+    
+    typingTimeout = setTimeout(() => {
+        hideTypingIndicator();
+    }, 3000);
+}
+
+// Add message to chat
+function addMessage(data) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const isMine = data.user_id === currentUserId;
+    const isAi = data.is_ai || data.user_id === 0;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isMine ? 'mine' : ''} ${isAi ? 'ai' : ''}`;
+    
+    let mediaHtml = '';
+    if (data.file_url) {
+        if (data.file_type === 'image') {
+            mediaHtml = `<div class="message-media"><img src="${data.file_url}" alt="Image"></div>`;
+        } else if (data.file_type === 'video') {
+            mediaHtml = `<div class="message-media"><video controls src="${data.file_url}"></video></div>`;
+        } else if (data.file_type === 'audio') {
+            mediaHtml = `<div class="message-media"><audio controls src="${data.file_url}"></audio></div>`;
+        }
+    }
+    
+    if (data.location) {
+        const mapUrl = `https://www.google.com/maps?q=${data.location.latitude},${data.location.longitude}`;
+        mediaHtml = `<div class="location-preview">
+            <i class="bi bi-geo-alt-fill"></i> 
+            <a href="${mapUrl}" target="_blank">View on Google Maps</a>
+        </div>`;
+    }
+    
+    if (isAi) {
+        messageDiv.innerHTML = `
+            <div class="avatar">${data.avatar}</div>
+            <div class="message-content" style="max-width: 100%">
+                <div class="message-header">
+                    <span class="sender-name">${data.user_name}</span>
+                    <span class="timestamp">${data.timestamp}</span>
+                </div>
+                <div class="message-bubble" style="background: transparent; box-shadow: none;">
+                    ${escapeHtml(data.message)}
+                </div>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="avatar">${data.avatar}</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="sender-name">${data.user_name}</span>
+                    <span class="timestamp">${data.timestamp}</span>
+                </div>
+                <div class="message-bubble">
+                    ${data.message ? escapeHtml(data.message) : ''}
+                    ${mediaHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Add system message
+function addSystemMessage(text) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'system-message';
+    msgDiv.textContent = text;
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Show typing indicator
+function showTypingIndicator(userName) {
+    const indicator = document.getElementById('typingIndicator');
+    const userSpan = document.getElementById('typingUser');
+    userSpan.textContent = userName;
+    indicator.classList.add('active');
+    
+    setTimeout(() => {
+        hideTypingIndicator();
+    }, 3000);
+}
+
+// Hide typing indicator
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator').classList.remove('active');
+}
+
+// Update online count
+function updateOnlineCount(count) {
+    document.getElementById('onlineCount').textContent = `${count} online`;
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// Insert @yatra tag
+function insertAiTag() {
+    const input = document.getElementById('messageInput');
+    input.value = '@yatra ';
+    input.focus();
+}
+
+// Handle media upload
+async function handleMediaUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/chat/upload-media', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            uploadedFileUrl = data.file_url;
+            uploadedFileType = data.file_type;
+            
+            // Show preview
+            const preview = document.getElementById('mediaPreview');
+            preview.style.display = 'block';
+            
+            if (data.file_type === 'image') {
+                preview.innerHTML = `<img src="${data.file_url}" alt="Preview">`;
+            } else if (data.file_type === 'video') {
+                preview.innerHTML = `<video src="${data.file_url}" controls></video>`;
+            } else {
+                preview.innerHTML = `<p>📎 ${data.filename}</p>`;
+            }
+        } else {
+            alert('❌ Upload failed: ' + data.error);
+        }
+    } catch (error) {
+        console.error(error);
+        alert('❌ Upload error');
+    }
+}
+
+// Share location
+function shareLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            socket.emit('share_location', {
+                trip_id: tripId,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            });
+        }, function() {
+            alert('❌ Location access denied');
+        });
+    } else {
+        alert('❌ Geolocation not supported');
+    }
+}
+
+// Start video call
+function startVideoCall() {
+    if (confirm('Start a video call? All members will be notified.')) {
+        socket.emit('start_video_call', {trip_id: tripId});
+        alert('📹 Video call feature coming soon! This will use WebRTC.');
+    }
+}
+
+// Start audio call
+function startAudioCall() {
+    if (confirm('Start an audio call? All members will be notified.')) {
+        socket.emit('start_audio_call', {trip_id: tripId});
+        alert('🎤 Audio call feature coming soon! This will use WebRTC.');
+    }
+}
+
+// Leave room on page unload
+window.addEventListener('beforeunload', function() {
+    socket.emit('leave_trip_chat', {trip_id: tripId});
+});
+
+console.log('✅ Chat connected for trip', tripId);
+</script>
+{% endblock %}

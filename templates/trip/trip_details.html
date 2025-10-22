@@ -1,0 +1,856 @@
+{% extends "base.html" %}
+
+{% block title %}{{ trip.trip_name }} - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body { background: #f4f6f9; }
+    
+    .trip-detail-container {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+    
+    .trip-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 60px 50px;
+        border-radius: 25px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .trip-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .trip-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .trip-destination {
+        font-size: 1.5rem;
+        opacity: 0.95;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .trip-meta {
+        display: flex;
+        gap: 40px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255,255,255,0.15);
+        padding: 12px 25px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .meta-item i {
+        font-size: 1.5rem;
+    }
+    
+    .trip-status-badge {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #667eea;
+    }
+    
+    .btn-add {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-ai {
+        background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 10px;
+    }
+    
+    .btn-ai:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(38, 222, 129, 0.4);
+        color: white;
+    }
+    
+    .itinerary-day {
+        background: #f8f9fa;
+        border-left: 5px solid #667eea;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .itinerary-day:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .day-number {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    
+    .day-details {
+        display: grid;
+        gap: 10px;
+    }
+    
+    .detail-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #666;
+    }
+    
+    .detail-row i {
+        color: #667eea;
+        width: 20px;
+    }
+    
+    .member-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .member-card:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .member-avatar {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    
+    .member-info h6 {
+        margin: 0;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .member-role {
+        font-size: 0.85rem;
+        color: #999;
+        text-transform: uppercase;
+    }
+    
+    .btn-action {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 25px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-bottom: 10px;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: #f8f9fa;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+    
+    .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .join-code-box {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .join-code {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 3px;
+        margin: 10px 0;
+    }
+    
+    .expense-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .expense-amount {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border-radius: 15px;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #667eea;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    /* ML SAFETY SCORE CARD STYLES */
+    .safety-score-card {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .safety-score-display {
+        text-align: center;
+        padding: 20px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .location-breakdown {
+        margin-top: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .location-score-item {
+        background: rgba(255,255,255,0.1);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        outline: none;
+    }
+    
+    @media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="trip-detail-container">
+    <div class="trip-hero">
+        <span class="trip-status-badge">{{ trip.status }}</span>
+        <h1 class="trip-title">{{ trip.trip_name }}</h1>
+        <div class="trip-destination">
+            <i class="bi bi-geo-alt-fill"></i>
+            {{ trip.destination }}
+        </div>
+        <div class="trip-meta">
+            <div class="meta-item">
+                <i class="bi bi-calendar-range-fill"></i>
+                <div>
+                    <strong>{{ trip.start_date.strftime('%b %d') }} - {{ trip.end_date.strftime('%b %d, %Y') }}</strong>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">{{ trip.duration_days }} days</div>
+                </div>
+            </div>
+            {% if trip.total_budget %}
+            <div class="meta-item">
+                <i class="bi bi-wallet2"></i>
+                <div>
+                    <strong>₹{{ "{:,.0f}".format(trip.total_budget) }}</strong>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Total Budget</div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="meta-item">
+                <i class="bi bi-people-fill"></i>
+                <div>
+                    <strong>{{ trip.member_count }} Members</strong>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Traveling together</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-grid">
+        <div>
+            <!-- Itinerary -->
+            <div class="card">
+                <h3 class="card-title">
+                    <span><i class="bi bi-map-fill"></i> Itinerary</span>
+                    <div>
+                        <a href="{{ url_for('trip.ai_planner', trip_id=trip.trip_id) }}" class="btn-ai">
+                            <i class="bi bi-robot"></i> AI Planner
+                        </a>
+                        <button class="btn-add" onclick="openItineraryModal()">
+                            <i class="bi bi-plus-circle"></i> Add Day
+                        </button>
+                    </div>
+                </h3>
+                
+                {% if itinerary %}
+                    {% for item in itinerary %}
+                    <div class="itinerary-day">
+                        <div class="day-number">Day {{ item.day_number }}</div>
+                        <div class="day-details">
+                            <div class="detail-row">
+                                <i class="bi bi-calendar3"></i>
+                                <strong>{{ item.date.strftime('%B %d, %Y') }}</strong>
+                            </div>
+                            <div class="detail-row">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ item.location }}
+                            </div>
+                            {% if item.activity %}
+                            <div class="detail-row">
+                                <i class="bi bi-star-fill"></i>
+                                {{ item.activity }}
+                            </div>
+                            {% endif %}
+                            {% if item.start_time and item.end_time %}
+                            <div class="detail-row">
+                                <i class="bi bi-clock-fill"></i>
+                                {{ item.start_time.strftime('%I:%M %p') }} - {{ item.end_time.strftime('%I:%M %p') }}
+                            </div>
+                            {% endif %}
+                            {% if item.estimated_cost %}
+                            <div class="detail-row">
+                                <i class="bi bi-currency-rupee"></i>
+                                ₹{{ "{:,.0f}".format(item.estimated_cost) }} estimated
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-stars"></i>
+                        <h4 style="color: #333; margin-bottom: 10px;">No itinerary yet!</h4>
+                        <p style="color: #666; margin-bottom: 25px;">Let AI create the perfect plan</p>
+                        <a href="{{ url_for('trip.ai_planner', trip_id=trip.trip_id) }}" 
+                           class="btn-action" style="width: auto; display: inline-block; background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);">
+                            <i class="bi bi-robot"></i> Generate with AI
+                        </a>
+                        <button class="btn-action" style="width: auto; display: inline-block; margin-left: 10px;" onclick="openItineraryModal()">
+                            <i class="bi bi-plus-circle"></i> Add Manually
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Expenses -->
+            <div class="card">
+                <h3 class="card-title">
+                    <span><i class="bi bi-wallet-fill"></i> Expenses</span>
+                    <button class="btn-add" onclick="openExpenseModal()">
+                        <i class="bi bi-plus-circle"></i> Add Expense
+                    </button>
+                </h3>
+                
+                {% if expenses %}
+                    {% for expense in expenses %}
+                    <div class="expense-item">
+                        <div>
+                            <strong>{{ expense.description }}</strong>
+                            <div style="font-size: 0.9rem; color: #999;">
+                                {{ expense.category }} • {{ expense.expense_date.strftime('%b %d') }} • Paid by {{ expense.payer.full_name }}
+                            </div>
+                        </div>
+                        <div class="expense-amount">₹{{ "{:,.0f}".format(expense.amount) }}</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="mt-3 pt-3" style="border-top: 2px solid #f0f0f0;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong style="font-size: 1.2rem;">Total Expenses:</strong>
+                            <span style="font-size: 1.5rem; font-weight: 700; color: #667eea;">
+                                ₹{{ "{:,.0f}".format(total_expenses) }}
+                            </span>
+                        </div>
+                        {% if remaining_budget is not none %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong style="color: #999;">Remaining Budget:</strong>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: {{ 'green' if remaining_budget >= 0 else 'red' }};">
+                                ₹{{ "{:,.0f}".format(remaining_budget) }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No expenses recorded yet</p>
+                        <button class="btn-action" style="width: auto;" onclick="openExpenseModal()">
+                            <i class="bi bi-plus-circle"></i> Add First Expense
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div>
+            {% if is_admin %}
+            <div class="card">
+                <h4 class="card-title" style="font-size: 1.2rem;">
+                    <span><i class="bi bi-key-fill"></i> Invite Code</span>
+                </h4>
+                <div class="join-code-box">
+                    <div style="color: white; font-size: 0.9rem; margin-bottom: 5px;">Share this code:</div>
+                    <div class="join-code" id="joinCodeText">{{ trip.join_code }}</div>
+                    <button class="btn btn-light btn-sm mt-2" onclick="copyCode()">
+                        <i class="bi bi-clipboard"></i> Copy Code
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card">
+                <h4 class="card-title" style="font-size: 1.2rem;">
+                    <span><i class="bi bi-people-fill"></i> Members ({{ members|length }})</span>
+                </h4>
+                
+                {% for member in members %}
+                <div class="member-card">
+                    <div class="member-avatar">
+                        {{ member.user.full_name[0].upper() }}
+                    </div>
+                    <div class="member-info">
+                        <h6>{{ member.user.full_name }}</h6>
+                        <span class="member-role">{{ member.role }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- ML SAFETY SCORE CARD (NEW) -->
+            <div class="card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white;">
+                <h4 class="card-title" style="font-size: 1.2rem; color: white; border-bottom-color: rgba(255,255,255,0.3);">
+                    <span><i class="bi bi-shield-check-fill"></i> Trip Safety Score</span>
+                </h4>
+                
+                <div id="tripSafetyScore">
+                    <div class="text-center py-3">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-2 mb-0">Analyzing trip safety...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h4 class="card-title" style="font-size: 1.2rem;">
+                    <span><i class="bi bi-lightning-fill"></i> Quick Actions</span>
+                </h4>
+                
+                <a href="{{ url_for('wallet.trip_wallet', trip_id=trip.trip_id) }}" 
+                   class="btn-action" 
+                   style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">
+                    <i class="bi bi-wallet2"></i> Pool Wallet
+                </a>
+                
+                <a href="{{ url_for('booking.browse') }}" 
+                   class="btn-action" 
+                   style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);">
+                    <i class="bi bi-shop"></i> Browse Hotels & Flights
+                </a>
+                
+                <a href="{{ url_for('chat.trip_chat', trip_id=trip.trip_id) }}" 
+                   class="btn-action" 
+                   style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">
+                    <i class="bi bi-chat-dots-fill"></i> Group Chat
+                </a>
+                
+                <a href="{{ url_for('trip.ai_planner', trip_id=trip.trip_id) }}" 
+                   class="btn-action" 
+                   style="background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);">
+                    <i class="bi bi-robot"></i> AI Trip Planner
+                </a>
+                
+                <button class="btn-action" onclick="openExpenseModal()">
+                    <i class="bi bi-plus-circle"></i> Add Expense
+                </button>
+                
+                <button class="btn-action btn-secondary" onclick="openItineraryModal()">
+                    <i class="bi bi-calendar-plus"></i> Add to Itinerary
+                </button>
+                
+                {% if is_admin %}
+                <a href="{{ url_for('trip.edit_trip', trip_id=trip.trip_id) }}" class="btn-action btn-secondary">
+                    <i class="bi bi-pencil"></i> Edit Trip
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal" id="itineraryModal">
+    <div class="modal-content">
+        <h3 class="modal-header">Add Itinerary Day</h3>
+        <form method="POST" action="{{ url_for('trip.add_itinerary', trip_id=trip.trip_id) }}">
+            <div class="form-group">
+                <label class="form-label">Day Number</label>
+                <input type="number" name="day_number" class="form-control" min="1" max="{{ trip.duration_days }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" 
+                       min="{{ trip.start_date.strftime('%Y-%m-%d') }}" 
+                       max="{{ trip.end_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" name="location" class="form-control" placeholder="Where are you going?" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Activity/Description</label>
+                <textarea name="activity" class="form-control" rows="3" placeholder="What will you do there?"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-action">Add Day</button>
+                <button type="button" class="btn-action btn-secondary" onclick="closeItineraryModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="expenseModal">
+    <div class="modal-content">
+        <h3 class="modal-header">Add Expense</h3>
+        <form method="POST" action="{{ url_for('trip.add_expense', trip_id=trip.trip_id) }}">
+            <div class="form-group">
+                <label class="form-label">Amount (₹)</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-control" required>
+                    <option value="">Select category...</option>
+                    <option value="Food">🍽️ Food & Dining</option>
+                    <option value="Transport">🚗 Transport</option>
+                    <option value="Accommodation">🏨 Accommodation</option>
+                    <option value="Activities">🎯 Activities & Tours</option>
+                    <option value="Shopping">🛍️ Shopping</option>
+                    <option value="Emergency">🚑 Emergency</option>
+                    <option value="Other">📦 Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" placeholder="What was this expense for?" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" name="expense_date" class="form-control" 
+                       min="{{ trip.start_date.strftime('%Y-%m-%d') }}" 
+                       max="{{ trip.end_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-action">Add Expense</button>
+                <button type="button" class="btn-action btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Fetch trip safety score on page load
+window.addEventListener('DOMContentLoaded', function() {
+    fetchTripSafety();
+});
+
+async function fetchTripSafety() {
+    try {
+        const tripId = {{ trip.trip_id }};
+        const response = await fetch(`/trip/${tripId}/safety-analysis`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayTripSafety(data);
+        } else {
+            document.getElementById('tripSafetyScore').innerHTML = 
+                '<p class="text-center">No itinerary data available</p>';
+        }
+    } catch (error) {
+        console.error('Safety fetch error:', error);
+        document.getElementById('tripSafetyScore').innerHTML = 
+            '<p class="text-center">Unable to load safety data</p>';
+    }
+}
+
+function displayTripSafety(data) {
+    const container = document.getElementById('tripSafetyScore');
+    
+    let scoreColor = '';
+    let icon = '';
+    
+    if (data.overall_score >= 75) {
+        scoreColor = '#26de81';
+        icon = 'shield-fill-check';
+    } else if (data.overall_score >= 50) {
+        scoreColor = '#ffc107';
+        icon = 'shield-exclamation';
+    } else {
+        scoreColor = '#ff4757';
+        icon = 'shield-x';
+    }
+    
+    let html = `
+        <div class="safety-score-display">
+            <div style="font-size: 3rem; font-weight: 700; color: white; margin: 10px 0;">
+                ${data.overall_score}<span style="font-size: 1.2rem;">/100</span>
+            </div>
+            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 5px;">
+                <i class="bi bi-${icon}"></i> ${data.risk_level.toUpperCase()} RISK
+            </div>
+            <p style="font-size: 0.85rem; opacity: 0.9; margin: 5px 0;">Overall Trip Safety Score</p>
+        </div>
+    `;
+    
+    if (data.location_scores && data.location_scores.length > 0) {
+        html += '<div class="location-breakdown">';
+        html += '<p style="font-size: 0.9rem; font-weight: 600; margin: 15px 0 10px 0;">📍 Location Breakdown:</p>';
+        
+        data.location_scores.forEach(loc => {
+            let locColor = loc.score >= 75 ? '#26de81' : (loc.score >= 50 ? '#ffc107' : '#ff4757');
+            
+            html += `
+                <div class="location-score-item">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Day ${loc.day} - ${loc.location}</div>
+                        <div style="font-size: 0.75rem; opacity: 0.8;">${loc.date}</div>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: ${locColor};">
+                        ${loc.score}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    }
+    
+    html += '<p style="font-size: 0.75rem; opacity: 0.7; margin-top: 15px; text-align: center;">🤖 Powered by ML Model</p>';
+    
+    container.innerHTML = html;
+}
+
+function openItineraryModal() {
+    document.getElementById('itineraryModal').classList.add('active');
+}
+
+function closeItineraryModal() {
+    document.getElementById('itineraryModal').classList.remove('active');
+}
+
+function openExpenseModal() {
+    document.getElementById('expenseModal').classList.add('active');
+}
+
+function closeExpenseModal() {
+    document.getElementById('expenseModal').classList.remove('active');
+}
+
+function copyCode() {
+    const code = document.getElementById('joinCodeText').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        alert('✅ Join code copied: ' + code);
+    }).catch(err => {
+        alert('❌ Failed to copy code');
+    });
+}
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const expenseDateInput = document.querySelector('#expenseModal input[name="expense_date"]');
+    if (expenseDateInput) {
+        expenseDateInput.value = today;
+    }
+});
+</script>
+{% endblock %}

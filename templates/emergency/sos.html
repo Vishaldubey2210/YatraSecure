@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency SOS - YatraSecure{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: #f4f6f9;
+    }
+    
+    .sos-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .sos-header {
+        background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
+        padding: 40px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(255, 71, 87, 0.3);
+    }
+    
+    .sos-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .sos-button-container {
+        text-align: center;
+        margin: 50px 0;
+    }
+    
+    .sos-button {
+        width: 250px;
+        height: 250px;
+        background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
+        border: 10px solid rgba(255, 71, 87, 0.3);
+        border-radius: 50%;
+        color: white;
+        font-size: 3rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 40px rgba(255, 71, 87, 0.4);
+        animation: pulse-border 2s infinite;
+        margin: 0 auto;
+    }
+    
+    .sos-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 15px 50px rgba(255, 71, 87, 0.5);
+    }
+    
+    .sos-button:active {
+        transform: scale(0.95);
+    }
+    
+    .sos-button i {
+        font-size: 4rem;
+        margin-bottom: 10px;
+    }
+    
+    @keyframes pulse-border {
+        0%, 100% {
+            border-width: 10px;
+            border-color: rgba(255, 71, 87, 0.3);
+        }
+        50% {
+            border-width: 15px;
+            border-color: rgba(255, 71, 87, 0.6);
+        }
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    
+    .info-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .quick-dial-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .quick-dial-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .quick-dial-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .quick-dial-btn i {
+        font-size: 2rem;
+    }
+    
+    .quick-dial-btn .number {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+    
+    .active-sos-alert {
+        background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        animation: pulse-alert 1.5s infinite;
+    }
+    
+    @keyframes pulse-alert {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+        }
+        50% {
+            box-shadow: 0 0 40px rgba(255, 71, 87, 0.8);
+        }
+    }
+    
+    .modal-sos {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-sos.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+    }
+</style>
+
+<div class="sos-container">
+    <div class="sos-header">
+        <h1><i class="bi bi-shield-exclamation"></i> Emergency SOS</h1>
+        <p style="font-size: 1.1rem; opacity: 0.9;">Get immediate help in emergency situations</p>
+    </div>
+    
+    {% if active_alerts %}
+        {% for alert in active_alerts %}
+        <div class="active-sos-alert">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> ACTIVE SOS ALERT</h4>
+            <p><strong>Location:</strong> {{ alert.location_name }}</p>
+            <p><strong>Type:</strong> {{ alert.alert_type|title }}</p>
+            <p><strong>Time:</strong> {{ alert.created_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+            <button class="btn btn-light mt-2" onclick="resolveSOS({{ alert.sos_id }})">
+                <i class="bi bi-check-circle"></i> Mark as Safe
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="sos-button-container">
+        <button class="sos-button" onclick="openSOSModal()">
+            <i class="bi bi-shield-fill-exclamation"></i>
+            <div>SOS</div>
+            <small style="font-size: 1rem; font-weight: 400;">Press for Help</small>
+        </button>
+        <p class="mt-4 text-muted">Emergency services will be notified immediately</p>
+    </div>
+    
+    <div class="info-card">
+        <h3 class="info-title">
+            <i class="bi bi-telephone-fill text-primary"></i>
+            Quick Dial Emergency Numbers
+        </h3>
+        <div class="quick-dial-grid">
+            <a href="tel:100" class="quick-dial-btn">
+                <i class="bi bi-shield-fill-check"></i>
+                <div class="number">100</div>
+                <div>Police</div>
+            </a>
+            <a href="tel:102" class="quick-dial-btn">
+                <i class="bi bi-heart-pulse-fill"></i>
+                <div class="number">102</div>
+                <div>Ambulance</div>
+            </a>
+            <a href="tel:101" class="quick-dial-btn">
+                <i class="bi bi-fire"></i>
+                <div class="number">101</div>
+                <div>Fire</div>
+            </a>
+            <a href="tel:1091" class="quick-dial-btn">
+                <i class="bi bi-person-fill-exclamation"></i>
+                <div class="number">1091</div>
+                <div>Women Helpline</div>
+            </a>
+        </div>
+    </div>
+    
+    <div class="info-card">
+        <h3 class="info-title">
+            <i class="bi bi-info-circle-fill text-info"></i>
+            What Happens When You Press SOS?
+        </h3>
+        <ul style="color: #666; line-height: 2;">
+            <li>🚨 Immediate alert sent to emergency services</li>
+            <li>📍 Your real-time location is shared</li>
+            <li>👥 Your emergency contacts are notified</li>
+            <li>🚔 Nearest police station is alerted</li>
+            <li>📞 You'll receive a callback within 2 minutes</li>
+        </ul>
+    </div>
+    
+    <div class="text-center">
+        <a href="{{ url_for('emergency.contacts') }}" class="btn btn-lg btn-primary">
+            <i class="bi bi-book-fill"></i> Emergency Contacts Directory
+        </a>
+    </div>
+</div>
+
+<!-- SOS Confirmation Modal -->
+<div class="modal-sos" id="sosModal">
+    <div class="modal-content">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size: 4rem; color: #ff4757;"></i>
+        <h3 style="margin: 20px 0; color: #333;">Confirm Emergency SOS</h3>
+        <p style="color: #666; margin-bottom: 25px;">
+            This will immediately alert emergency services and your contacts. 
+            Only use in genuine emergencies.
+        </p>
+        
+        <form method="POST" action="{{ url_for('emergency.trigger_sos') }}" id="sosForm">
+            <div class="form-group mb-3">
+                <select name="alert_type" class="form-control" required>
+                    <option value="general">General Emergency</option>
+                    <option value="medical">Medical Emergency</option>
+                    <option value="crime">Crime/Assault</option>
+                    <option value="accident">Accident</option>
+                    <option value="lost">Lost/Stranded</option>
+                </select>
+            </div>
+            
+            <input type="hidden" name="latitude" id="sosLat">
+            <input type="hidden" name="longitude" id="sosLng">
+            <input type="hidden" name="location_name" id="sosLocation" value="Current Location">
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-danger" style="flex: 1;">
+                    <i class="bi bi-exclamation-circle-fill"></i> Send SOS Alert
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeSOSModal()" style="flex: 1;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openSOSModal() {
+    document.getElementById('sosModal').classList.add('active');
+    getCurrentLocation();
+}
+
+function closeSOSModal() {
+    document.getElementById('sosModal').classList.remove('active');
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('sosLat').value = position.coords.latitude;
+            document.getElementById('sosLng').value = position.coords.longitude;
+            
+            // Get location name (reverse geocoding would go here)
+            document.getElementById('sosLocation').value = 
+                `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
+        }, function(error) {
+            console.error('Location error:', error);
+            // Use default location if permission denied
+            document.getElementById('sosLat').value = 28.6139;
+            document.getElementById('sosLng').value = 77.2090;
+        });
+    }
+}
+
+function resolveSOS(sosId) {
+    if (confirm('Are you sure you are safe now?')) {
+        fetch(`/emergency/sos/${sosId}/resolve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Close modal on outside click
+window.onclick = function(event) {
+    const modal = document.getElementById('sosModal');
+    if (event.target === modal) {
+        closeSOSModal();
+    }
+}
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 """
 YatraSecure - Main Application Factory
 PRODUCTION VERSION for Railway Deployment
+✅ Fixed PORT binding for Railway
 """
 
 from flask import Flask, render_template, redirect, url_for
@@ -235,12 +236,14 @@ def create_app(config_name=None):
         }
     
     # Startup info
+    port = int(os.getenv('PORT', 8080))
     print(f"\n{'='*60}")
     print(f"🚀 YatraSecure Application Created")
     print(f"{'='*60}")
     print(f"📦 Blueprints: {len(blueprints_registered)} registered")
     print(f"   {', '.join(blueprints_registered)}")
     print(f"🔧 Config: {config_name}")
+    print(f"🌐 Port: {port}")
     print(f"💾 Database: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured')[:50]}...")
     print(f"{'='*60}\n")
     
@@ -283,10 +286,14 @@ def render_fallback_home(blueprints):
     </div></body></html>"""
 
 
-# ✅ FIXED: Export app instance for gunicorn
+# ✅ FIXED: Export app instance for gunicorn with Railway PORT
 app = create_app()
 
 # Run application
 if __name__ == '__main__':
+    # ✅ Use Railway's PORT environment variable
+    port = int(os.getenv('PORT', 8080))
+    print(f"⚠️  Starting on port {port}")
     print("⚠️  For production, use: gunicorn run:app\n")
-    app.run(debug=False, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    app.run(debug=False, host='0.0.0.0', port=port)
+

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Community Leaderboard - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h2 class="fw-bold mb-2"><i class="fas fa-trophy text-warning"></i> Community Leaderboard</h2>
+                        <p class="opacity-75 mb-0">Top travelers in YatraSecure community</p>
+                    </div>
+                    <div class="mt-3 mt-md-0">
+                        <a href="{% url 'community:discover' %}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left"></i> Back to Discover
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Rank -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        {% if user.profile_pic %}
+                            <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="profile-avatar-large">
+                        {% else %}
+                            <div class="avatar-placeholder-large mx-auto">
+                                {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-center text-md-start">
+                        <h4 class="mb-2">{{ user.first_name }} {{ user.last_name }}</h4>
+                        <p class="mb-2">
+                            <span class="badge bg-primary">@{{ user.username }}</span>
+                        </p>
+                        <p class="opacity-75 mb-0">{{ user.bio|default:"Complete your bio to inspire others!" }}</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h1 class="display-4 mb-2">#{{ user_rank }}</h1>
+                        <p class="mb-2"><strong>Your Rank</strong></p>
+                        <p class="mb-0">
+                            <i class="fas fa-star text-warning"></i> {{ user.points|default:0 }} Points
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 3 -->
+    <div class="row g-4 mb-4">
+        {% for traveler in top_travelers|slice:":3" %}
+        <div class="col-md-4">
+            <div class="glass-card text-center" style="
+                {% if forloop.counter == 1 %}background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%);{% endif %}
+                {% if forloop.counter == 2 %}background: linear-gradient(135deg, rgba(192, 192, 192, 0.2) 0%, rgba(169, 169, 169, 0.2) 100%);{% endif %}
+                {% if forloop.counter == 3 %}background: linear-gradient(135deg, rgba(205, 127, 50, 0.2) 0%, rgba(184, 115, 51, 0.2) 100%);{% endif %}
+            ">
+                <div class="position-relative mb-3">
+                    <div class="rank-badge">
+                        {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                    </div>
+                    {% if traveler.profile_pic %}
+                        <img src="{{ traveler.profile_pic.url }}" alt="{{ traveler.username }}" class="profile-avatar-large">
+                    {% else %}
+                        <div class="avatar-placeholder-large mx-auto">
+                            {{ traveler.first_name|slice:":1"|upper }}{{ traveler.last_name|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <h5 class="mb-2">{{ traveler.first_name }} {{ traveler.last_name }}</h5>
+                <p class="small mb-3">
+                    <span class="badge bg-dark">@{{ traveler.username }}</span>
+                </p>
+                <div class="mb-3">
+                    <h3 class="mb-0"><i class="fas fa-star text-warning"></i> {{ traveler.points|default:0 }}</h3>
+                    <p class="small opacity-75 mb-0">Points</p>
+                </div>
+                <p class="mb-3">
+                    <i class="fas fa-suitcase"></i> {{ traveler.trip_count }} Trip{{ traveler.trip_count|pluralize }}
+                </p>
+                <button class="btn btn-sm btn-gradient-primary">
+                    <i class="fas fa-user-plus"></i> Follow
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Full Leaderboard -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card">
+                <h4 class="mb-4"><i class="fas fa-list-ol"></i> Full Rankings</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover" style="color: white;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid rgba(255, 255, 255, 0.2);">
+                                <th>Rank</th>
+                                <th>Traveler</th>
+                                <th>Vibe</th>
+                                <th>Trips</th>
+                                <th>Points</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for traveler in top_travelers %}
+                            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <td>
+                                    <strong class="text-warning">#{{ forloop.counter }}</strong>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if traveler.profile_pic %}
+                                            <img src="{{ traveler.profile_pic.url }}" alt="{{ traveler.username }}" class="profile-avatar-small me-2">
+                                        {% else %}
+                                            <div class="avatar-placeholder-small me-2">
+                                                {{ traveler.first_name|slice:":1"|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ traveler.first_name }} {{ traveler.last_name }}</strong>
+                                            <br><small class="opacity-75">@{{ traveler.username }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if traveler.travel_vibe == 'adventure' %}
+                                        <span class="badge bg-warning">🏔️ Adventure</span>
+                                    {% elif traveler.travel_vibe == 'beach' %}
+                                        <span class="badge bg-info">🏖️ Beach</span>
+                                    {% elif traveler.travel_vibe == 'cultural' %}
+                                        <span class="badge bg-success">🏛️ Cultural</span>
+                                    {% elif traveler.travel_vibe == 'wildlife' %}
+                                        <span class="badge bg-danger">🦁 Wildlife</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">✈️ Explorer</span>
+                                    {% endif %}
+                                </td>
+                                <td><i class="fas fa-suitcase"></i> {{ traveler.trip_count }}</td>
+                                <td><i class="fas fa-star text-warning"></i> {{ traveler.points|default:0 }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-light">
+                                        <i class="fas fa-user-plus"></i> Follow
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-placeholder-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: bold;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.rank-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 3rem;
+}
+</style>
+{% endblock %}

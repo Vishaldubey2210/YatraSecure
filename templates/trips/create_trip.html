@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Trip - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-plane-departure fa-3x mb-3 text-primary"></i>
+                    <h2 class="fw-bold mb-2">Create New Trip</h2>
+                    <p class="opacity-75 mb-0">Plan your next adventure with friends</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><i class="fas fa-heading"></i> Trip Name *</label>
+                            <input type="text" name="name" class="form-control glass-input" placeholder="e.g., Goa Beach Trip 2025" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-map-marker-alt"></i> Origin *</label>
+                            <input type="text" name="origin" class="form-control glass-input" placeholder="Starting point" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-flag-checkered"></i> Destination *</label>
+                            <input type="text" name="destination" class="form-control glass-input" placeholder="Where to?" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar-alt"></i> Start Date *</label>
+                            <input type="date" name="start_date" class="form-control glass-input" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar-check"></i> End Date *</label>
+                            <input type="date" name="end_date" class="form-control glass-input" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-rupee-sign"></i> Budget (₹) *</label>
+                            <input type="number" name="budget" class="form-control glass-input" placeholder="10000" min="0" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-tag"></i> Trip Type *</label>
+                            <select name="trip_type" class="form-select glass-input" required>
+                                <option value="">Select type...</option>
+                                <option value="adventure">🏔️ Adventure</option>
+                                <option value="beach">🏖️ Beach</option>
+                                <option value="cultural">🎭 Cultural</option>
+                                <option value="wildlife">🦁 Wildlife</option>
+                                <option value="pilgrimage">🕉️ Pilgrimage</option>
+                                <option value="business">💼 Business</option>
+                                <option value="family">👨‍👩‍👧‍👦 Family</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-4">
+                            <label class="form-label"><i class="fas fa-align-left"></i> Description</label>
+                            <textarea name="description" class="form-control glass-input" rows="4" placeholder="Tell us about your trip plans..."></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-gradient-success flex-grow-1">
+                                    <i class="fas fa-check-circle"></i> Create Trip
+                                </button>
+                                <a href="{% url 'trips:trip_list' %}" class="btn btn-outline-light">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

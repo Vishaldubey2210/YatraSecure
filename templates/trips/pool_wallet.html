@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pool Wallet - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.wallet-header {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    color: #000;
+}
+
+.wallet-balance-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(79, 172, 254, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.balance-amount {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #4facfe;
+}
+
+.web3-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #43e97b;
+}
+
+.progress-bar-custom {
+    height: 30px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+}
+
+.transaction-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 4px solid;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.transaction-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.transaction-card.contribution {
+    border-left-color: #43e97b;
+}
+
+.transaction-card.payment {
+    border-left-color: #f5576c;
+}
+
+.transaction-card.withdrawal {
+    border-left-color: #feca57;
+}
+
+.transaction-hash {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #4facfe;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.transaction-hash:hover {
+    background: rgba(79, 172, 254, 0.2);
+}
+
+.member-contribution {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.contribute-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.contribute-modal.active {
+    display: flex;
+}
+
+.modal-content-custom {
+    background: rgba(20, 20, 40, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+}
+
+.quick-amount {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.quick-amount:hover {
+    background: rgba(79, 172, 254, 0.2);
+    border-color: #4facfe;
+    transform: scale(1.05);
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="wallet-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-wallet"></i> Pool Wallet</h2>
+                <p class="mb-0 opacity-75">{{ trip.name }} - Shared Fund Management</p>
+            </div>
+            <span class="web3-badge">
+                <i class="fas fa-lock"></i> Web3 Secured
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-box">
+                <i class="fas fa-wallet fa-2x mb-2 text-primary"></i>
+                <div class="stat-value">₹{{ pool_wallet.total_balance|floatformat:0 }}</div>
+                <small class="text-muted">Current Balance</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <i class="fas fa-bullseye fa-2x mb-2 text-success"></i>
+                <div class="stat-value">₹{{ pool_wallet.target_amount|floatformat:0 }}</div>
+                <small class="text-muted">Target Amount</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <i class="fas fa-users fa-2x mb-2 text-info"></i>
+                <div class="stat-value">{{ member_contributions|length }}</div>
+                <small class="text-muted">Contributors</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <i class="fas fa-history fa-2x mb-2 text-warning"></i>
+                <div class="stat-value">{{ transactions.count }}</div>
+                <small class="text-muted">Transactions</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Balance Card & Transactions -->
+        <div class="col-lg-8">
+            <!-- Balance Display -->
+            <div class="wallet-balance-card">
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Available Balance</h5>
+                        <div class="balance-amount">₹{{ pool_wallet.total_balance|floatformat:2 }}</div>
+                        <p class="text-muted mb-0">of ₹{{ pool_wallet.target_amount|floatformat:0 }} target</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button class="btn btn-gradient-success btn-lg mb-2" id="contributeBtn">
+                            <i class="fas fa-plus-circle"></i> Add Funds
+                        </button>
+                        <a href="{% url 'trips:view_cart' trip.id %}" class="btn btn-gradient-primary btn-lg">
+                            <i class="fas fa-shopping-cart"></i> Use Wallet
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar-custom">
+                    <div class="progress-fill" style="width: {{ pool_wallet.contribution_percentage }}%">
+                        {{ pool_wallet.contribution_percentage|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-history"></i> Transaction History</h5>
+                    <span class="badge bg-primary">{{ transactions.count }} Total</span>
+                </div>
+
+                {% if transactions %}
+                    {% for txn in transactions %}
+                    <div class="transaction-card {{ txn.transaction_type }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if txn.transaction_type == 'contribution' %}
+                                        <i class="fas fa-arrow-down fa-lg text-success"></i>
+                                    {% elif txn.transaction_type == 'payment' %}
+                                        <i class="fas fa-arrow-up fa-lg text-danger"></i>
+                                    {% else %}
+                                        <i class="fas fa-exchange-alt fa-lg text-warning"></i>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ txn.get_transaction_type_display }}</strong>
+                                        <small class="text-muted">by {{ txn.user.username }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <strong class="{% if txn.transaction_type == 'contribution' %}text-success{% else %}text-danger{% endif %}">
+                                    {% if txn.transaction_type == 'contribution' %}+{% else %}-{% endif %}₹{{ txn.amount|floatformat:2 }}
+                                </strong>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <small class="text-muted d-block">{{ txn.timestamp|date:"M d, Y" }}</small>
+                                <small class="text-muted">{{ txn.timestamp|time:"h:i A" }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if txn.description %}
+                        <p class="mb-1 mt-2 small opacity-75">{{ txn.description }}</p>
+                        {% endif %}
+                        
+                        {% if txn.transaction_hash %}
+                        <div class="mt-2">
+                            <span class="transaction-hash" onclick="copyHash('{{ txn.transaction_hash }}')" title="Click to copy">
+                                <i class="fas fa-link"></i> {{ txn.transaction_hash|slice:":16" }}...{{ txn.transaction_hash|slice:"-4:" }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x mb-3 opacity-50"></i>
+                        <p class="opacity-75">No transactions yet</p>
+                        <button class="btn btn-gradient-success" id="contributeBtn2">
+                            <i class="fas fa-plus"></i> Make First Contribution
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Member Contributions -->
+            <div class="glass-card mb-3 sticky-top" style="top: 100px;">
+                <h5 class="mb-3"><i class="fas fa-users"></i> Member Contributions</h5>
+
+                {% for contribution in member_contributions %}
+                <div class="member-contribution">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle">
+                                {{ contribution.user.first_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <strong class="d-block">{{ contribution.user.username }}</strong>
+                                <small class="text-muted">{{ contribution.user.first_name }}</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-success d-block">₹{{ contribution.amount|floatformat:2 }}</strong>
+                            <small class="text-muted">
+                                {% widthratio contribution.amount pool_wallet.total_balance 100 %}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center opacity-75 py-3">No contributions yet</p>
+                {% endfor %}
+
+                <hr style="border-color: rgba(255, 255, 255, 0.2);">
+
+                <!-- Security Info -->
+                <div class="alert alert-info glass-card">
+                    <h6><i class="fas fa-shield-alt"></i> Web3 Security</h6>
+                    <p class="small mb-2">All transactions are secured with blockchain-grade encryption.</p>
+                    <ul class="small mb-0">
+                        <li>Transparent transaction history</li>
+                        <li>Immutable records</li>
+                        <li>Secure & verified</li>
+                    </ul>
+                </div>
+
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light w-100">
+                    <i class="fas fa-arrow-left"></i> Back to Trip
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contribute Modal -->
+<div class="contribute-modal" id="contributeModal">
+    <div class="modal-content-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="fas fa-plus-circle"></i> Add Funds to Wallet</h4>
+            <button class="btn btn-sm btn-outline-light" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="contributeForm">
+            <div class="mb-3">
+                <label class="form-label">Enter Amount (₹)</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text glass-input">₹</span>
+                    <input type="number" id="amountInput" class="form-control glass-input" 
+                           placeholder="Enter amount" min="1" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Quick Select</label>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="500">₹500</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="1000">₹1000</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="2000">₹2000</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="5000">₹5000</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="10000">₹10k</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="quick-amount" data-amount="20000">₹20k</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning glass-card">
+                <small>
+                    <i class="fas fa-info-circle"></i> 
+                    Demo Mode: Real payment integration required for production.
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-gradient-success btn-lg w-100" id="submitBtn">
+                <i class="fas fa-lock"></i> Confirm Contribution
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('contributeModal');
+    const amountInput = document.getElementById('amountInput');
+
+    // Open modal
+    document.getElementById('contributeBtn').addEventListener('click', () => modal.classList.add('active'));
+    
+    if (document.getElementById('contributeBtn2')) {
+        document.getElementById('contributeBtn2').addEventListener('click', () => modal.classList.add('active'));
+    }
+
+    // Close modal
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+
+    // Quick amounts
+    document.querySelectorAll('.quick-amount').forEach(btn => {
+        btn.addEventListener('click', function() {
+            amountInput.value = this.dataset.amount;
+            document.querySelectorAll('.quick-amount').forEach(b => b.style.borderColor = 'rgba(255, 255, 255, 0.2)');
+            this.style.borderColor = '#4facfe';
+        });
+    });
+
+    // Submit
+    document.getElementById('contributeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const amount = amountInput.value;
+        if (!amount || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        fetch("{% url 'trips:contribute_wallet' trip.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `amount=${amount}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+                submitBtn.classList.add('btn-success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-lock"></i> Confirm Contribution';
+            }
+        })
+        .catch(error => {
+            alert('Network error. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-lock"></i> Confirm Contribution';
+        });
+    });
+});
+
+function copyHash(hash) {
+    navigator.clipboard.writeText(hash);
+    alert('Transaction hash copied!\n' + hash);
+}
+</script>
+{% endblock %}

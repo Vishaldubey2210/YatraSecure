@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Profile - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-edit fa-3x mb-3"></i>
+                    <h2 class="fw-bold">Complete Your Profile</h2>
+                    <p class="opacity-75">Tell us more about yourself for better travel experience</p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Personal Information -->
+                    <div class="mb-4">
+                        <h4 class="mb-3"><i class="fas fa-info-circle"></i> Personal Information</h4>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                {{ profile_form.phone }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Age</label>
+                                {{ profile_form.age }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Gender</label>
+                                {{ profile_form.gender }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bio</label>
+                            {{ profile_form.bio }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profile Picture</label>
+                            {{ profile_form.profile_pic }}
+                        </div>
+                    </div>
+
+                    <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+
+                    <!-- Travel Preferences -->
+                    <div class="mb-4">
+                        <h4 class="mb-3"><i class="fas fa-plane"></i> Travel Preferences</h4>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Travel Vibe</label>
+                                {{ profile_form.travel_vibe }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Dietary Needs</label>
+                                {{ profile_form.dietary_needs }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ profile_form.smoking_habit }}
+                                    <label class="form-check-label text-light">
+                                        Smoking Habit
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ profile_form.drinking_habit }}
+                                    <label class="form-check-label text-light">
+                                        Drinking Habit
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+
+                    <!-- Emergency Contact -->
+                    <div class="mb-4">
+                        <h4 class="mb-3"><i class="fas fa-phone-alt"></i> Emergency Contact</h4>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Name</label>
+                                {{ emergency_form.name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Relationship</label>
+                                {{ emergency_form.relationship }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                {{ emergency_form.phone }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">WhatsApp Number</label>
+                                {{ emergency_form.whatsapp }}
+                            </div>
+                        </div>
+                        <div class="form-check mb-3">
+                            {{ emergency_form.is_primary }}
+                            <label class="form-check-label text-light">
+                                Set as Primary Contact
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient-success btn-lg w-100">
+                        <i class="fas fa-check-circle"></i> Complete Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Photo - {{ place.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="glass-card">
+                <h3 class="mb-4"><i class="fas fa-camera"></i> Upload Photo</h3>
+                <p class="text-muted mb-4">Share your experience at {{ place.name }}</p>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Select Photo</label>
+                        <input type="file" name="image" class="form-control glass-input" 
+                               accept="image/*" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Caption (Optional)</label>
+                        <textarea name="caption" class="form-control glass-input" 
+                                  rows="3" placeholder="Share your story..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-gradient-primary btn-lg">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                        <a href="{% url 'explore:place_detail' place.id %}" class="btn btn-outline-light">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

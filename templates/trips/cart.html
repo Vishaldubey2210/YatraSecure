@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.cart-header {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.cart-item {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.cart-summary {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    position: sticky;
+    top: 100px;
+}
+
+.wallet-info {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    padding: 1.5rem;
+    border-radius: 15px;
+    color: #000;
+    margin-bottom: 1rem;
+}
+
+.price-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.total-line {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4facfe;
+    border-bottom: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="cart-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-shopping-cart"></i> Booking Cart</h2>
+                <p class="mb-0 opacity-75">{{ trip.name }}</p>
+            </div>
+            <a href="{% url 'trips:booking_search' trip.id %}" class="btn btn-light">
+                <i class="fas fa-plus"></i> Add More
+            </a>
+        </div>
+    </div>
+
+    {% if cart and cart.items.all %}
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            {% for item in cart.items.all %}
+            <div class="cart-item">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <i class="fas fa-{% if item.booking_type == 'flight' %}plane{% elif item.booking_type == 'train' %}train{% elif item.booking_type == 'cab' %}car{% elif item.booking_type == 'hotel' %}hotel{% else %}utensils{% endif %} fa-2x text-primary"></i>
+                    </div>
+                    <div class="col-md-7">
+                        <span class="badge bg-primary mb-1">{{ item.get_booking_type_display }}</span>
+                        <h5 class="mb-1">{{ item.title }}</h5>
+                        <p class="mb-1 opacity-75 small">{{ item.description }}</p>
+                        <p class="mb-0"><strong>{{ item.provider }}</strong></p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <div class="mb-2">
+                            <strong class="d-block">₹{{ item.price }}</strong>
+                            <small class="text-muted">× {{ item.quantity }}</small>
+                        </div>
+                        <strong class="text-success">₹{{ item.total_price }}</strong>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <button class="btn btn-danger btn-sm remove-item" data-item-id="{{ item.id }}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Summary & Checkout -->
+        <div class="col-lg-4">
+            <div class="cart-summary">
+                <h5 class="mb-3"><i class="fas fa-file-invoice"></i> Order Summary</h5>
+
+                {% if pool_wallet %}
+                <div class="wallet-info">
+                    <h6 class="mb-2"><i class="fas fa-wallet"></i> Pool Wallet Balance</h6>
+                    <div class="display-6 fw-bold">₹{{ pool_wallet.total_balance|floatformat:2 }}</div>
+                    <a href="{% url 'trips:pool_wallet' trip.id %}" class="btn btn-dark btn-sm mt-2">
+                        View Wallet <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="price-line">
+                    <span>Subtotal ({{ cart.item_count }} items)</span>
+                    <strong>₹{{ cart.total_amount|floatformat:2 }}</strong>
+                </div>
+                <div class="price-line">
+                    <span>Service Fee</span>
+                    <strong>₹0</strong>
+                </div>
+                <div class="price-line total-line mt-2">
+                    <span>Total Amount</span>
+                    <strong>₹{{ cart.total_amount|floatformat:2 }}</strong>
+                </div>
+
+                {% if is_creator %}
+                    {% if pool_wallet and pool_wallet.total_balance >= cart.total_amount %}
+                        <a href="{% url 'trips:checkout_cart' trip.id %}" class="btn btn-gradient-success btn-lg w-100 mt-3">
+                            <i class="fas fa-lock"></i> Proceed to Checkout
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Need ₹{{ cart.total_amount|floatformat:2 }} in wallet
+                            {% if pool_wallet %}
+                                <br><small>Current: ₹{{ pool_wallet.total_balance|floatformat:2 }}</small>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'trips:pool_wallet' trip.id %}" class="btn btn-warning w-100">
+                            <i class="fas fa-plus-circle"></i> Add Funds to Wallet
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> Only trip creator can make payments
+                    </div>
+                {% endif %}
+
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light w-100 mt-2">
+                    <i class="fas fa-arrow-left"></i> Back to Trip
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-4x mb-3 opacity-50"></i>
+        <h4>Your cart is empty</h4>
+        <p class="opacity-75 mb-4">Start adding bookings to your cart</p>
+        <a href="{% url 'trips:booking_search' trip.id %}" class="btn btn-gradient-primary">
+            <i class="fas fa-search"></i> Browse Bookings
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.remove-item').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (confirm('Remove this item from cart?')) {
+            const itemId = this.dataset.itemId;
+            
+            fetch("{% url 'trips:remove_from_cart' trip.id 0 %}".replace('/0/', `/${itemId}/`), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                }
+            })
+            .catch(() => {
+                alert('Error removing item');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

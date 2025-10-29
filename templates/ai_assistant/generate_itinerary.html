@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Itinerary Generator - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+.chat-interface {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+}
+
+.chat-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    margin-bottom: 1rem;
+}
+
+.message-bubble {
+    margin-bottom: 1.5rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-bubble.ai {
+    display: flex;
+    gap: 1rem;
+}
+
+.message-bubble.user {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row-reverse;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.avatar.ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.avatar.user {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.message-content {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.message-bubble.user .message-content {
+    background: rgba(79, 172, 254, 0.2);
+}
+
+.typing-indicator {
+    display: none;
+    padding: 1rem;
+}
+
+.typing-indicator.active {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4facfe;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+.chat-input-wrapper {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.quick-action-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.quick-action-btn:hover {
+    background: rgba(79, 172, 254, 0.3);
+    transform: translateY(-2px);
+}
+
+#previewMap {
+    height: 300px;
+    border-radius: 15px;
+    margin-top: 1rem;
+}
+
+.itinerary-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(67, 233, 123, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #43e97b;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="fw-bold mb-2">
+                            <i class="fas fa-comments text-primary"></i> AI Itinerary Chat
+                        </h2>
+                        <p class="opacity-75 mb-0">{{ trip.name }} - {{ trip.destination }}</p>
+                    </div>
+                    <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Chat Interface -->
+        <div class="col-lg-8">
+            <div class="glass-card">
+                <div class="chat-interface">
+                    <div class="chat-messages-area" id="chatMessagesArea">
+                        <!-- Initial AI message -->
+                        <div class="message-bubble ai">
+                            <div class="avatar ai">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <strong class="d-block mb-2">AI Travel Planner</strong>
+                                <p class="mb-2">Hi! I'm your AI travel assistant. Let's create an amazing itinerary for your trip to <strong>{{ trip.destination }}</strong>!</p>
+                                <p class="mb-2">I see you have:</p>
+                                <ul class="mb-2">
+                                    <li>📅 <strong>{{ trip.duration_days }} days</strong> trip</li>
+                                    <li>💰 Budget of <strong>₹{{ trip.budget }}</strong></li>
+                                    <li>🎯 Trip type: <strong>{{ trip.get_trip_type_display }}</strong></li>
+                                </ul>
+                                <p class="mb-0">What kind of activities would you like to include? Or should I create a complete itinerary based on your trip type?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="avatar ai">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="d-flex gap-1">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="chat-input-wrapper">
+                        <form id="chatForm">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" id="userInput" class="form-control glass-input" 
+                                       placeholder="Type your preferences or ask for suggestions..." 
+                                       required autofocus>
+                                <button type="submit" class="btn btn-gradient-primary px-4">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Quick Action Buttons -->
+                        <div class="quick-actions" id="quickActions">
+                            <button class="quick-action-btn" data-message="Create a complete itinerary">
+                                ✨ Create Complete Itinerary
+                            </button>
+                            <button class="quick-action-btn" data-message="Add adventure activities">
+                                🏔️ Add Adventure
+                            </button>
+                            <button class="quick-action-btn" data-message="Include local food spots">
+                                🍽️ Local Cuisine
+                            </button>
+                            <button class="quick-action-btn" data-message="Add cultural attractions">
+                                🏛️ Cultural Sites
+                            </button>
+                            <button class="quick-action-btn" data-message="Show safety tips">
+                                🛡️ Safety Tips
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="col-lg-4">
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-eye"></i> Live Preview</h5>
+                
+                <div id="itineraryPreviewContainer">
+                    <div class="text-center py-5 opacity-50">
+                        <i class="fas fa-magic fa-3x mb-3"></i>
+                        <p>Your itinerary will appear here as it's generated...</p>
+                    </div>
+                </div>
+
+                <div id="mapPreviewContainer" style="display: none;">
+                    <h6 class="mt-4 mb-2"><i class="fas fa-map-marked-alt"></i> Route Preview</h6>
+                    <div id="previewMap"></div>
+                </div>
+
+                <div class="mt-3" id="saveButtonContainer" style="display: none;">
+                    <button id="saveItineraryBtn" class="btn btn-gradient-success w-100 btn-lg">
+                        <i class="fas fa-save"></i> Save Itinerary
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let conversationHistory = [];
+let currentItinerary = '';
+let previewMap = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupChatInterface();
+    setupQuickActions();
+});
+
+function setupChatInterface() {
+    const form = document.getElementById('chatForm');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const input = document.getElementById('userInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        sendMessage(message);
+        input.value = '';
+    });
+}
+
+function setupQuickActions() {
+    const buttons = document.querySelectorAll('.quick-action-btn');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const message = this.dataset.message;
+            sendMessage(message);
+        });
+    });
+}
+
+function sendMessage(message) {
+    // Add user message
+    addMessage(message, 'user');
+    
+    // Show typing indicator
+    document.getElementById('typingIndicator').classList.add('active');
+    
+    // Send to backend
+    fetch("{% url 'ai_assistant:chat_generate' trip.id %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `message=${encodeURIComponent(message)}&history=${encodeURIComponent(JSON.stringify(conversationHistory))}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide typing indicator
+        document.getElementById('typingIndicator').classList.remove('active');
+        
+        // Add AI response
+        addMessage(data.response, 'ai');
+        
+        // Update conversation history
+        conversationHistory.push({
+            user: message,
+            ai: data.response
+        });
+        
+        // Update preview if itinerary generated
+        if (data.itinerary_html) {
+            updatePreview(data.itinerary_html);
+            currentItinerary = data.itinerary_html;
+        }
+        
+        // Show save button if complete
+        if (data.is_complete) {
+            document.getElementById('saveButtonContainer').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        document.getElementById('typingIndicator').classList.remove('active');
+        addMessage('Sorry, I encountered an error. Please try again!', 'ai');
+    });
+}
+
+function addMessage(text, type) {
+    const messagesArea = document.getElementById('chatMessagesArea');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message-bubble ${type}`;
+    
+    const avatar = type === 'user' 
+        ? '<div class="avatar user"><i class="fas fa-user"></i></div>'
+        : '<div class="avatar ai"><i class="fas fa-robot"></i></div>';
+    
+    const sender = type === 'user' ? 'You' : 'AI Travel Planner';
+    
+    messageDiv.innerHTML = `
+        ${avatar}
+        <div class="message-content">
+            <strong class="d-block mb-2">${sender}</strong>
+            <div>${text}</div>
+        </div>
+    `;
+    
+    messagesArea.appendChild(messageDiv);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+function updatePreview(html) {
+    const container = document.getElementById('itineraryPreviewContainer');
+    container.innerHTML = `
+        <div class="itinerary-preview">
+            ${html}
+        </div>
+    `;
+    
+    // Show map
+    document.getElementById('mapPreviewContainer').style.display = 'block';
+    
+    // Initialize map if not done
+    if (!previewMap) {
+        setTimeout(() => {
+            previewMap = L.map('previewMap').setView([20.5937, 78.9629], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(previewMap);
+        }, 100);
+    }
+}
+
+// Save itinerary
+document.getElementById('saveItineraryBtn').addEventListener('click', function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    fetch("{% url 'ai_assistant:save_generated' trip.id %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `itinerary=${encodeURIComponent(currentItinerary)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = "{% url 'ai_assistant:view_itinerary' trip.id %}";
+        }
+    })
+    .catch(error => {
+        alert('Error saving itinerary');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-save"></i> Save Itinerary';
+    });
+});
+</script>
+{% endblock %}

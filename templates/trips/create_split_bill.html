@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Split Bill - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-header {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    color: #000;
+}
+
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.image-preview {
+    max-width: 300px;
+    border-radius: 10px;
+    margin-top: 1rem;
+    display: none;
+}
+
+.member-chip {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    margin: 0.25rem;
+}
+
+.split-preview {
+    background: rgba(67, 233, 123, 0.1);
+    border: 1px solid rgba(67, 233, 123, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="create-header">
+        <h2><i class="fas fa-plus-circle"></i> Create Split Bill</h2>
+        <p class="mb-0 opacity-75">Divide expenses among {{ trip.members.count }} trip members</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="form-section">
+                <form method="POST" enctype="multipart/form-data" id="splitBillForm">
+                    {% csrf_token %}
+                    
+                    <!-- Bill Title -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Bill Title *</strong></label>
+                        <input type="text" name="title" class="form-control glass-input" 
+                               placeholder="e.g., Dinner at Restaurant" required>
+                        <small class="text-muted">What is this expense for?</small>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Description (Optional)</strong></label>
+                        <textarea name="description" class="form-control glass-input" rows="3"
+                                  placeholder="Add any additional details..."></textarea>
+                    </div>
+
+                    <!-- Total Amount -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Total Amount (₹) *</strong></label>
+                        <input type="number" name="total_amount" id="totalAmount" 
+                               class="form-control glass-input" 
+                               placeholder="0.00" step="0.01" min="0.01" required>
+                        <small class="text-muted">Enter the total bill amount</small>
+                    </div>
+
+                    <!-- Bill Image -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Upload Bill Image (Optional)</strong></label>
+                        <input type="file" name="bill_image" id="billImage" 
+                               class="form-control glass-input" accept="image/*" 
+                               onchange="previewImage(event)">
+                        <img id="imagePreview" class="image-preview" src="" alt="Preview">
+                        <small class="text-muted d-block mt-2">Upload a photo of the bill for transparency</small>
+                    </div>
+
+                    <!-- Split Type -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Split Type *</strong></label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="split_equally" 
+                                   id="splitEqually" checked>
+                            <label class="form-check-label" for="splitEqually">
+                                Split equally among all members
+                            </label>
+                        </div>
+                        <small class="text-muted">Amount will be divided equally among {{ trip.members.count }} members</small>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-gradient-success btn-lg">
+                            <i class="fas fa-paper-plane"></i> Send Split Bill to All Members
+                        </button>
+                        <a href="{% url 'trips:split_bill_list' trip.id %}" class="btn btn-outline-light">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Preview Sidebar -->
+        <div class="col-lg-4">
+            <div class="glass-card sticky-top" style="top: 100px;">
+                <h5 class="mb-3"><i class="fas fa-users"></i> Trip Members</h5>
+                
+                {% for member in trip.members.all %}
+                <div class="member-chip">
+                    <i class="fas fa-user"></i> {{ member.username }}
+                </div>
+                {% endfor %}
+
+                <hr style="border-color: rgba(255, 255, 255, 0.2);">
+
+                <!-- Live Preview -->
+                <div class="split-preview">
+                    <h6><i class="fas fa-calculator"></i> Split Preview</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Amount:</span>
+                        <strong id="previewTotal">₹0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Number of People:</span>
+                        <strong>{{ trip.members.count }}</strong>
+                    </div>
+                    <hr style="border-color: rgba(67, 233, 123, 0.3);">
+                    <div class="d-flex justify-content-between">
+                        <span><strong>Per Person:</strong></span>
+                        <strong class="text-success" id="previewPerPerson">₹0.00</strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-info glass-card mt-3">
+                    <small>
+                        <i class="fas fa-info-circle"></i> 
+                        All members will receive notification to accept or decline this split.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Image preview
+function previewImage(event) {
+    const preview = document.getElementById('imagePreview');
+    const file = event.target.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+// Live split calculation
+document.getElementById('totalAmount').addEventListener('input', function() {
+    const total = parseFloat(this.value) || 0;
+    const memberCount = {{ trip.members.count }};
+    const perPerson = total / memberCount;
+    
+    document.getElementById('previewTotal').textContent = '₹' + total.toFixed(2);
+    document.getElementById('previewPerPerson').textContent = '₹' + perPerson.toFixed(2);
+});
+</script>
+{% endblock %}

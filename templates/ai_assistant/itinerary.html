@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Itinerary - {{ trip.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="fw-bold mb-2"><i class="fas fa-robot"></i> AI Generated Itinerary</h2>
+                        <p class="opacity-75 mb-0">{{ trip.name }} - {{ trip.destination }}</p>
+                    </div>
+                    <div>
+                        <form method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-gradient-primary">
+                                <i class="fas fa-sync-alt"></i> Regenerate
+                            </button>
+                        </form>
+                        <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light ms-2">
+                            <i class="fas fa-arrow-left"></i> Back to Trip
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="glass-card itinerary-content">
+                {% if itinerary.content %}
+                    <div class="ai-generated-content">
+                        {{ itinerary.content|safe }}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="loader mb-3"></div>
+                        <h5>Generating your perfect itinerary...</h5>
+                        <p class="opacity-75">This may take a few moments</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="glass-card mb-3">
+                <h5 class="mb-3"><i class="fas fa-info-circle"></i> Trip Details</h5>
+                <p class="mb-2"><strong>Duration:</strong> {{ trip.duration_days }} days</p>
+                <p class="mb-2"><strong>Budget:</strong> ₹{{ trip.budget }}</p>
+                <p class="mb-2"><strong>Type:</strong> {{ trip.get_trip_type_display }}</p>
+                <p class="mb-0"><strong>Dates:</strong> {{ trip.start_date|date:"M d" }} - {{ trip.end_date|date:"M d, Y" }}</p>
+            </div>
+
+            <div class="glass-card">
+                <h6 class="mb-3"><i class="fas fa-lightbulb"></i> AI Features</h6>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'ai_assistant:generate_packing' trip.id %}" class="btn btn-gradient-success btn-sm">
+                        <i class="fas fa-suitcase"></i> Packing List
+                    </a>
+                    <a href="{% url 'ai_assistant:chat' %}?trip={{ trip.id }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-comments"></i> Ask AI Assistant
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ai-generated-content {
+    line-height: 1.8;
+}
+
+.ai-generated-content h4 {
+    color: #f093fb;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.ai-generated-content h5 {
+    color: #4facfe;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.ai-generated-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.ai-generated-content li {
+    padding: 0.5rem 0;
+    padding-left: 2rem;
+    position: relative;
+}
+
+.ai-generated-content li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #43e97b;
+    font-weight: bold;
+}
+
+.day-plan {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+}
+</style>
+{% endblock %}

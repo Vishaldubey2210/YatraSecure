@@ -1,0 +1,510 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Safety Map - YatraSecure{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+#safetyMap {
+    height: 75vh;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    z-index: 1;
+}
+
+.map-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 250px;
+}
+
+.danger-zone-card {
+    background: rgba(255, 0, 0, 0.2);
+    border-left: 4px solid #ff0844;
+}
+
+.warning-zone-card {
+    background: rgba(255, 165, 0, 0.2);
+    border-left: 4px solid #fa709a;
+}
+
+.safe-zone-card {
+    background: rgba(0, 255, 0, 0.2);
+    border-left: 4px solid #43e97b;
+}
+
+.news-alert-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.news-alert-card:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.severity-badge-high {
+    background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+}
+
+.severity-badge-medium {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.severity-badge-low {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.legend {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.legend-color {
+    width: 40px;
+    height: 25px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.heatmap-toggle {
+    margin-top: 1rem;
+}
+
+.layer-control {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.layer-control label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.layer-control input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.stats-info {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <h2 class="fw-bold mb-2"><i class="fas fa-fire"></i> Live Safety Heatmap</h2>
+                <p class="opacity-75 mb-0">Real-time danger zones with color-coded heat intensity from crime data</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="glass-card position-relative">
+                <div class="map-controls">
+                    <h6 class="mb-3"><i class="fas fa-sliders-h"></i> Map Controls</h6>
+                    
+                    <!-- Radius Filter -->
+                    <div class="mb-3">
+                        <label class="form-label small">News Radius</label>
+                        <select id="radiusFilter" class="form-select glass-input">
+                            <option value="10">10 km</option>
+                            <option value="25">25 km</option>
+                            <option value="50" selected>50 km</option>
+                            <option value="100">100 km</option>
+                            <option value="200">200 km</option>
+                        </select>
+                    </div>
+
+                    <!-- Layer Controls -->
+                    <div class="layer-control">
+                        <label>
+                            <input type="checkbox" id="heatmapToggle" checked>
+                            <span>Show Heatmap</span>
+                        </label>
+                    </div>
+
+                    <div class="layer-control">
+                        <label>
+                            <input type="checkbox" id="markersToggle" checked>
+                            <span>Show Danger Markers</span>
+                        </label>
+                    </div>
+
+                    <div class="layer-control">
+                        <label>
+                            <input type="checkbox" id="circlesToggle" checked>
+                            <span>Show Danger Zones</span>
+                        </label>
+                    </div>
+
+                    <button id="refreshNews" class="btn btn-gradient-primary btn-sm w-100 mt-2">
+                        <i class="fas fa-sync-alt"></i> Refresh News
+                    </button>
+
+                    <!-- Stats -->
+                    <div class="stats-info">
+                        <h6 class="small mb-2">Map Statistics</h6>
+                        <p class="small mb-1"><i class="fas fa-map-pin text-danger"></i> Danger Zones: <span id="dangerCount">0</span></p>
+                        <p class="small mb-1"><i class="fas fa-map-pin text-warning"></i> Warning Zones: <span id="warningCount">0</span></p>
+                        <p class="small mb-0"><i class="fas fa-map-pin text-success"></i> Safe Zones: <span id="safeCount">0</span></p>
+                    </div>
+                </div>
+
+                <div id="safetyMap"></div>
+
+                <!-- Legend -->
+                <div class="legend position-absolute" style="bottom: 20px; left: 20px; z-index: 1000;">
+                    <h6 class="mb-3"><i class="fas fa-info-circle"></i> Heat Intensity</h6>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, red 0%, darkred 100%);"></div>
+                        <span>Extreme Danger (0-30)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, orange 0%, red 100%);"></div>
+                        <span>High Risk (31-50)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, yellow 0%, orange 100%);"></div>
+                        <span>Medium Risk (51-70)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, lightgreen 0%, yellow 100%);"></div>
+                        <span>Low Risk (71-85)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(90deg, green 0%, lightgreen 100%);"></div>
+                        <span>Safe Zone (86-100)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Alerts Sidebar -->
+        <div class="col-lg-4">
+            <div class="glass-card mb-3">
+                <h5 class="mb-3"><i class="fas fa-newspaper"></i> Latest Safety Alerts</h5>
+                <div id="newsAlertsContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-light" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 opacity-75">Loading news alerts...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="glass-card">
+                <h6 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'safety:report_safety' %}" class="btn btn-gradient-success btn-sm">
+                        <i class="fas fa-flag"></i> Report Safety Issue
+                    </a>
+                    <a href="{% url 'safety:sos_alert' %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-exclamation-triangle"></i> SOS Emergency
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<script>
+let map;
+let heatmapLayer;
+let markersLayer;
+let circlesLayer;
+let userLocation = { lat: 28.6139, lon: 77.2090 }; // Default Delhi
+let dangerMarkers = [];
+
+// Initialize map
+function initMap() {
+    map = L.map('safetyMap').setView([userLocation.lat, userLocation.lon], 11);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+    
+    // Create layer groups
+    markersLayer = L.layerGroup().addTo(map);
+    circlesLayer = L.layerGroup().addTo(map);
+    
+    // Add user location marker with custom icon
+    const userIcon = L.divIcon({
+        className: 'user-location-icon',
+        html: '<div style="background: #4facfe; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>',
+        iconSize: [20, 20]
+    });
+    
+    L.marker([userLocation.lat, userLocation.lon], {icon: userIcon})
+        .addTo(map)
+        .bindPopup('<strong>📍 Your Location</strong>')
+        .openPopup();
+}
+
+// Get user location and load data
+document.addEventListener('DOMContentLoaded', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            userLocation.lat = position.coords.latitude;
+            userLocation.lon = position.coords.longitude;
+            
+            initMap();
+            loadSafetyData();
+            loadNewsAlerts();
+        }, function(error) {
+            console.log('Geolocation error:', error);
+            initMap();
+            loadSafetyData();
+            loadNewsAlerts();
+        });
+    } else {
+        initMap();
+        loadSafetyData();
+        loadNewsAlerts();
+    }
+});
+
+// Load safety data and create heatmap
+function loadSafetyData() {
+    const reports = {{ reports_data|safe }};
+    
+    if (reports.length === 0) {
+        // Generate sample data around user location for demonstration
+        generateSampleData();
+    } else {
+        createHeatmapFromData(reports);
+    }
+}
+
+// Generate sample heatmap data (for testing)
+function generateSampleData() {
+    const sampleData = [];
+    const numPoints = 200;
+    
+    for (let i = 0; i < numPoints; i++) {
+        const latOffset = (Math.random() - 0.5) * 0.5;
+        const lonOffset = (Math.random() - 0.5) * 0.5;
+        const safetyScore = Math.random() * 100;
+        
+        sampleData.push({
+            lat: userLocation.lat + latOffset,
+            lon: userLocation.lon + lonOffset,
+            safety_score: safetyScore,
+            location: `Area ${i + 1}`,
+            description: `Safety score: ${safetyScore.toFixed(0)}`
+        });
+    }
+    
+    createHeatmapFromData(sampleData);
+}
+
+// Create heatmap from data
+function createHeatmapFromData(reports) {
+    let dangerCount = 0;
+    let warningCount = 0;
+    let safeCount = 0;
+    
+    // Convert to heatmap format [lat, lon, intensity]
+    const heatData = reports.map(report => {
+        // Invert safety score to get danger intensity (0 = safe, 1 = danger)
+        const intensity = (100 - report.safety_score) / 100;
+        
+        // Count zones
+        if (report.safety_score < 40) dangerCount++;
+        else if (report.safety_score < 70) warningCount++;
+        else safeCount++;
+        
+        return [report.lat, report.lon, intensity];
+    });
+    
+    // Update stats
+    document.getElementById('dangerCount').textContent = dangerCount;
+    document.getElementById('warningCount').textContent = warningCount;
+    document.getElementById('safeCount').textContent = safeCount;
+    
+    // Create heatmap with custom gradient
+    if (heatmapLayer) {
+        map.removeLayer(heatmapLayer);
+    }
+    
+    heatmapLayer = L.heatLayer(heatData, {
+        radius: 35,
+        blur: 25,
+        maxZoom: 13,
+        max: 1.0,
+        gradient: {
+            0.0: '#00ff00',  // Green (safe)
+            0.2: '#7fff00',  // Light green
+            0.4: '#ffff00',  // Yellow
+            0.6: '#ffa500',  // Orange
+            0.8: '#ff4500',  // Red-orange
+            1.0: '#ff0000'   // Red (danger)
+        }
+    }).addTo(map);
+    
+    // Add markers and circles for danger zones
+    reports.forEach(report => {
+        // Add danger zone markers (only for risky areas)
+        if (report.safety_score < 70) {
+            const markerColor = report.safety_score < 40 ? '#ff0000' : '#ffa500';
+            const iconHtml = report.safety_score < 40 
+                ? '<i class="fas fa-exclamation-triangle" style="color: white;"></i>'
+                : '<i class="fas fa-exclamation-circle" style="color: white;"></i>';
+            
+            const dangerIcon = L.divIcon({
+                className: 'danger-marker',
+                html: `<div style="background: ${markerColor}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">${iconHtml}</div>`,
+                iconSize: [30, 30]
+            });
+            
+            const marker = L.marker([report.lat, report.lon], {icon: dangerIcon})
+                .bindPopup(`
+                    <strong>${report.location || 'Unknown Location'}</strong><br>
+                    <span style="color: ${markerColor};">⚠️ Safety Score: ${report.safety_score.toFixed(0)}/100</span><br>
+                    ${report.description || 'No description'}
+                `);
+            
+            markersLayer.addLayer(marker);
+            
+            // Add danger circles
+            const circleRadius = report.safety_score < 40 ? 500 : 300;
+            const circle = L.circle([report.lat, report.lon], {
+                color: markerColor,
+                fillColor: markerColor,
+                fillOpacity: 0.15,
+                radius: circleRadius,
+                weight: 2
+            });
+            
+            circlesLayer.addLayer(circle);
+        }
+    });
+}
+
+// Toggle layers
+document.getElementById('heatmapToggle').addEventListener('change', function(e) {
+    if (e.target.checked) {
+        map.addLayer(heatmapLayer);
+    } else {
+        map.removeLayer(heatmapLayer);
+    }
+});
+
+document.getElementById('markersToggle').addEventListener('change', function(e) {
+    if (e.target.checked) {
+        map.addLayer(markersLayer);
+    } else {
+        map.removeLayer(markersLayer);
+    }
+});
+
+document.getElementById('circlesToggle').addEventListener('change', function(e) {
+    if (e.target.checked) {
+        map.addLayer(circlesLayer);
+    } else {
+        map.removeLayer(circlesLayer);
+    }
+});
+
+// Load news alerts
+function loadNewsAlerts() {
+    const radius = document.getElementById('radiusFilter').value;
+    const apiUrl = "{% url 'safety:news_alerts' %}";
+    
+    fetch(`${apiUrl}?lat=${userLocation.lat}&lon=${userLocation.lon}&radius=${radius}`)
+        .then(response => response.json())
+        .then(data => {
+            displayNewsAlerts(data.alerts);
+        })
+        .catch(error => {
+            console.error('Error loading news:', error);
+            document.getElementById('newsAlertsContainer').innerHTML = `
+                <div class="alert alert-danger glass-card">
+                    <i class="fas fa-exclamation-circle"></i> Unable to load news alerts
+                </div>
+            `;
+        });
+}
+
+// Display news alerts
+function displayNewsAlerts(alerts) {
+    const container = document.getElementById('newsAlertsContainer');
+    
+    if (!alerts || alerts.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-success glass-card">
+                <i class="fas fa-check-circle"></i> No recent safety alerts in your area! 🎉
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    alerts.forEach(alert => {
+        const severityClass = alert.severity >= 70 ? 'high' : (alert.severity >= 40 ? 'medium' : 'low');
+        const zoneClass = alert.severity >= 70 ? 'danger-zone-card' : (alert.severity >= 40 ? 'warning-zone-card' : 'safe-zone-card');
+        
+        html += `
+            <div class="glass-card news-alert-card ${zoneClass} mb-3 p-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${alert.title}</h6>
+                    <span class="badge severity-badge-${severityClass}">${alert.severity}</span>
+                </div>
+                <p class="small mb-2 opacity-75">
+                    <i class="fas fa-newspaper"></i> ${alert.source} | 
+                    <i class="fas fa-clock"></i> ${alert.timestamp}
+                </p>
+                <a href="${alert.link}" target="_blank" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-external-link-alt"></i> Read More
+                </a>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Refresh button
+document.getElementById('refreshNews').addEventListener('click', loadNewsAlerts);
+document.getElementById('radiusFilter').addEventListener('change', loadNewsAlerts);
+</script>
+{% endblock %}

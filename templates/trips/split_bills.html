@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Split Bills - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.split-header {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.bill-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.bill-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #feca57 0%, #ff9a56 100%);
+    color: #000;
+}
+
+.status-accepted {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #000;
+}
+
+.status-declined {
+    background: linear-gradient(135deg, #ee5a6f 0%, #f29263 100%);
+    color: #fff;
+}
+
+.status-paid {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+}
+
+.bill-image {
+    max-width: 150px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bill-image:hover {
+    transform: scale(1.05);
+}
+
+.pending-alert {
+    background: rgba(254, 202, 87, 0.2);
+    border-left: 4px solid #feca57;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4facfe;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="split-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-receipt"></i> Split Bills</h2>
+                <p class="mb-0 opacity-75">{{ trip.name }}</p>
+            </div>
+            <div class="mt-3 mt-md-0">
+                <a href="{% url 'trips:create_split_bill' trip.id %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-plus-circle"></i> Create Split Bill
+                </a>
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if pending_bills %}
+    <div class="pending-alert">
+        <h5><i class="fas fa-exclamation-triangle"></i> You have {{ pending_bills.count }} pending bill(s)</h5>
+        <p class="mb-2">Please review and respond:</p>
+        {% for split in pending_bills %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span><strong>{{ split.bill.title }}</strong> - ₹{{ split.amount|floatformat:2 }}</span>
+            <a href="{% url 'trips:split_bill_detail' trip.id split.bill.id %}" class="btn btn-sm btn-warning">
+                Review <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ bills.count }}</div>
+            <div class="text-muted">Total Bills</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₹{{ total_bill_amount|floatformat:0 }}</div>
+            <div class="text-muted">Total Amount</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ pending_bills.count }}</div>
+            <div class="text-muted">Pending Response</div>
+        </div>
+    </div>
+
+    {% if bills %}
+    <div class="row">
+        {% for bill in bills %}
+        <div class="col-md-6 mb-4">
+            <div class="bill-card">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="mb-0">{{ bill.title }}</h5>
+                            <span class="status-badge status-{{ bill.status }}">
+                                {{ bill.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        {% if bill.description %}
+                        <p class="mb-2 small opacity-75">{{ bill.description }}</p>
+                        {% endif %}
+                        
+                        <div class="mb-2">
+                            <strong class="text-success">₹{{ bill.total_amount|floatformat:2 }}</strong>
+                            <small class="text-muted">/ {{ bill.splits.count }} people = ₹{{ bill.per_person_amount|floatformat:2 }} each</small>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted d-block">
+                                <i class="fas fa-user"></i> Created by {{ bill.created_by.username }}
+                            </small>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-clock"></i> {{ bill.created_at|date:"M d, Y h:i A" }}
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex gap-2 flex-wrap mt-2">
+                            <span class="badge bg-success">
+                                <i class="fas fa-check"></i> {{ bill.accepted_count }} Accepted
+                            </span>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock"></i> {{ bill.pending_count }} Pending
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-center">
+                        {% if bill.bill_image %}
+                        <img src="{{ bill.bill_image.url }}" alt="Bill" class="bill-image mb-2" 
+                             onclick="showImageModal('{{ bill.bill_image.url }}')">
+                        <small class="d-block text-muted">Click to view</small>
+                        {% endif %}
+                        
+                        <a href="{% url 'trips:split_bill_detail' trip.id bill.id %}" 
+                           class="btn btn-gradient-primary w-100 mt-2">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-receipt fa-4x mb-3 opacity-50"></i>
+        <h4>No bills yet</h4>
+        <p class="opacity-75 mb-4">Create a split bill to divide expenses among trip members</p>
+        <a href="{% url 'trips:create_split_bill' trip.id %}" class="btn btn-gradient-primary btn-lg">
+            <i class="fas fa-plus-circle"></i> Create First Bill
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Bill Image</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Bill">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showImageModal(imageUrl) {
+    document.getElementById('modalImage').src = imageUrl;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,556 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ trip.name }} - YatraSecure{% endblock %}
+
+{% block extra_css %}
+<style>
+.trip-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.member-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #000;
+    margin-right: 1rem;
+}
+
+.quick-action-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.quick-action-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+}
+
+/* Enhanced Wallet Widget */
+.wallet-widget {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    padding: 2rem;
+    border-radius: 20px;
+    color: #000;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(67, 233, 123, 0.3);
+}
+
+.wallet-widget::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.wallet-balance {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.wallet-target {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.wallet-progress {
+    height: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.wallet-progress-fill {
+    height: 100%;
+    background: #000;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.contributor-item {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.contributor-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 0.75rem;
+}
+
+.recent-transaction {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.wallet-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.wallet-stat {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.wallet-stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.wallet-stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Expandable Section */
+.wallet-expandable {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.wallet-expandable.expanded {
+    max-height: 1000px;
+}
+
+.expand-btn {
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    color: #000;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.expand-btn:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="trip-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2"><i class="fas fa-route"></i> {{ trip.name }}</h1>
+                <p class="mb-2 opacity-75">
+                    <i class="fas fa-map-marker-alt"></i> {{ trip.origin }} → {{ trip.destination }}
+                </p>
+                <p class="mb-0">
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="fas fa-calendar"></i> {{ trip.start_date|date:"M d" }} - {{ trip.end_date|date:"M d, Y" }}
+                    </span>
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="fas fa-clock"></i> {{ trip.duration_days }} Days
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-rupee-sign"></i> {{ trip.budget }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <span class="badge bg-success mb-2">{{ trip.get_status_display }}</span>
+                <div class="mt-2">
+                    <strong>Trip Code:</strong> 
+                    <span class="badge bg-warning text-dark" style="font-size: 1.2rem;">{{ trip.trip_code }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if pool_wallet %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="wallet-widget">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-6">
+                        <h5 class="mb-2"><i class="fas fa-wallet"></i> Pool Wallet</h5>
+                        <div class="wallet-balance">₹{{ pool_wallet.total_balance|floatformat:2 }}</div>
+                        <div class="wallet-target">Target: ₹{{ pool_wallet.target_amount|floatformat:0 }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="wallet-stat">
+                                    <div class="wallet-stat-value">{{ pool_wallet.transactions.count }}</div>
+                                    <div class="wallet-stat-label">Transactions</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="wallet-stat">
+                                    <div class="wallet-stat-value">{{ trip.members.count }}</div>
+                                    <div class="wallet-stat-label">Contributors</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wallet-progress">
+                    <div class="wallet-progress-fill" style="width: {{ pool_wallet.contribution_percentage }}%"></div>
+                </div>
+                <div class="text-center mb-3">
+                    <small><strong>{{ pool_wallet.contribution_percentage|floatformat:1 }}%</strong> of target reached</small>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="mb-2"><i class="fas fa-users"></i> Top Contributors</h6>
+                        {% for contribution in member_contributions|slice:":3" %}
+                        <div class="contributor-item">
+                            <div class="d-flex align-items-center">
+                                <div class="contributor-avatar">
+                                    {{ contribution.user.first_name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <strong class="d-block">{{ contribution.user.username }}</strong>
+                                    <small>{{ contribution.user.first_name }}</small>
+                                </div>
+                            </div>
+                            <strong>₹{{ contribution.amount|floatformat:0 }}</strong>
+                        </div>
+                        {% empty %}
+                        <p class="text-center opacity-75 py-2">No contributions yet</p>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2"><i class="fas fa-history"></i> Recent Activity</h6>
+                        {% for txn in pool_wallet.transactions.all|slice:":3" %}
+                        <div class="recent-transaction">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    {% if txn.transaction_type == 'contribution' %}
+                                        <i class="fas fa-arrow-down text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-arrow-up text-danger"></i>
+                                    {% endif %}
+                                    {{ txn.user.username }}
+                                </span>
+                                <strong>
+                                    {% if txn.transaction_type == 'contribution' %}+{% else %}-{% endif %}₹{{ txn.amount|floatformat:0 }}
+                                </strong>
+                            </div>
+                            <small class="opacity-75">{{ txn.timestamp|timesince }} ago</small>
+                        </div>
+                        {% empty %}
+                        <p class="text-center opacity-75 py-2">No transactions yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="text-center mb-2">
+                    <button class="expand-btn" id="expandWalletBtn">
+                        <i class="fas fa-chevron-down"></i> View All Details
+                    </button>
+                </div>
+
+                <div class="wallet-expandable" id="walletExpandable">
+                    <hr style="border-color: rgba(0, 0, 0, 0.2);">
+                    
+                    <h6 class="mb-3"><i class="fas fa-users"></i> All Contributors ({{ member_contributions|length }})</h6>
+                    <div class="row g-2 mb-3">
+                        {% for contribution in member_contributions %}
+                        <div class="col-md-6">
+                            <div class="contributor-item">
+                                <div class="d-flex align-items-center">
+                                    <div class="contributor-avatar">
+                                        {{ contribution.user.first_name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <strong class="d-block">{{ contribution.user.username }}</strong>
+                                        <small>
+                                            {% widthratio contribution.amount pool_wallet.total_balance 100 %}% share
+                                        </small>
+                                    </div>
+                                </div>
+                                <strong>₹{{ contribution.amount|floatformat:2 }}</strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <h6 class="mb-3"><i class="fas fa-receipt"></i> All Transactions ({{ pool_wallet.transactions.count }})</h6>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for txn in pool_wallet.transactions.all %}
+                        <div class="recent-transaction">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        {% if txn.transaction_type == 'contribution' %}
+                                            <i class="fas fa-arrow-down text-success"></i>
+                                        {% elif txn.transaction_type == 'payment' %}
+                                            <i class="fas fa-arrow-up text-danger"></i>
+                                        {% else %}
+                                            <i class="fas fa-exchange-alt text-warning"></i>
+                                        {% endif %}
+                                        <strong>{{ txn.get_transaction_type_display }}</strong>
+                                    </div>
+                                    <small class="d-block">by {{ txn.user.username }}</small>
+                                    {% if txn.description %}
+                                    <small class="d-block opacity-75">{{ txn.description }}</small>
+                                    {% endif %}
+                                    <small class="d-block opacity-75">{{ txn.timestamp|date:"M d, Y h:i A" }}</small>
+                                </div>
+                                <strong class="{% if txn.transaction_type == 'contribution' %}text-success{% else %}text-danger{% endif %}">
+                                    {% if txn.transaction_type == 'contribution' %}+{% else %}-{% endif %}₹{{ txn.amount|floatformat:2 }}
+                                </strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="wallet-actions">
+                    <button class="btn btn-dark btn-lg" onclick="openContributeModal()">
+                        <i class="fas fa-plus-circle"></i> Add Funds
+                    </button>
+                    <a href="{% url 'trips:pool_wallet' trip.id %}" class="btn btn-dark btn-lg">
+                        <i class="fas fa-external-link-alt"></i> Full Wallet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-shopping-cart"></i> Bookings & Travel</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'trips:booking_search' trip.id %}" class="btn btn-gradient-primary btn-lg">
+                        <i class="fas fa-search"></i> Search Flights, Hotels & More
+                    </a>
+                    <a href="{% url 'trips:view_cart' trip.id %}" class="btn btn-gradient-info btn-lg">
+                        <i class="fas fa-shopping-cart"></i> View Cart
+                        {% if trip.booking_cart and trip.booking_cart.item_count > 0 %}
+                            <span class="badge bg-danger">{{ trip.booking_cart.item_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'trips:bookings_list' trip.id %}" class="btn btn-gradient-success btn-lg">
+                        <i class="fas fa-ticket-alt"></i> My Bookings
+                    </a>
+                    <a href="{% url 'trips:split_bill_list' trip.id %}" class="btn btn-gradient-warning btn-lg">
+                        <i class="fas fa-receipt"></i> Split Bills
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-robot"></i> AI Travel Assistant</h5>
+                <div class="row g-2">
+                    <div class="col-12">
+                        {% if trip.ai_itinerary %}
+                            <a href="{% url 'ai_assistant:view_itinerary' trip.id %}" class="btn btn-gradient-primary w-100 btn-lg">
+                                <i class="fas fa-eye"></i> View AI Itinerary
+                            </a>
+                        {% else %}
+                            <a href="{% url 'ai_assistant:generate_itinerary' trip.id %}" class="btn btn-gradient-success w-100 btn-lg">
+                                <i class="fas fa-magic"></i> Generate AI Itinerary
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'ai_assistant:generate_packing' trip.id %}" class="btn btn-gradient-info w-100">
+                            <i class="fas fa-suitcase"></i> Packing
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'ai_assistant:chat' %}" class="btn btn-gradient-warning w-100">
+                            <i class="fas fa-comments"></i> AI Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="glass-card mb-4">
+                <h5 class="mb-3"><i class="fas fa-info-circle"></i> Trip Details</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Origin:</strong>
+                        <p>{{ trip.origin }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Destination:</strong>
+                        <p>{{ trip.destination }}</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Start Date:</strong>
+                        <p>{{ trip.start_date|date:"F d, Y" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>End Date:</strong>
+                        <p>{{ trip.end_date|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Budget:</strong>
+                        <p>₹{{ trip.budget }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Trip Type:</strong>
+                        <p>{{ trip.get_trip_type_display }}</p>
+                    </div>
+                </div>
+
+                {% if trip.description %}
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p>{{ trip.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-users"></i> Trip Members ({{ members.count }})</h5>
+                
+                {% for member in members %}
+                <div class="d-flex align-items-center mb-3 p-2" style="background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+                    <div class="member-avatar">
+                        {{ member.first_name|slice:":1"|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <strong class="d-block">{{ member.username }}</strong>
+                        <small class="text-muted">{{ member.first_name }} {{ member.last_name }}</small>
+                    </div>
+                    {% if member == trip.creator %}
+                        <span class="badge bg-primary">Creator</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="glass-card sticky-top" style="top: 100px;">
+                <h5 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'safety:safety_map' %}" class="btn btn-gradient-warning">
+                        <i class="fas fa-shield-alt"></i> Safety Map
+                    </a>
+
+                    <button class="btn btn-gradient-info" onclick="shareTrip()">
+                        <i class="fas fa-share-alt"></i> Share Trip Code
+                    </button>
+
+                    <a href="{% url 'trips:trip_list' %}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left"></i> Back to Trips
+                    </a>
+                </div>
+
+                <hr style="border-color: rgba(255, 255, 255, 0.2);" class="my-3">
+
+                <div class="alert alert-info glass-card">
+                    <h6><i class="fas fa-info-circle"></i> Share Trip</h6>
+                    <p class="small mb-2">Share this code with friends:</p>
+                    <div class="text-center">
+                        <h3 class="mb-0 fw-bold text-warning">{{ trip.trip_code }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wallet expand/collapse
+document.getElementById('expandWalletBtn')?.addEventListener('click', function() {
+    const expandable = document.getElementById('walletExpandable');
+    const btn = this;
+    
+    expandable.classList.toggle('expanded');
+    
+    if (expandable.classList.contains('expanded')) {
+        btn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Details';
+    } else {
+        btn.innerHTML = '<i class="fas fa-chevron-down"></i> View All Details';
+    }
+});
+
+function openContributeModal() {
+    window.location.href = "{% url 'trips:pool_wallet' trip.id %}";
+}
+
+function shareTrip() {
+    const tripCode = '{{ trip.trip_code }}';
+    const message = `Join my trip "{{ trip.name }}" on YatraSecure!\n\nTrip Code: ${tripCode}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Join My Trip',
+            text: message
+        });
+    } else {
+        navigator.clipboard.writeText(tripCode);
+        alert('Trip code copied: ' + tripCode);
+    }
+}
+</script>
+{% endblock %}

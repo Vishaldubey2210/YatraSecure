@@ -1,0 +1,489 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ trip.name }} - Itinerary{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+.itinerary-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.day-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 5px solid;
+}
+
+.day-card:nth-child(odd) {
+    border-left-color: #4facfe;
+}
+
+.day-card:nth-child(even) {
+    border-left-color: #43e97b;
+}
+
+.day-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4facfe;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.day-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.activity-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.activity-time {
+    font-size: 0.9rem;
+    color: #43e97b;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.activity-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.activity-details {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.cost-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 20px;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.map-container {
+    height: 500px;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.edit-actions {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.action-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.edit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.ai-btn {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.save-btn {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    display: none;
+}
+
+.save-btn.active {
+    display: block;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: rgba(20, 20, 40, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.chat-container {
+    margin-bottom: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.chat-msg {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+.chat-msg.user {
+    background: rgba(79, 172, 254, 0.2);
+    margin-left: 2rem;
+}
+
+.chat-msg.ai {
+    background: rgba(67, 233, 123, 0.2);
+    margin-right: 2rem;
+}
+
+#itineraryContent[contenteditable="true"] {
+    outline: 2px dashed #4facfe;
+    padding: 1rem;
+}
+
+/* Clean scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(79, 172, 254, 0.5);
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="itinerary-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2"><i class="fas fa-route"></i> {{ trip.name }}</h1>
+                <p class="mb-2 opacity-75">
+                    <i class="fas fa-map-marker-alt"></i> {{ trip.destination }} | 
+                    <i class="fas fa-calendar"></i> {{ trip.duration_days }} Days | 
+                    <i class="fas fa-rupee-sign"></i> ₹{{ trip.budget }}
+                </p>
+                <p class="mb-0 small opacity-50">
+                    <i class="fas fa-clock"></i> Generated: {{ trip.itinerary_generated_at|date:"M d, Y" }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button id="regenerateBtn" class="btn btn-warning">
+                    <i class="fas fa-sync-alt"></i> Regenerate
+                </button>
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Itinerary Content -->
+        <div class="col-lg-7">
+            <div id="itineraryContent" contenteditable="false">
+                {{ itinerary_html|safe }}
+            </div>
+        </div>
+
+        <!-- Map & Info -->
+        <div class="col-lg-5">
+            <div class="glass-card sticky-top" style="top: 100px;">
+                <h5 class="mb-3"><i class="fas fa-map"></i> Route Map</h5>
+                <div class="map-container" id="mapContainer"></div>
+                
+                <div class="mt-3 p-3" style="background: rgba(67, 233, 123, 0.1); border-radius: 10px;">
+                    <h6><i class="fas fa-info-circle"></i> Quick Stats</h6>
+                    <div class="row text-center mt-3">
+                        <div class="col-4">
+                            <div class="display-6">{{ trip.duration_days }}</div>
+                            <small>Days</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="display-6">₹{{ trip.budget|floatformat:0 }}</div>
+                            <small>Budget</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="display-6">{{ trip.get_trip_type_display|slice:":1" }}</div>
+                            <small>{{ trip.get_trip_type_display }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="edit-actions">
+    <button class="action-btn edit-btn" id="editBtn" title="Edit Itinerary">
+        <i class="fas fa-edit"></i>
+    </button>
+    <button class="action-btn ai-btn" id="aiBtn" title="AI Customize">
+        <i class="fas fa-robot"></i>
+    </button>
+    <button class="action-btn save-btn" id="saveBtn" title="Save Changes">
+        <i class="fas fa-save"></i>
+    </button>
+</div>
+
+<!-- AI Chat Modal -->
+<div class="modal-overlay" id="aiModal">
+    <div class="modal-content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="fas fa-robot"></i> AI Assistant</h4>
+            <button class="btn btn-sm btn-outline-light" id="closeAiModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-msg ai">
+                <strong>AI:</strong> How would you like to customize your itinerary?
+            </div>
+        </div>
+
+        <form id="aiChatForm">
+            <div class="input-group mb-3">
+                <input type="text" id="aiInput" class="form-control glass-input" 
+                       placeholder="e.g., Add beach activities..." required>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-light" data-quick="Add more activities">+ Activities</button>
+            <button class="btn btn-sm btn-outline-light" data-quick="Reduce costs">💰 Budget Cut</button>
+            <button class="btn btn-sm btn-outline-light" data-quick="Add food recommendations">🍽️ Food</button>
+            <button class="btn btn-sm btn-outline-light" data-quick="More adventure">🏔️ Adventure</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map;
+let isEditing = false;
+let originalContent = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    setupActions();
+    originalContent = document.getElementById('itineraryContent').innerHTML;
+});
+
+// Initialize map
+function initMap() {
+    map = L.map('mapContainer').setView([20.5937, 78.9629], 5);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 18
+    }).addTo(map);
+
+    // Add sample markers (replace with actual data)
+    const locations = [
+        { lat: 15.2993, lon: 74.1240, day: 1, name: "Day 1: Arrival" },
+        { lat: 15.5167, lon: 73.9234, day: 2, name: "Day 2: Adventure" },
+        { lat: 15.4909, lon: 73.8278, day: 3, name: "Day 3: Culture" }
+    ];
+
+    locations.forEach((loc, i) => {
+        // Day marker
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="background: linear-gradient(135deg, #667eea, #764ba2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">${loc.day}</div>`,
+            iconSize: [40, 40]
+        });
+
+        L.marker([loc.lat, loc.lon], { icon })
+            .addTo(map)
+            .bindPopup(`<strong>${loc.name}</strong>`);
+
+        // Draw route line
+        if (i > 0) {
+            const prev = locations[i - 1];
+            L.polyline([
+                [prev.lat, prev.lon],
+                [loc.lat, loc.lon]
+            ], {
+                color: '#4facfe',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(map);
+        }
+    });
+
+    // Fit bounds
+    const bounds = locations.map(l => [l.lat, l.lon]);
+    if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    // Force map resize after render
+    setTimeout(() => map.invalidateSize(), 100);
+}
+
+// Setup action buttons
+function setupActions() {
+    const editBtn = document.getElementById('editBtn');
+    const aiBtn = document.getElementById('aiBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const content = document.getElementById('itineraryContent');
+    const aiModal = document.getElementById('aiModal');
+
+    // Edit mode toggle
+    editBtn.addEventListener('click', function() {
+        isEditing = !isEditing;
+        
+        if (isEditing) {
+            content.setAttribute('contenteditable', 'true');
+            content.focus();
+            this.style.background = 'linear-gradient(135deg, #fa709a, #fee140)';
+            saveBtn.classList.add('active');
+        } else {
+            content.setAttribute('contenteditable', 'false');
+            this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            saveBtn.classList.remove('active');
+        }
+    });
+
+    // AI modal
+    aiBtn.addEventListener('click', () => aiModal.classList.add('active'));
+    document.getElementById('closeAiModal').addEventListener('click', () => aiModal.classList.remove('active'));
+
+    // Save changes
+    saveBtn.addEventListener('click', function() {
+        if (confirm('Save changes to itinerary?')) {
+            fetch("{% url 'ai_assistant:save_itinerary' trip.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `itinerary_content=${encodeURIComponent(content.innerHTML)}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert('✅ Saved successfully!');
+                originalContent = content.innerHTML;
+                editBtn.click(); // Exit edit mode
+            });
+        }
+    });
+
+    // AI chat
+    const aiForm = document.getElementById('aiChatForm');
+    const aiInput = document.getElementById('aiInput');
+    const chatContainer = document.getElementById('chatContainer');
+
+    aiForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const msg = aiInput.value.trim();
+        if (!msg) return;
+
+        addChat(msg, 'user');
+        aiInput.value = '';
+
+        fetch("{% url 'ai_assistant:ai_edit' trip.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `original_text=${encodeURIComponent(content.innerHTML)}&edit_request=${encodeURIComponent(msg)}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            addChat(data.suggestion, 'ai');
+        });
+    });
+
+    function addChat(msg, type) {
+        const div = document.createElement('div');
+        div.className = `chat-msg ${type}`;
+        div.innerHTML = `<strong>${type === 'user' ? 'You' : 'AI'}:</strong> ${msg}`;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Quick suggestions
+    document.querySelectorAll('[data-quick]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            aiInput.value = this.dataset.quick;
+            aiForm.dispatchEvent(new Event('submit'));
+        });
+    });
+}
+
+// Regenerate
+document.getElementById('regenerateBtn').addEventListener('click', function() {
+    if (confirm('⚠️ This will delete current itinerary. Continue?')) {
+        window.location.href = "{% url 'ai_assistant:generate_itinerary' trip.id %}";
+    }
+});
+</script>
+{% endblock %}

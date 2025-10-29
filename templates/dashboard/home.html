@@ -1,0 +1,609 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <div>
+                        <h2 class="fw-bold mb-2">Welcome back, {{ user.username }}! 👋</h2>
+                        <p class="mb-0 opacity-75">Ready for your next adventure?</p>
+                    </div>
+                    <div class="mt-3 mt-md-0">
+                        <a href="{% url 'trips:create_trip' %}" class="btn btn-gradient-primary">
+                            <i class="fas fa-plus-circle"></i> Plan New Trip
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Safety Score Card - FIXED VERSION -->
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon">🛡️</div>
+                <div class="stat-value" id="safety-score-value">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                </div>
+                <div class="stat-label">
+                    <span id="safety-level">Checking Score...</span>
+                    <span class="badge" id="safety-badge" style="display: block; margin-top: 5px;">Loading...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Trips -->
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon">🚀</div>
+                <div class="stat-value">{{ active_trips }}</div>
+                <div class="stat-label">Active Trips</div>
+            </div>
+        </div>
+
+        <!-- Total Expenses -->
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₹{{ total_expenses|floatformat:0 }}</div>
+                <div class="stat-label">Total Expenses</div>
+            </div>
+        </div>
+
+        <!-- Trip Photos -->
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon">📸</div>
+                <div class="stat-value">{{ total_photos }}</div>
+                <div class="stat-label">Trip Photos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nearby Emergency Facilities -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <div>
+                        <h4 class="mb-2"><i class="fas fa-hospital"></i> Nearby Emergency Facilities</h4>
+                        <p class="small opacity-75 mb-0">Auto-loading nearest facilities from your location</p>
+                    </div>
+                </div>
+
+                <div id="locationStatus" class="alert alert-info glass-card mb-4">
+                    <i class="fas fa-spinner fa-spin"></i> Getting your location and loading nearby facilities...
+                </div>
+
+                <div id="facilitiesContainer" style="display: none;">
+                    <!-- Hospitals -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-hospital text-danger"></i> 3 Nearest Hospitals</h5>
+                        <div id="hospitalsList" class="row g-3">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Police Stations -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-shield-alt text-primary"></i> 3 Nearest Police Stations</h5>
+                        <div id="policeList" class="row g-3">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transport Hubs -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-bus text-warning"></i> Nearest Transport Hubs</h5>
+                        <div id="transportList" class="row g-3">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <h4 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h4>
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'trips:join_trip' %}" class="quick-action-btn">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <p class="mb-0">Join Trip</p>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'safety:safety_map' %}" class="quick-action-btn">
+                            <i class="fas fa-map-marked-alt fa-2x mb-2"></i>
+                            <p class="mb-0">Safety Map</p>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'ai_assistant:chat' %}" class="quick-action-btn">
+                            <i class="fas fa-robot fa-2x mb-2"></i>
+                            <p class="mb-0">AI Assistant</p>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'safety:sos_alert' %}" class="quick-action-btn sos-btn">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p class="mb-0">SOS Emergency</p>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'explore:explore_home' %}" class="quick-action-btn">
+                            <i class="fas fa-globe-asia fa-2x mb-2 text-primary"></i>
+                            <p class="mb-0 fw-bold">Explore India</p>
+                            <p class="small opacity-75">Discover beautiful places</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Trips -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card">
+                <h4 class="mb-4"><i class="fas fa-suitcase"></i> Recent Trips</h4>
+                {% if recent_trips %}
+                <div class="row g-3">
+                    {% for trip in recent_trips %}
+                    <div class="col-md-6">
+                        <div class="trip-card glass-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="mb-0">{{ trip.name }}</h5>
+                                <span class="badge badge-status-{{ trip.status }}">
+                                    {{ trip.get_status_display }}
+                                </span>
+                            </div>
+                            <p class="mb-2 opacity-75">
+                                <i class="fas fa-map-marker-alt"></i> {{ trip.origin }} → {{ trip.destination }}
+                            </p>
+                            <p class="mb-3 opacity-75">
+                                <i class="fas fa-calendar"></i> {{ trip.start_date|date:"M d, Y" }} - {{ trip.end_date|date:"M d, Y" }}
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-sm btn-gradient-primary">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                <a href="{% url 'chat:group_chat' trip.id %}" class="btn btn-sm btn-outline-light">
+                                    <i class="fas fa-comments"></i> Chat
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-suitcase fa-4x mb-3 opacity-50"></i>
+                    <h5 class="mb-3">No trips yet</h5>
+                    <a href="{% url 'trips:create_trip' %}" class="btn btn-gradient-success">
+                        <i class="fas fa-plus"></i> Create Your First Trip
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Stat Cards */
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.stat-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    opacity: 0.75;
+    font-size: 0.9rem;
+}
+
+/* Quick Action Buttons */
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+    color: white;
+}
+
+.sos-btn {
+    background: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.4);
+}
+
+.sos-btn:hover {
+    background: rgba(255, 0, 0, 0.3);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Trip Cards */
+.trip-card {
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.trip-card:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.badge-status-active {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+.badge-status-completed {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+.badge-status-planning {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+/* Facility Cards */
+.facility-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.facility-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.facility-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
+}
+
+.facility-icon.hospital {
+    background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+}
+
+.facility-icon.police {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.facility-icon.transport {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+@media (max-width: 768px) {
+    .facility-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+}
+</style>
+
+<script>
+let userLocation = null;
+
+// Safety Score Loading - FIXED VERSION
+function loadSafetyScore() {
+    console.log('🔍 Loading safety score...');
+    
+    const scoreElement = document.getElementById('safety-score-value');
+    const levelElement = document.getElementById('safety-level');
+    const badgeElement = document.getElementById('safety-badge');
+    
+    if (!scoreElement || !levelElement || !badgeElement) {
+        console.error('❌ Safety score elements not found');
+        return;
+    }
+    
+    // Reset to loading
+    scoreElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    levelElement.textContent = 'Checking...';
+    badgeElement.className = 'badge bg-secondary';
+    badgeElement.textContent = 'Loading...';
+    
+    if (navigator.geolocation) {
+        console.log('📍 Requesting location...');
+        
+        navigator.geolocation.getCurrentPosition(
+            // Success
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                console.log('✅ Location obtained:', lat, lon);
+                
+                // Store for facilities
+                userLocation = { lat, lon };
+                loadNearbyFacilities();
+                
+                // Fetch safety score from NEW API
+                const apiUrl = `/api/safety-score/?lat=${lat}&lon=${lon}`;
+                console.log('📡 Fetching from:', apiUrl);
+                
+                fetch(apiUrl)
+                    .then(response => {
+                        console.log('📡 Response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📊 Safety data received:', data);
+                        
+                        if (data.success && data.safety_score) {
+                            // Update score
+                            const score = parseFloat(data.safety_score);
+                            scoreElement.innerHTML = `<strong>${score.toFixed(1)}</strong>/10`;
+                            levelElement.textContent = (data.safety_level || 'MODERATE').toUpperCase();
+                            
+                            // Update badge color
+                            let badgeClass = 'bg-secondary';
+                            if (data.color === 'green' || score >= 7.5) {
+                                badgeClass = 'bg-success';
+                            } else if (data.color === 'yellow' || score >= 5.0) {
+                                badgeClass = 'bg-warning';
+                            } else if (data.color === 'red' || score < 5.0) {
+                                badgeClass = 'bg-danger';
+                            }
+                            
+                            badgeElement.className = `badge ${badgeClass}`;
+                            badgeElement.textContent = (data.safety_level || 'MODERATE').toUpperCase();
+                            
+                            console.log('✅ Safety score updated successfully!');
+                        } else {
+                            console.warn('⚠️ Invalid data structure');
+                            setDefaultScore();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Fetch error:', error);
+                        setDefaultScore();
+                    });
+            },
+            // Error
+            function(error) {
+                console.warn('⚠️ Geolocation error:', error.message);
+                
+                // Show error in UI
+                scoreElement.innerHTML = 'N/A';
+                levelElement.textContent = 'Location denied';
+                badgeElement.className = 'badge bg-secondary';
+                badgeElement.textContent = 'UNAVAILABLE';
+                
+                document.getElementById('locationStatus').innerHTML = 
+                    '<i class="fas fa-exclamation-circle"></i> Location access denied. Please enable location to see safety score and nearby facilities.';
+                document.getElementById('locationStatus').className = 'alert alert-warning glass-card mb-4';
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        console.error('❌ Geolocation not supported');
+        scoreElement.innerHTML = 'N/A';
+        levelElement.textContent = 'Not supported';
+        badgeElement.className = 'badge bg-secondary';
+        badgeElement.textContent = 'UNAVAILABLE';
+        
+        document.getElementById('locationStatus').innerHTML = 
+            '<i class="fas fa-exclamation-circle"></i> Geolocation not supported by your browser';
+        document.getElementById('locationStatus').className = 'alert alert-danger glass-card mb-4';
+    }
+}
+
+function setDefaultScore() {
+    document.getElementById('safety-score-value').innerHTML = '<strong>6.5</strong>/10';
+    document.getElementById('safety-level').textContent = 'API Error';
+    document.getElementById('safety-badge').className = 'badge bg-warning';
+    document.getElementById('safety-badge').textContent = 'MODERATE';
+}
+
+// Load Nearby Facilities
+function loadNearbyFacilities() {
+    if (!userLocation) return;
+    
+    console.log('📍 Loading facilities for:', userLocation);
+    
+    const apiUrl = `/api/nearby-facilities/?lat=${userLocation.lat}&lon=${userLocation.lon}`;
+    
+    document.getElementById('facilitiesContainer').style.display = 'block';
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('🏥 Facilities data:', data);
+            
+            // Populate hospitals
+            const hospitalsList = document.getElementById('hospitalsList');
+            hospitalsList.innerHTML = '';
+            if (data.hospitals && data.hospitals.length > 0) {
+                data.hospitals.forEach(hospital => {
+                    hospitalsList.innerHTML += createFacilityCard(hospital, 'hospital', 'fas fa-hospital');
+                });
+            } else {
+                hospitalsList.innerHTML = '<div class="col-12"><div class="alert alert-warning glass-card"><i class="fas fa-info-circle"></i> No hospitals found nearby</div></div>';
+            }
+            
+            // Populate police
+            const policeList = document.getElementById('policeList');
+            policeList.innerHTML = '';
+            if (data.police_stations && data.police_stations.length > 0) {
+                data.police_stations.forEach(station => {
+                    policeList.innerHTML += createFacilityCard(station, 'police', 'fas fa-shield-alt');
+                });
+            } else {
+                policeList.innerHTML = '<div class="col-12"><div class="alert alert-warning glass-card"><i class="fas fa-info-circle"></i> No police stations found nearby</div></div>';
+            }
+            
+            // Populate transport
+            const transportList = document.getElementById('transportList');
+            transportList.innerHTML = '';
+            let transportFound = false;
+            
+            if (data.bus_stations && data.bus_stations.length > 0) {
+                transportList.innerHTML += createFacilityCard(data.bus_stations[0], 'transport', 'fas fa-bus');
+                transportFound = true;
+            }
+            if (data.railway_stations && data.railway_stations.length > 0) {
+                transportList.innerHTML += createFacilityCard(data.railway_stations[0], 'transport', 'fas fa-train');
+                transportFound = true;
+            }
+            if (data.airports && data.airports.length > 0) {
+                transportList.innerHTML += createFacilityCard(data.airports[0], 'transport', 'fas fa-plane');
+                transportFound = true;
+            }
+            
+            if (!transportFound) {
+                transportList.innerHTML = '<div class="col-12"><div class="alert alert-warning glass-card"><i class="fas fa-info-circle"></i> No transport hubs found nearby</div></div>';
+            }
+            
+            document.getElementById('locationStatus').innerHTML = 
+                '<i class="fas fa-check-circle"></i> ✅ Location and facilities loaded successfully!';
+            document.getElementById('locationStatus').className = 'alert alert-success glass-card mb-4';
+        })
+        .catch(error => {
+            console.error('❌ Facilities error:', error);
+            document.getElementById('locationStatus').innerHTML = 
+                `<i class="fas fa-exclamation-circle"></i> Error loading facilities: ${error.message}`;
+            document.getElementById('locationStatus').className = 'alert alert-danger glass-card mb-4';
+        });
+}
+
+function createFacilityCard(facility, type, icon) {
+    const phoneInfo = facility.phone && facility.phone !== 'N/A' 
+        ? `<p class="small mb-2 opacity-75"><i class="fas fa-phone"></i> ${facility.phone}</p>` 
+        : '';
+    
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${facility.lat},${facility.lon}`;
+
+    return `
+        <div class="col-md-4 col-sm-6">
+            <div class="facility-card">
+                <div class="d-flex align-items-start">
+                    <div class="facility-icon ${type}">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-2 fw-bold">${facility.name}</h6>
+                        <p class="small mb-2 opacity-75">
+                            <i class="fas fa-map-marker-alt"></i> ${facility.address || 'Address not available'}
+                        </p>
+                        ${phoneInfo}
+                        <div class="d-flex gap-2 align-items-center mb-3">
+                            <span class="badge bg-success">
+                                <i class="fas fa-route"></i> ${facility.distance} km
+                            </span>
+                        </div>
+                        <a href="${mapsLink}" target="_blank" class="btn btn-sm btn-gradient-primary w-100">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Dashboard page loaded');
+    setTimeout(loadSafetyScore, 500);
+});
+
+// Refresh every 5 minutes
+setInterval(loadSafetyScore, 5 * 60 * 1000);
+</script>
+{% endblock %}

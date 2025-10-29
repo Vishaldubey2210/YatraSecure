@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generate Packing List - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <h2 class="fw-bold mb-2"><i class="fas fa-suitcase text-success"></i> AI Packing List</h2>
+                <p class="opacity-75 mb-0">{{ trip.name }} - {{ trip.destination }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="glass-card">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3">Trip Details</h5>
+                        <p><strong>Destination:</strong> {{ trip.destination }}</p>
+                        <p><strong>Duration:</strong> {{ trip.duration_days }} days</p>
+                        <p><strong>Type:</strong> {{ trip.get_trip_type_display }}</p>
+                        <p><strong>Start Date:</strong> {{ trip.start_date|date:"M d, Y" }}</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient-success btn-lg">
+                        <i class="fas fa-magic"></i> Generate Packing List
+                    </button>
+                    <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-info-circle"></i> What You'll Get</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Weather-appropriate clothing</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Essential toiletries</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Electronics & gadgets</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Important documents</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Safety & first aid</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Trip-specific items</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ bill.title }} - Split Bill{% endblock %}
+
+{% block extra_css %}
+<style>
+.bill-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.bill-image-large {
+    max-width: 100%;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+}
+
+.split-item {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 4px solid;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.split-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.split-item.pending {
+    border-left-color: #feca57;
+}
+
+.split-item.accepted {
+    border-left-color: #43e97b;
+}
+
+.split-item.declined {
+    border-left-color: #ee5a6f;
+}
+
+.split-item.paid {
+    border-left-color: #667eea;
+}
+
+.action-panel {
+    background: rgba(254, 202, 87, 0.2);
+    border: 2px solid #feca57;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.avatar-sm {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="bill-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div>
+                <h2 class="mb-2">{{ bill.title }}</h2>
+                <p class="mb-2 opacity-75">{{ bill.description }}</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-rupee-sign"></i> ₹{{ bill.total_amount|floatformat:2 }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-users"></i> {{ bill.splits.count }} People
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-user"></i> By {{ bill.created_by.username }}
+                    </span>
+                </div>
+            </div>
+            <a href="{% url 'trips:split_bill_list' trip.id %}" class="btn btn-outline-light mt-3 mt-md-0">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Bill Details -->
+        <div class="col-lg-8">
+            <!-- Bill Image -->
+            {% if bill.bill_image %}
+            <div class="glass-card mb-4">
+                <h5 class="mb-3"><i class="fas fa-image"></i> Bill Image</h5>
+                <img src="{{ bill.bill_image.url }}" alt="Bill" class="bill-image-large">
+            </div>
+            {% endif %}
+
+            <!-- Your Split (if pending) -->
+            {% if user_split and user_split.status == 'pending' %}
+            <div class="action-panel mb-4">
+                <h4 class="mb-3"><i class="fas fa-hand-holding-usd"></i> Your Share</h4>
+                <div class="display-4 fw-bold text-dark mb-3">₹{{ user_split.amount|floatformat:2 }}</div>
+                <p class="mb-4">Do you accept this split?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-success btn-lg" onclick="respondToSplit({{ user_split.id }}, 'accept')">
+                        <i class="fas fa-check-circle"></i> Accept & Pay
+                    </button>
+                    <button class="btn btn-danger btn-lg" onclick="respondToSplit({{ user_split.id }}, 'decline')">
+                        <i class="fas fa-times-circle"></i> Decline
+                    </button>
+                </div>
+            </div>
+            {% elif user_split and user_split.status == 'accepted' %}
+            <div class="glass-card mb-4" style="background: rgba(67, 233, 123, 0.2);">
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                    <h5>You accepted this split</h5>
+                    <p class="mb-2">Your share: <strong>₹{{ user_split.amount|floatformat:2 }}</strong></p>
+                    {% if user_split.status != 'paid' %}
+                    <button class="btn btn-success" onclick="markAsPaid({{ user_split.id }})">
+                        <i class="fas fa-check"></i> Mark as Paid
+                    </button>
+                    {% else %}
+                    <span class="badge bg-success">Paid ✓</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- All Splits Status -->
+            <div class="glass-card">
+                <h5 class="mb-3"><i class="fas fa-list-ul"></i> Split Status ({{ bill.splits.count }} members)</h5>
+                
+                {% for split in bill.splits.all %}
+                <div class="split-item {{ split.status }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm">
+                                {{ split.user.first_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <strong class="d-block">{{ split.user.username }}</strong>
+                                <small class="text-muted">{{ split.user.first_name }} {{ split.user.last_name }}</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <strong class="d-block">₹{{ split.amount|floatformat:2 }}</strong>
+                            <span class="badge bg-{% if split.status == 'pending' %}warning text-dark{% elif split.status == 'accepted' %}success{% elif split.status == 'paid' %}primary{% else %}danger{% endif %}">
+                                {{ split.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if split.responded_at %}
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-clock"></i> Responded: {{ split.responded_at|date:"M d, Y h:i A" }}
+                    </small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Summary Sidebar -->
+        <div class="col-lg-4">
+            <div class="glass-card sticky-top" style="top: 100px;">
+                <h5 class="mb-3"><i class="fas fa-chart-pie"></i> Summary</h5>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Amount:</span>
+                        <strong>₹{{ bill.total_amount|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Per Person:</span>
+                        <strong>₹{{ bill.per_person_amount|floatformat:2 }}</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-success">Accepted:</span>
+                        <strong>{{ bill.accepted_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-warning">Pending:</span>
+                        <strong>{{ bill.pending_count }}</strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-info glass-card">
+                    <h6><i class="fas fa-info-circle"></i> Status</h6>
+                    <p class="mb-0">
+                        <strong>{{ bill.get_status_display }}</strong>
+                    </p>
+                </div>
+
+                <div class="alert alert-warning glass-card">
+                    <small>
+                        <i class="fas fa-lightbulb"></i> 
+                        Accepted amounts will be deducted from pool wallet or paid directly.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function respondToSplit(splitId, action) {
+    if (!confirm(`Are you sure you want to ${action} this split?`)) return;
+    
+    const formData = new URLSearchParams();
+    formData.append('action', action);
+    
+    fetch(`/trips/{{ trip.id }}/split-bills/respond/${splitId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(() => alert('Network error'));
+}
+
+function markAsPaid(splitId) {
+    if (!confirm('Mark this split as paid?')) return;
+    
+    fetch(`/trips/{{ trip.id }}/split-bills/mark-paid/${splitId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(() => alert('Network error'));
+}
+</script>
+{% endblock %}

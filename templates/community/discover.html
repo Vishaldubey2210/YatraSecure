@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Discover Community - YatraSecure{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <h2 class="fw-bold mb-2"><i class="fas fa-compass"></i> Discover Community</h2>
+                <p class="opacity-75 mb-0">Connect with fellow travelers and join exciting trips</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Travelers -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0"><i class="fas fa-user-friends"></i> Travelers Like You</h4>
+                    <a href="{% url 'community:leaderboard' %}" class="btn btn-sm btn-outline-light">
+                        <i class="fas fa-trophy"></i> View Leaderboard
+                    </a>
+                </div>
+                
+                {% if similar_users %}
+                <div class="row g-4">
+                    {% for user in similar_users %}
+                    <div class="col-md-4 col-lg-3">
+                        <div class="traveler-card glass-card h-100">
+                            <div class="text-center mb-3">
+                                {% if user.profile_pic %}
+                                    <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="profile-avatar">
+                                {% else %}
+                                    <div class="avatar-placeholder mx-auto">
+                                        {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <h6 class="text-center mb-2">{{ user.first_name }} {{ user.last_name }}</h6>
+                            <p class="text-center small mb-2">
+                                <span class="badge bg-primary">@{{ user.username }}</span>
+                            </p>
+                            <p class="text-center small opacity-75 mb-3">
+                                {% if user.travel_vibe == 'adventure' %}
+                                    <i class="fas fa-mountain text-warning"></i> Adventure Seeker
+                                {% elif user.travel_vibe == 'beach' %}
+                                    <i class="fas fa-umbrella-beach text-info"></i> Beach Lover
+                                {% elif user.travel_vibe == 'cultural' %}
+                                    <i class="fas fa-landmark text-success"></i> Culture Explorer
+                                {% elif user.travel_vibe == 'wildlife' %}
+                                    <i class="fas fa-paw text-danger"></i> Wildlife Enthusiast
+                                {% elif user.travel_vibe == 'pilgrimage' %}
+                                    <i class="fas fa-om text-warning"></i> Spiritual Traveler
+                                {% else %}
+                                    <i class="fas fa-plane text-primary"></i> Travel Enthusiast
+                                {% endif %}
+                            </p>
+                            {% if user.bio %}
+                                <p class="small opacity-90 mb-3 text-center" style="min-height: 60px;">{{ user.bio|truncatewords:15 }}</p>
+                            {% endif %}
+                            
+                            <div class="text-center mb-3">
+                                <span class="badge badge-gradient-primary">
+                                    <i class="fas fa-star"></i> {{ user.points|default:0 }} Points
+                                </span>
+                            </div>
+                            
+                            <button class="btn btn-gradient-success btn-sm w-100">
+                                <i class="fas fa-user-plus"></i> Connect
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x mb-3 opacity-50"></i>
+                    <p class="opacity-75">No travelers found with similar vibes yet</p>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-light">
+                        <i class="fas fa-user-edit"></i> Complete Your Profile
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Trips -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card">
+                <h4 class="mb-4"><i class="fas fa-globe"></i> Open Trips to Join</h4>
+                {% if public_trips %}
+                <div class="row g-4">
+                    {% for trip in public_trips %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="trip-discover-card glass-card h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="mb-0">{{ trip.name }}</h5>
+                                <span class="badge badge-status-{{ trip.status }}">{{ trip.get_status_display }}</span>
+                            </div>
+                            <p class="mb-2">
+                                <i class="fas fa-map-marker-alt text-primary"></i> {{ trip.destination }}
+                            </p>
+                            <p class="mb-2 small opacity-75">
+                                <i class="fas fa-calendar text-success"></i> {{ trip.start_date|date:"M d" }} - {{ trip.end_date|date:"M d, Y" }}
+                            </p>
+                            <p class="mb-3 small opacity-75">
+                                <i class="fas fa-users text-info"></i> {{ trip.member_count }} member(s) • 
+                                <i class="fas fa-tag text-warning"></i> {{ trip.get_trip_type_display }}
+                            </p>
+                            
+                            {% if trip.description %}
+                            <p class="small opacity-90 mb-3" style="min-height: 40px;">{{ trip.description|truncatewords:20 }}</p>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-sm btn-gradient-primary flex-grow-1">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <button class="btn btn-sm btn-gradient-success">
+                                    <i class="fas fa-sign-in-alt"></i> Join
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-suitcase fa-3x mb-3 opacity-50"></i>
+                    <p class="opacity-75">No open trips available at the moment</p>
+                    <a href="{% url 'trips:create_trip' %}" class="btn btn-gradient-success">
+                        <i class="fas fa-plus"></i> Create a Public Trip
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.traveler-card {
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.traveler-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.trip-discover-card {
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.trip-discover-card:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.badge-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+</style>
+{% endblock %}

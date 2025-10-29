@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book for {{ trip.name }} - YatraSecure{% endblock %}
+
+{% block extra_css %}
+<style>
+.booking-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.filter-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 100px;
+}
+
+.booking-type-btn {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    display: block;
+}
+
+.booking-type-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.booking-type-btn.active {
+    border-color: #4facfe;
+    background: rgba(79, 172, 254, 0.2);
+}
+
+.result-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.result-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.provider-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #000;
+}
+
+.price-tag {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4facfe;
+}
+
+.deal-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.cart-badge {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    text-decoration: none;
+    color: white;
+}
+
+.cart-badge:hover {
+    transform: scale(1.05);
+    color: white;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #4facfe;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.fresh-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #43e97b;
+    color: #000;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.metadata-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    border-radius: 5px;
+    font-size: 0.85rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="booking-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-search"></i> Real-Time Booking Search</h2>
+                <p class="mb-0 opacity-75">{{ trip.origin }} → {{ trip.destination }} | {{ trip.start_date|date:"M d" }} to {{ trip.end_date|date:"M d, Y" }}</p>
+            </div>
+            <span class="fresh-badge">
+                <i class="fas fa-sync-alt"></i> Live Results
+            </span>
+        </div>
+    </div>
+
+    <!-- Cart Badge -->
+    <a href="{% url 'trips:view_cart' trip.id %}" class="cart-badge">
+        <i class="fas fa-shopping-cart"></i> Cart <span id="cartCount" class="badge bg-white text-dark ms-2">0</span>
+    </a>
+
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-lg-3">
+            <div class="filter-panel">
+                <h5 class="mb-3"><i class="fas fa-filter"></i> Search Filters</h5>
+
+                <!-- Booking Type -->
+                <div class="mb-4">
+                    <label class="form-label"><strong>Category</strong></label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="?type=flight" class="booking-type-btn {% if booking_type == 'flight' %}active{% endif %}">
+                                <i class="fas fa-plane fa-2x mb-2"></i>
+                                <div>Flights</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="?type=train" class="booking-type-btn {% if booking_type == 'train' %}active{% endif %}">
+                                <i class="fas fa-train fa-2x mb-2"></i>
+                                <div>Trains</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="?type=cab" class="booking-type-btn {% if booking_type == 'cab' %}active{% endif %}">
+                                <i class="fas fa-car fa-2x mb-2"></i>
+                                <div>Cabs</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="?type=hotel" class="booking-type-btn {% if booking_type == 'hotel' %}active{% endif %}">
+                                <i class="fas fa-hotel fa-2x mb-2"></i>
+                                <div>Hotels</div>
+                            </a>
+                        </div>
+                        <div class="col-12">
+                            <a href="?type=restaurant" class="booking-type-btn {% if booking_type == 'restaurant' %}active{% endif %}">
+                                <i class="fas fa-utensils fa-2x mb-2"></i>
+                                <div>Restaurants</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <form method="GET" id="filterForm">
+                    <input type="hidden" name="type" value="{{ booking_type }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Price Range (₹)</strong></label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" name="min_price" class="form-control glass-input" 
+                                       placeholder="Min" value="{{ request.GET.min_price }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="max_price" class="form-control glass-input" 
+                                       placeholder="Max" value="{{ request.GET.max_price }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient-primary w-100 mb-2">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-light w-100" onclick="refreshResults()">
+                        <i class="fas fa-sync-alt"></i> Refresh Results
+                    </button>
+                </form>
+
+                <hr class="my-3" style="border-color: rgba(255, 255, 255, 0.2);">
+
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light w-100">
+                    <i class="fas fa-arrow-left"></i> Back to Trip
+                </a>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="col-lg-9">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="fas fa-{% if booking_type == 'flight' %}plane{% elif booking_type == 'train' %}train{% elif booking_type == 'cab' %}car{% elif booking_type == 'hotel' %}hotel{% else %}utensils{% endif %}"></i>
+                    {{ booking_type|title }} Options ({{ results|length }} found)
+                </h5>
+                <span class="badge bg-success">
+                    <i class="fas fa-check-circle"></i> Real-time data
+                </span>
+            </div>
+
+            {% if results %}
+                {% for result in results %}
+                <div class="result-card">
+                    {% if forloop.first %}
+                    <span class="deal-badge">🔥 Best Deal</span>
+                    {% endif %}
+                    
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <div class="mb-2">
+                                <span class="provider-badge">{{ result.provider }}</span>
+                                {% if result.airline %}
+                                <span class="badge bg-info ms-2">{{ result.airline }}</span>
+                                {% endif %}
+                            </div>
+                            <h5 class="mt-2 mb-2">{{ result.title }}</h5>
+                            <p class="mb-2 opacity-75">{{ result.description }}</p>
+                            
+                            {% if result.metadata %}
+                            <div class="metadata-grid">
+                                {% for key, value in result.metadata.items %}
+                                <div class="metadata-item">
+                                    <strong>{{ key|title }}:</strong> {{ value }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-clock"></i> Updated just now
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="price-tag">₹{{ result.price }}</div>
+                            <small class="text-muted">per person</small>
+                            
+                            {% if result.url %}
+                            <a href="{{ result.url }}" target="_blank" class="btn btn-sm btn-outline-light mt-2">
+                                <i class="fas fa-external-link-alt"></i> View on {{ result.provider }}
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <button class="btn btn-gradient-success add-to-cart-btn w-100" 
+                                    data-title="{{ result.title }}"
+                                    data-description="{{ result.description }}"
+                                    data-price="{{ result.price }}"
+                                    data-provider="{{ result.provider }}"
+                                    data-url="{{ result.url }}"
+                                    data-type="{{ booking_type }}">
+                                <i class="fas fa-plus-circle"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x mb-3 opacity-50"></i>
+                    <h5>No results found</h5>
+                    <p class="opacity-75">Try adjusting your filters or search again</p>
+                    <button class="btn btn-gradient-primary" onclick="refreshResults()">
+                        <i class="fas fa-sync-alt"></i> Refresh Search
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="text-center">
+        <div class="spinner mb-3"></div>
+        <p class="text-white">Searching real-time deals...</p>
+    </div>
+</div>
+
+<script>
+let cartCount = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartCount();
+
+    // Add to cart buttons
+    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const data = {
+                booking_type: this.dataset.type,
+                title: this.dataset.title,
+                description: this.dataset.description,
+                price: this.dataset.price,
+                provider: this.dataset.provider,
+                url: this.dataset.url || '',
+                quantity: 1
+            };
+
+            const formData = new URLSearchParams();
+            for (let key in data) {
+                formData.append(key, data[key]);
+            }
+
+            showLoading();
+
+            fetch("{% url 'trips:add_to_cart' trip.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.status === 'success') {
+                    this.innerHTML = '<i class="fas fa-check"></i> Added';
+                    this.classList.remove('btn-gradient-success');
+                    this.classList.add('btn-success');
+                    this.disabled = true;
+                    
+                    cartCount = data.cart_count;
+                    updateCartCount();
+                    
+                    showNotification('✅ Added to cart!');
+                }
+            })
+            .catch(() => {
+                hideLoading();
+                showNotification('❌ Error adding to cart', 'error');
+            });
+        });
+    });
+});
+
+function updateCartCount() {
+    document.getElementById('cartCount').textContent = cartCount;
+}
+
+function refreshResults() {
+    showLoading();
+    location.reload();
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type}`;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; animation: slideIn 0.3s ease;';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+}
+</style>
+{% endblock %}

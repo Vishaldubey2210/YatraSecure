@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Bookings - {{ trip.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.bookings-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.booking-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 5px solid;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.booking-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.booking-card.flight {
+    border-left-color: #4facfe;
+}
+
+.booking-card.train {
+    border-left-color: #43e97b;
+}
+
+.booking-card.cab {
+    border-left-color: #f5576c;
+}
+
+.booking-card.hotel {
+    border-left-color: #f093fb;
+}
+
+.booking-card.restaurant {
+    border-left-color: #feca57;
+}
+
+.booking-reference {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #4facfe;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.status-confirmed {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #000;
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #feca57 0%, #ff9a56 100%);
+    color: #000;
+}
+
+.status-cancelled {
+    background: linear-gradient(135deg, #ee5a6f 0%, #f29263 100%);
+    color: #fff;
+}
+
+.booking-stats {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4facfe;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="bookings-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-ticket-alt"></i> My Bookings</h2>
+                <p class="mb-0 opacity-75">{{ trip.name }}</p>
+            </div>
+            <div class="mt-3 mt-md-0">
+                <a href="{% url 'trips:booking_search' trip.id %}" class="btn btn-light me-2">
+                    <i class="fas fa-plus"></i> Add Booking
+                </a>
+                <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if bookings %}
+    <!-- Stats -->
+    <div class="booking-stats mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value">{{ bookings.count }}</div>
+                    <div class="text-muted">Total Bookings</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value">{{ bookings|length }}</div>
+                    <div class="text-muted">Confirmed</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value">₹{% widthratio bookings.0.amount 1 bookings.count %}</div>
+                    <div class="text-muted">Total Spent</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-value">{{ trip.members.count }}</div>
+                    <div class="text-muted">Travelers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings List -->
+    <div class="row">
+        <div class="col-12">
+            {% for booking in bookings %}
+            <div class="booking-card {{ booking.booking_type }}">
+                <div class="row align-items-center">
+                    <!-- Icon -->
+                    <div class="col-md-1 text-center">
+                        <i class="fas fa-{% if booking.booking_type == 'flight' %}plane{% elif booking.booking_type == 'train' %}train{% elif booking.booking_type == 'cab' %}car{% elif booking.booking_type == 'hotel' %}hotel{% else %}utensils{% endif %} fa-3x" 
+                           style="color: {% if booking.booking_type == 'flight' %}#4facfe{% elif booking.booking_type == 'train' %}#43e97b{% elif booking.booking_type == 'cab' %}#f5576c{% elif booking.booking_type == 'hotel' %}#f093fb{% else %}#feca57{% endif %};"></i>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="col-md-6">
+                        <span class="badge bg-primary mb-2">{{ booking.get_booking_type_display }}</span>
+                        <h5 class="mb-2">{{ booking.title }}</h5>
+                        <p class="mb-2 opacity-75">
+                            <i class="fas fa-building"></i> {{ booking.provider }}
+                        </p>
+                        <p class="mb-2">
+                            <strong>Booking Reference:</strong> 
+                            <span class="booking-reference">{{ booking.booking_reference }}</span>
+                        </p>
+                        <p class="mb-0 small text-muted">
+                            <i class="fas fa-clock"></i> Booked on {{ booking.booked_at|date:"M d, Y h:i A" }}
+                        </p>
+                    </div>
+
+                    <!-- Quantity & Amount -->
+                    <div class="col-md-3 text-center">
+                        <div class="mb-2">
+                            <strong>Quantity:</strong> {{ booking.quantity }}
+                        </div>
+                        <div class="mb-2">
+                            <h4 class="text-success mb-0">₹{{ booking.amount }}</h4>
+                            <small class="text-muted">Total: ₹{{ booking.amount|floatformat:0 }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-2 text-center">
+                        <span class="status-badge status-{{ booking.status }}">
+                            {% if booking.status == 'confirmed' %}
+                                <i class="fas fa-check-circle"></i> Confirmed
+                            {% elif booking.status == 'pending' %}
+                                <i class="fas fa-clock"></i> Pending
+                            {% else %}
+                                <i class="fas fa-times-circle"></i> Cancelled
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Additional Details -->
+                {% if booking.booking_details %}
+                <div class="mt-3 pt-3" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <strong class="d-block mb-2">Booking Details:</strong>
+                    <div class="row">
+                        {% for key, value in booking.booking_details.items %}
+                        <div class="col-md-3">
+                            <small class="text-muted">{{ key|title }}:</small>
+                            <div><strong>{{ value }}</strong></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <i class="fas fa-ticket-alt fa-4x mb-3 opacity-50"></i>
+        <h4>No bookings yet</h4>
+        <p class="opacity-75 mb-4">Start booking flights, hotels, and more for your trip</p>
+        <a href="{% url 'trips:booking_search' trip.id %}" class="btn btn-gradient-primary btn-lg">
+            <i class="fas fa-search"></i> Browse Bookings
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Expense - {{ trip.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-receipt fa-3x mb-3"></i>
+                    <h2 class="fw-bold">Add Expense</h2>
+                    <p class="opacity-75">{{ trip.name }}</p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-tag"></i> Description</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-rupee-sign"></i> Amount</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-list"></i> Category</label>
+                            {{ form.category }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Date</label>
+                        {{ form.date }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-users"></i> Split Among</label>
+                        <div class="split-members glass-card p-3">
+                            {% for checkbox in form.split_among %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label text-light" for="{{ checkbox.id_for_label }}">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-camera"></i> Receipt (Optional)</label>
+                        {{ form.receipt }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-sticky-note"></i> Notes</label>
+                        {{ form.notes }}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-gradient-success flex-grow-1">
+                            <i class="fas fa-check"></i> Add Expense
+                        </button>
+                        <a href="{% url 'trips:trip_detail' trip.id %}" class="btn btn-outline-light">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

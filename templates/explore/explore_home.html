@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Explore India - YatraSecure{% endblock %}
+
+{% block extra_css %}
+<style>
+.explore-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 3rem 0;
+    text-align: center;
+    border-radius: 0 0 30px 30px;
+}
+
+.search-box {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.category-chip {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: white;
+    text-decoration: none;
+    margin: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.category-chip:hover {
+    background: rgba(79, 172, 254, 0.3);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.photo-card {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+}
+
+.photo-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.photo-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    padding: 1.5rem;
+    color: white;
+}
+
+.place-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.place-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+}
+
+.place-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="explore-header">
+    <div class="container">
+        <h1 class="mb-3"><i class="fas fa-globe-asia"></i> Explore India</h1>
+        <p class="mb-4 opacity-75">Discover beautiful places through traveler's eyes</p>
+        
+        <!-- Search -->
+        <div class="search-box">
+            <form action="{% url 'explore:search_places' %}" method="GET">
+                <div class="input-group input-group-lg">
+                    <input type="text" name="q" class="form-control glass-input" 
+                           placeholder="Search places, cities, states..." required>
+                    <button type="submit" class="btn btn-light">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Categories -->
+        <div class="mt-4">
+            {% for cat_code, cat_name in categories %}
+                <a href="{% url 'explore:search_places' %}?category={{ cat_code }}" class="category-chip">
+                    {{ cat_name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <!-- Trending Places -->
+    <section class="mb-5">
+        <h3 class="mb-4"><i class="fas fa-fire"></i> Trending Places</h3>
+        <div class="row">
+            {% for place in trending_places %}
+            <div class="col-md-4 mb-4">
+                <a href="{% url 'explore:place_detail' place.id %}" style="text-decoration: none; color: inherit;">
+                    <div class="place-card">
+                        <h5 class="mb-2">{{ place.name }}</h5>
+                        <p class="mb-1 text-muted small">
+                            <i class="fas fa-map-marker-alt"></i> {{ place.city }}, {{ place.state }}
+                        </p>
+                        <p class="mb-2 small opacity-75">{{ place.description|truncatewords:15 }}</p>
+                        <div class="place-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-star text-warning"></i>
+                                <span>{{ place.rating }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-camera text-primary"></i>
+                                <span>{{ place.photo_count }} photos</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-eye text-info"></i>
+                                <span>{{ place.view_count }} views</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Recent Photos - Instagram Style -->
+    <section>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3><i class="fas fa-images"></i> Recent Photos</h3>
+            <a href="{% url 'explore:search_places' %}" class="btn btn-gradient-primary">
+                <i class="fas fa-compass"></i> Explore All
+            </a>
+        </div>
+        
+        {% if recent_photos %}
+        <div class="photo-grid">
+            {% for photo in recent_photos %}
+            <div class="photo-card" onclick="window.location.href='{% url 'explore:place_detail' photo.place.id %}'">
+                <img src="{{ photo.image.url }}" alt="{{ photo.place.name }}">
+                <div class="photo-overlay">
+                    <h6 class="mb-1">{{ photo.place.name }}</h6>
+                    <p class="mb-2 small opacity-75">
+                        <i class="fas fa-map-marker-alt"></i> {{ photo.place.city }}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small">
+                            <i class="fas fa-user"></i> {{ photo.user.username }}
+                        </span>
+                        <span class="small">
+                            <i class="fas fa-heart"></i> {{ photo.likes_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-camera fa-3x mb-3 opacity-50"></i>
+            <h5>No photos yet</h5>
+            <p class="opacity-75">Be the first to share your travel photos!</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

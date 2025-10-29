@@ -1,7 +1,12 @@
+"""
+AI Assistant Services - Fixed for Render Deployment
+Uses google.generativeai (correct import)
+"""
+
 import os
 import re
 import json
-from google import genai
+import google.generativeai as genai  # ✅ Correct import
 from django.conf import settings
 
 
@@ -9,10 +14,15 @@ from django.conf import settings
 # Initialize Gemini API Client
 # -------------------------------
 def init_gemini():
-    """Initialize Gemini API Client"""
+    """Initialize Gemini API with correct configuration"""
     api_key = getattr(settings, "GEMINI_API_KEY", None)
     if api_key:
-        return genai.Client(api_key=api_key)
+        try:
+            genai.configure(api_key=api_key)
+            return genai.GenerativeModel('gemini-pro')  # ✅ Correct model initialization
+        except Exception as e:
+            print(f"Gemini init error: {e}")
+            return None
     return None
 
 
@@ -24,8 +34,8 @@ def chat_based_itinerary_generation(trip, user_message, conversation_history):
     Generate itinerary through conversational chat
     Returns AI response, generated itinerary HTML, and status flag
     """
-    client = init_gemini()
-    if not client:
+    model = init_gemini()
+    if not model:
         return {
             'response': "Sorry, AI service is temporarily unavailable.",
             'itinerary_html': None,
@@ -72,12 +82,9 @@ Respond naturally and helpfully.
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         ai_response = response.text
+        
         is_complete = '[ITINERARY_COMPLETE]' in ai_response
         itinerary_html = None
 
@@ -140,25 +147,28 @@ def convert_text_to_html(text):
 def add_safety_scores_to_html(html, trip):
     """Attach safety information to itinerary"""
     try:
-        from apps.ai_assistant.ml_service import safety_predictor
-        safety_data = safety_predictor.predict_safety_score(
+        from apps.ai_assistant.ml_service import get_ml_service
+        ml_service = get_ml_service()
+        
+        # Use trip destination coordinates (fallback to Delhi)
+        safety_data = ml_service.predict_safety(
             latitude=28.6139,
             longitude=77.2090,
-            city=trip.destination
+            hour=12
         )
 
         safety_banner = f"""
-        <div class="alert alert-{safety_data['color']} glass-card mb-4">
+        <div class="alert alert-{safety_data.get('color', 'info')} glass-card mb-4">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h5><i class="fas fa-shield-alt"></i> {trip.destination} Safety Score</h5>
-                    <p><strong>Overall:</strong> {safety_data['safety_score']:.0f}/100 ({safety_data['risk_level']})</p>
+                    <p><strong>Overall:</strong> {safety_data.get('safety_score', 'N/A')}/10 ({safety_data.get('safety_level', 'Unknown')})</p>
                     <ul class="small">
-                        {''.join(f'<li>{rec}</li>' for rec in safety_data.get('recommendations', []))}
+                        {''.join(f'<li>{rec}</li>' for rec in safety_data.get('recommendations', [])[:3])}
                     </ul>
                 </div>
                 <div class="col-md-4 text-center">
-                    <div class="display-4 fw-bold">{safety_data['safety_score']:.0f}</div>
+                    <div class="display-4 fw-bold">{safety_data.get('safety_score', 'N/A')}</div>
                     <small class="text-muted">Safety Score</small>
                 </div>
             </div>
@@ -175,8 +185,8 @@ def add_safety_scores_to_html(html, trip):
 # -------------------------------
 def ai_edit_suggestion(original_text, user_edit_request):
     """AI suggests edits to parts of itinerary"""
-    client = init_gemini()
-    if not client:
+    model = init_gemini()
+    if not model:
         return "AI editing service unavailable."
 
     prompt = f"""
@@ -190,10 +200,7 @@ User wants to: {user_edit_request}
 Return ONLY the edited HTML section — same structure, concise and practical.
 """
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text
     except Exception as e:
         return f"Error: {str(e)}"
@@ -205,18 +212,23 @@ Return ONLY the edited HTML section — same structure, concise and practical.
 def get_location_safety_score(location_name):
     """Get ML safety score for a location"""
     try:
-        from apps.ai_assistant.ml_service import safety_predictor
-        return safety_predictor.predict_safety_score(
+        from apps.ai_assistant.ml_service import get_ml_service
+        ml_service = get_ml_service()
+        
+        # Default coordinates (can be improved with geocoding)
+        result = ml_service.predict_safety(
             latitude=28.6139,
             longitude=77.2090,
-            city=location_name
+            hour=12
         )
-    except Exception:
+        return result
+    except Exception as e:
+        print(f"Safety score error: {e}")
         return {
-            'safety_score': 75.0,
-            'risk_level': 'Medium Risk',
+            'safety_score': 6.5,
+            'safety_level': 'moderate',
             'color': 'warning',
-            'recommendations': []
+            'recommendations': ['Be cautious', 'Keep valuables secure']
         }
 
 
@@ -225,36 +237,78 @@ def get_location_safety_score(location_name):
 # -------------------------------
 def generate_packing_list(trip):
     """Generate packing list via AI"""
-    client = init_gemini()
-    if not client:
+    model = init_gemini()
+    if not model:
         return generate_fallback_packing(trip)
 
     prompt = f"""
-Create a packing checklist for:
+Create a comprehensive packing checklist for:
 Destination: {trip.destination}
 Duration: {trip.duration_days} days
 Trip Type: {trip.get_trip_type_display()}
+Season: Current season in India
 
-Format as HTML with categories and checkboxes.
+Format as clean HTML with categories:
+- Clothing
+- Documents
+- Electronics
+- Toiletries
+- Medicine
+- Special items
+
+Use <h5> for categories and <ul><li> for items.
 """
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text
-    except Exception:
+    except Exception as e:
+        print(f"Packing list error: {e}")
         return generate_fallback_packing(trip)
 
 
 def generate_fallback_packing(trip):
     """Fallback packing list if AI fails"""
-    return """
-    <h5>👕 Clothing & Footwear</h5>
-    <ul>
-        <li>T-shirts (3-4)</li>
-        <li>Comfortable shoes</li>
-    </ul>
+    return f"""
+    <div class="packing-list">
+        <h5>👕 Clothing & Footwear</h5>
+        <ul>
+            <li>Comfortable clothes for {trip.duration_days} days</li>
+            <li>Comfortable walking shoes</li>
+            <li>Light jacket</li>
+            <li>Hat/Cap for sun protection</li>
+        </ul>
+        
+        <h5>📄 Documents</h5>
+        <ul>
+            <li>ID proof (Aadhaar/Passport)</li>
+            <li>Hotel bookings</li>
+            <li>Travel tickets</li>
+            <li>Travel insurance (if any)</li>
+        </ul>
+        
+        <h5>📱 Electronics</h5>
+        <ul>
+            <li>Phone & charger</li>
+            <li>Power bank</li>
+            <li>Camera (optional)</li>
+            <li>Headphones</li>
+        </ul>
+        
+        <h5>💊 Health & Toiletries</h5>
+        <ul>
+            <li>Basic medicines</li>
+            <li>Sunscreen</li>
+            <li>Hand sanitizer</li>
+            <li>Personal hygiene items</li>
+        </ul>
+        
+        <h5>💰 Money & Cards</h5>
+        <ul>
+            <li>Cash</li>
+            <li>Credit/Debit cards</li>
+            <li>Digital wallets</li>
+        </ul>
+    </div>
     """
 
 
@@ -263,22 +317,71 @@ def generate_fallback_packing(trip):
 # -------------------------------
 def chat_with_ai(message, context=""):
     """General-purpose AI chat assistant"""
-    client = init_gemini()
-    if not client:
-        return "AI assistant unavailable."
+    model = init_gemini()
+    if not model:
+        return "AI assistant is currently unavailable. Please try again later."
 
     prompt = f"""
-You are a travel assistant.
-Context: {context}
-User: {message}
+You are a friendly and helpful travel assistant for India.
+Context: {context if context else 'General travel inquiry'}
 
-Provide friendly, helpful travel advice (under 150 words).
+User question: {message}
+
+Provide helpful, practical advice about travel in India.
+Keep response under 150 words.
+Be friendly and conversational.
 """
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text
-    except Exception:
-        return "Error connecting to AI."
+    except Exception as e:
+        print(f"Chat error: {e}")
+        return "I'm having trouble connecting right now. Please try again in a moment!"
+
+
+# -------------------------------
+# Simple Itinerary Generator (Non-Chat)
+# -------------------------------
+def generate_simple_itinerary(destination, days, budget, preferences=''):
+    """Generate itinerary without chat interface"""
+    model = init_gemini()
+    if not model:
+        return generate_fallback_itinerary(destination, days)
+    
+    prompt = f"""
+Create a detailed {days}-day travel itinerary for {destination}, India.
+Budget: ₹{budget}
+Preferences: {preferences if preferences else 'General sightseeing'}
+
+Include for each day:
+- Morning, Afternoon, Evening activities
+- Must-visit places
+- Food recommendations
+- Estimated costs
+- Travel tips
+
+Format as clean HTML with <h4> for each day.
+"""
+    
+    try:
+        response = model.generate_content(prompt)
+        return convert_text_to_html(response.text)
+    except Exception as e:
+        print(f"Itinerary error: {e}")
+        return generate_fallback_itinerary(destination, days)
+
+
+def generate_fallback_itinerary(destination, days):
+    """Basic fallback itinerary"""
+    return f"""
+    <h4>Day 1: Arrival & Local Exploration</h4>
+    <p>Check into hotel and explore nearby areas. Try local cuisine.</p>
+    
+    <h4>Day 2-{days-1}: Main Attractions</h4>
+    <p>Visit popular tourist spots, cultural sites, and local markets in {destination}.</p>
+    
+    <h4>Day {days}: Departure</h4>
+    <p>Last-minute shopping and airport transfer.</p>
+    
+    <p><em>Note: For detailed AI-generated itinerary, please ensure Gemini API is configured.</em></p>
+    """

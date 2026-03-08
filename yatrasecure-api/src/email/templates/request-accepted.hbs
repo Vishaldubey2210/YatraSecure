@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    .content {
+      padding: 30px;
+    }
+    .success-box {
+      background-color: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+      color: #888;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎉 Congratulations!</h1>
+    </div>
+    
+    <div class="content">
+      <h2>Hello {{username}}!</h2>
+      
+      <div class="success-box">
+        <strong>Great news!</strong> Your request to join <strong>{{tripName}}</strong> has been accepted!
+      </div>
+      
+      <p>You're now officially part of this travel group. You can:</p>
+      <ul>
+        <li>💬 Chat with group members</li>
+        <li>📅 View trip itinerary</li>
+        <li>💰 Contribute to pool wallet</li>
+        <li>📍 Share live location</li>
+      </ul>
+      
+      <a href="{{tripUrl}}" class="button">View Trip Details →</a>
+    </div>
+    
+    <div class="footer">
+      <p>© 2026 YatraSecure</p>
+    </div>
+  </div>
+</body>
+</html>

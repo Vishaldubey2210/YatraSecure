@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  password     String
+  profileImage String?
+  bio          String?
+  age          Int?
+  city         String?
+  state        String?
+  firstName    String?
+  lastName     String?
+  phone        String?
+  country      String?
+  dateOfBirth  DateTime?
+  travelStyle  String[] @default([])
+  budgetRange  String?
+  refreshToken     String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  isEmailVerified     Boolean   @default(false)
+  verificationToken   String?
+  verificationExpiry  DateTime?
+
+  trips               Trip[]             @relation("UserTrips")
+  tripMembers         TripMember[]
+  joinRequests        JoinRequest[]
+  transactions        Transaction[]
+  notifications       Notification[]
+  expensesPaid        Expense[]          @relation("ExpensePaidBy")
+  expenseParticipants ExpenseParticipant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Notification {
+  id      String  @id @default(uuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    String
+  title   String
+  message String
+  link    String?
+  isRead  Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  name        String
+  fromCity    String
+  toCity      String
+  startDate   DateTime
+  endDate     DateTime
+  budget      Float
+  tripType    String
+  description String?
+  itinerary   String?
+  isPublic    Boolean  @default(true)
+  inviteCode  String?  @unique   // ← Private trips ke liye unique code
+
+  adminId String
+  admin   User   @relation("UserTrips", fields: [adminId], references: [id], onDelete: Cascade)
+
+  members      TripMember[]
+  joinRequests JoinRequest[]
+  wallet       Wallet?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("trips")
+}
+
+model Wallet {
+  id          String   @id @default(uuid())
+  tripId      String   @unique
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  totalBudget Float    @default(0)
+  collected   Float    @default(0)
+  spent       Float    @default(0)
+  transactions Transaction[]
+  expenses     Expense[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String  @id @default(uuid())
+  walletId    String
+  wallet      Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@map("transactions")
+}
+
+model Expense {
+  id          String  @id @default(uuid())
+  walletId    String
+  wallet      Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  paidBy      String
+  paidByUser  User    @relation("ExpensePaidBy", fields: [paidBy], references: [id], onDelete: Cascade)
+  amount      Float
+  description String
+  category    String? @default("other")
+  splitType   String  @default("equal")
+  participants ExpenseParticipant[]
+  createdAt   DateTime @default(now())
+
+  @@map("expenses")
+}
+
+model ExpenseParticipant {
+  id        String  @id @default(uuid())
+  expenseId String
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  share     Float
+  createdAt DateTime @default(now())
+
+  @@unique([expenseId, userId])
+  @@map("expense_participants")
+}
+
+model TripMember {
+  id       String   @id @default(uuid())
+  tripId   String
+  trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  @@unique([tripId, userId])
+  @@map("trip_members")
+}
+
+model JoinRequest {
+  id          String  @id @default(uuid())
+  tripId      String
+  trip        Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  requesterId String
+  requester   User    @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  message     String?
+  status      String  @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("join_requests")
+}

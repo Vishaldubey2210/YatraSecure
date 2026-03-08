@@ -1,0 +1,203 @@
+============================================================
+  PROJECT STRUCTURE
+  Path: D:\yatrasecure
+  Folders: 61 | Files: 131
+============================================================
+
+📁 yatrasecure/
+    ├── 📁 yatrasecure-api/
+    │   ├── 📁 logs/
+    │   ├── 📁 prisma/
+    │   │   ├── 📁 migrations/
+    │   │   │   ├── 📁 20260208194244_init/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260208195444_add_user_profile_fields/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260209150535_add_trip_model/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260209151005_add_trip_members_and_requests/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260209152611_add_wallet_and_transactions/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260214120824_add_refresh_token_and_profile_fields/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260214172839_add_password_reset_fields/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260214180717_add_expenses/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   ├── 📁 20260214200222_add_notifications/
+    │   │   │   │   └── 🗃️ migration.sql
+    │   │   │   └── ⚙️ migration_lock.toml
+    │   │   └── 📄 schema.prisma
+    │   ├── 📁 src/
+    │   │   ├── 📁 auth/
+    │   │   │   ├── 📁 dto/
+    │   │   │   │   ├── 📘 forgot-password.dto.ts
+    │   │   │   │   ├── 📘 login.dto.ts
+    │   │   │   │   ├── 📘 resend-verification.dto.ts
+    │   │   │   │   ├── 📘 reset-password.dto.ts
+    │   │   │   │   ├── 📘 signup.dto.ts
+    │   │   │   │   └── 📘 verify-email.dto.ts
+    │   │   │   ├── 📁 guards/
+    │   │   │   │   └── 📘 jwt-auth.guard.ts
+    │   │   │   ├── 📁 strategies/
+    │   │   │   │   └── 📘 jwt.strategy.ts
+    │   │   │   ├── 📘 auth.controller.ts
+    │   │   │   ├── 📘 auth.module.ts
+    │   │   │   └── 📘 auth.service.ts
+    │   │   ├── 📁 chat/
+    │   │   │   ├── 📁 schemas/
+    │   │   │   │   └── 📘 message.schema.ts
+    │   │   │   ├── 📘 chat.controller.ts
+    │   │   │   ├── 📘 chat.gateway.ts
+    │   │   │   ├── 📘 chat.module.ts
+    │   │   │   └── 📘 chat.service.ts
+    │   │   ├── 📁 common/
+    │   │   │   ├── 📁 filters/
+    │   │   │   │   └── 📘 http-exception.filter.ts
+    │   │   │   ├── 📁 interceptors/
+    │   │   │   │   └── 📘 logging.interceptor.ts
+    │   │   │   └── 📁 logger/
+    │   │   │       ├── 📘 logger.module.ts
+    │   │   │       └── 📘 logger.service.ts
+    │   │   ├── 📁 email/
+    │   │   │   ├── 📁 templates/
+    │   │   │   │   ├── 📄 join-request.hbs
+    │   │   │   │   ├── 📄 request-accepted.hbs
+    │   │   │   │   ├── 📄 request-rejected.hbs
+    │   │   │   │   └── 📄 welcome.hbs
+    │   │   │   ├── 📘 email.module.ts
+    │   │   │   └── 📘 email.service.ts
+    │   │   ├── 📁 expenses/
+    │   │   │   ├── 📘 expenses.controller.spec.ts
+    │   │   │   ├── 📘 expenses.controller.ts
+    │   │   │   ├── 📘 expenses.module.ts
+    │   │   │   ├── 📘 expenses.service.spec.ts
+    │   │   │   └── 📘 expenses.service.ts
+    │   │   ├── 📁 join-requests/
+    │   │   │   ├── 📘 join-requests.controller.ts
+    │   │   │   ├── 📘 join-requests.module.ts
+    │   │   │   └── 📘 join-requests.service.ts
+    │   │   ├── 📁 members/
+    │   │   │   ├── 📘 members.controller.ts
+    │   │   │   ├── 📘 members.module.ts
+    │   │   │   └── 📘 members.service.ts
+    │   │   ├── 📁 notifications/
+    │   │   │   ├── 📘 notifications.controller.spec.ts
+    │   │   │   ├── 📘 notifications.controller.ts
+    │   │   │   ├── 📘 notifications.module.ts
+    │   │   │   ├── 📘 notifications.service.spec.ts
+    │   │   │   └── 📘 notifications.service.ts
+    │   │   ├── 📁 prisma/
+    │   │   │   ├── 📘 prisma.module.ts
+    │   │   │   └── 📘 prisma.service.ts
+    │   │   ├── 📁 trips/
+    │   │   │   ├── 📁 dto/
+    │   │   │   │   ├── 📘 create-trip.dto.ts
+    │   │   │   │   ├── 📘 join-trip.dto.ts
+    │   │   │   │   └── 📘 update-request-status.dto.ts
+    │   │   │   ├── 📘 trips.controller.ts
+    │   │   │   ├── 📘 trips.module.ts
+    │   │   │   └── 📘 trips.service.ts
+    │   │   ├── 📁 upload/
+    │   │   │   ├── 📘 upload.controller.spec.ts
+    │   │   │   ├── 📘 upload.controller.ts
+    │   │   │   ├── 📘 upload.module.ts
+    │   │   │   ├── 📘 upload.service.spec.ts
+    │   │   │   └── 📘 upload.service.ts
+    │   │   ├── 📁 users/
+    │   │   │   ├── 📁 dto/
+    │   │   │   │   └── 📘 update-profile.dto.ts
+    │   │   │   ├── 📘 users.controller.ts
+    │   │   │   ├── 📘 users.module.ts
+    │   │   │   └── 📘 users.service.ts
+    │   │   ├── 📁 wallet/
+    │   │   │   ├── 📘 wallet.controller.ts
+    │   │   │   ├── 📘 wallet.module.ts
+    │   │   │   └── 📘 wallet.service.ts
+    │   │   ├── 📘 app.controller.spec.ts
+    │   │   ├── 📘 app.controller.ts
+    │   │   ├── 📘 app.module.ts
+    │   │   ├── 📘 app.service.ts
+    │   │   └── 📘 main.ts
+    │   ├── 📁 test/
+    │   │   ├── 📘 app.e2e-spec.ts
+    │   │   └── 📋 jest-e2e.json
+    │   ├── 📁 uploads/
+    │   │   └── 📁 profiles/
+    │   ├── 🔒 .env
+    │   ├── 🙈 .gitignore
+    │   ├── 📄 .prettierrc
+    │   ├── 📖 README.md
+    │   ├── 📄 eslint.config.mjs
+    │   ├── 📋 nest-cli.json
+    │   ├── 📋 package.json
+    │   ├── 📋 tsconfig.build.json
+    │   └── 📋 tsconfig.json
+    ├── 📁 yatrasecure-web/
+    │   ├── 📁 app/
+    │   │   ├── 📁 (auth)/
+    │   │   │   ├── 📁 forgot-password/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 login/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 resend-verification/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 signup/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 verify-email/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   └── ⚛️ layout.tsx
+    │   │   ├── 📁 (dashboard)/
+    │   │   │   ├── 📁 dashboard/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 profile/
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   ├── 📁 trips/
+    │   │   │   │   ├── 📁 [id]/
+    │   │   │   │   │   ├── 📁 admin/
+    │   │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   │   ├── 📁 chat/
+    │   │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   │   ├── 📁 edit/
+    │   │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   │   ├── 📁 wallet/
+    │   │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   ├── 📁 create/
+    │   │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   │   └── ⚛️ page.tsx
+    │   │   │   └── ⚛️ layout.tsx
+    │   │   ├── 📁 lib/
+    │   │   │   ├── 📘 api.ts
+    │   │   │   └── 📘 date-utils.ts
+    │   │   ├── 🖼️ favicon.ico
+    │   │   ├── 🎨 globals.css
+    │   │   ├── ⚛️ layout.tsx
+    │   │   ├── ⚛️ loading.tsx
+    │   │   ├── ⚛️ not-found.tsx
+    │   │   └── ⚛️ page.tsx
+    │   ├── 📁 public/
+    │   │   ├── 🖼️ file.svg
+    │   │   ├── 🖼️ globe.svg
+    │   │   ├── 🖼️ next.svg
+    │   │   ├── 🖼️ vercel.svg
+    │   │   └── 🖼️ window.svg
+    │   ├── 🔒 .env.local
+    │   ├── 🙈 .gitignore
+    │   ├── 📖 README.md
+    │   ├── 📄 eslint.config.mjs
+    │   ├── 📘 next-env.d.ts
+    │   ├── 📘 next.config.ts
+    │   ├── 📋 package.json
+    │   ├── 📄 postcss.config.mjs
+    │   ├── 📘 tailwind.config.ts
+    │   └── 📋 tsconfig.json
+    ├── 🙈 .gitignore
+    ├── 📖 README.md
+    └── 🐍 filestature.py
+
+============================================================
+  Total: 61 folders, 131 files
+  (node_modules and other junk folders excluded)
+============================================================

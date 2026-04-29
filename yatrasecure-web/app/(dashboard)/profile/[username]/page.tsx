@@ -204,8 +204,8 @@ export default function PublicProfilePage() {
                     style={{ background: 'none', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', display: "flex", alignItems: "center", gap: 8, transition: 'all 0.2s', ...(activeTab === 'followers' ? { background: 'rgba(59,130,246,0.1)', outline: '1px solid rgba(59,130,246,0.3)' } : {}) }}
                     className="hover:bg-white/5"
                   >
-                     <span style={{ fontSize: 18, fontWeight: 800, color: activeTab === 'followers' ? '#60a5fa' : 'white' }}>{profile._count?.followers || 0}</span>
-                     <span style={{ fontSize: 13, color: activeTab === 'followers' ? '#93c5fd' : '#64748b', fontWeight: 600 }}>Followers</span>
+                     <span style={{ fontSize: 18, fontWeight: 800, color: activeTab === 'followers' ? '#60a5fa' : 'var(--text)' }}>{profile._count?.followers || 0}</span>
+                     <span style={{ fontSize: 13, color: activeTab === 'followers' ? '#93c5fd' : 'var(--text3)', fontWeight: 600 }}>Followers</span>
                   </button>
 
                   <button 
@@ -213,8 +213,8 @@ export default function PublicProfilePage() {
                     style={{ background: 'none', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', display: "flex", alignItems: "center", gap: 8, transition: 'all 0.2s', ...(activeTab === 'following' ? { background: 'rgba(59,130,246,0.1)', outline: '1px solid rgba(59,130,246,0.3)' } : {}) }}
                     className="hover:bg-white/5"
                   >
-                     <span style={{ fontSize: 18, fontWeight: 800, color: activeTab === 'following' ? '#60a5fa' : 'white' }}>{profile._count?.following || 0}</span>
-                     <span style={{ fontSize: 13, color: activeTab === 'following' ? '#93c5fd' : '#64748b', fontWeight: 600 }}>Following</span>
+                     <span style={{ fontSize: 18, fontWeight: 800, color: activeTab === 'following' ? '#60a5fa' : 'var(--text)' }}>{profile._count?.following || 0}</span>
+                     <span style={{ fontSize: 13, color: activeTab === 'following' ? '#93c5fd' : 'var(--text3)', fontWeight: 600 }}>Following</span>
                   </button>
 
                   {!isSelf && (
@@ -223,8 +223,8 @@ export default function PublicProfilePage() {
                       style={{ background: 'none', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', display: "flex", alignItems: "center", gap: 8, transition: 'all 0.2s', ...(activeTab === 'mutuals' ? { background: 'rgba(168,85,247,0.1)', outline: '1px solid rgba(168,85,247,0.3)' } : {}) }}
                       className="hover:bg-white/5"
                     >
-                      <Users style={{ width: 14, height: 14, color: activeTab === 'mutuals' ? '#c084fc' : '#64748b' }} />
-                      <span style={{ fontSize: 13, color: activeTab === 'mutuals' ? '#d8b4fe' : '#64748b', fontWeight: 600 }}>Mutuals</span>
+                      <Users style={{ width: 14, height: 14, color: activeTab === 'mutuals' ? '#c084fc' : 'var(--text3)' }} />
+                      <span style={{ fontSize: 13, color: activeTab === 'mutuals' ? '#d8b4fe' : 'var(--text3)', fontWeight: 600 }}>Mutuals</span>
                     </button>
                   )}
                </div>

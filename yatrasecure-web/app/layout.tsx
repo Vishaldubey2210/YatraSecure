@@ -19,9 +19,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Space Grotesk — headings | Inter — body | JetBrains Mono — numerics */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -32,15 +31,16 @@ export default function RootLayout({
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#131C2E",
-              color: "#F1F5F9",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "#FFFFFF",
+              color: "#1A1A2E",
+              border: "1px solid #E4E2F4",
               borderRadius: "12px",
               fontSize: "14px",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontFamily: "'Inter', sans-serif",
+              boxShadow: "0 8px 24px rgba(83,74,183,0.12)",
             },
-            success: { iconTheme: { primary: "#22C55E", secondary: "#F1F5F9" } },
-            error:   { iconTheme: { primary: "#EF4444", secondary: "#F1F5F9" } },
+            success: { iconTheme: { primary: "#1D9E75", secondary: "#FFFFFF" } },
+            error:   { iconTheme: { primary: "#E24B4A", secondary: "#FFFFFF" } },
           }}
         />
       </body>

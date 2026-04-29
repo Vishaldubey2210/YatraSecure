@@ -174,7 +174,7 @@ export default function TripAlbumPage() {
       {loading && photos.length === 0 ? (
          <div style={{ padding: 100, textAlign: "center" }}>
            <Loader2 style={{ width: 44, height: 44, color: "#ec4899", animation: "spin 1s linear infinite", margin: "0 auto" }} />
-           <p style={{ marginTop: 20, color: '#64748b', fontSize: 14 }}>Developing photos...</p>
+           <p style={{ marginTop: 20, color: 'var(--text3)', fontSize: 14 }}>Developing photos...</p>
          </div>
       ) : photos.length === 0 ? (
          <div style={{ padding: 80, textAlign: "center", background: "rgba(15,23,42,0.4)", borderRadius: 32, border: "1px dashed rgba(255,255,255,0.08)", backdropFilter: 'blur(20px)' }}>
@@ -190,7 +190,7 @@ export default function TripAlbumPage() {
             {Object.entries(groupedPhotos).map(([day, dayPhotos]: [any, any]) => (
                <div key={day}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</h2>
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</h2>
                     <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, rgba(255,255,255,0.1), transparent)' }} />
                   </div>
                   
@@ -262,7 +262,7 @@ export default function TripAlbumPage() {
                            >
                               <div style={{ transform: 'translateY(10px)', transition: 'transform 0.3s ease' }} className="group-hover:translate-y-0">
                                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--border)', overflow: 'hidden' }}>
                                       <img src={p.user?.profileImage || `https://ui-avatars.com/api/?name=${p.user?.username}&background=random`} alt="user" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                    </div>
                                    <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>@{p.user?.username}</span>

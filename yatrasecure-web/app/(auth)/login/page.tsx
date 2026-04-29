@@ -83,34 +83,34 @@ export default function LoginPage() {
         <div style={{ position: 'absolute', inset: 0, zIndex: 1, opacity: mounted ? 1 : 0, transition: 'opacity 0.7s' }}>
           <img src={LOGIN_PHOTO} alt="Travel" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
         </div>
-        {/* Dark overlay */}
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(11,17,32,0.62)', zIndex: 2 }} />
-        {/* Bottom gradient for quote legibility */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(to top, rgba(11,17,32,0.95) 0%, transparent 100%)', zIndex: 2 }} />
+        {/* Purple gradient overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(83,74,183,0.4) 0%, rgba(26,26,46,0.75) 100%)', zIndex: 2 }} />
+        {/* Bottom gradient for extra quote legibility */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(to top, rgba(26,26,46,0.9) 0%, transparent 100%)', zIndex: 2 }} />
         {/* Accent line */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'var(--cta-gradient)', zIndex: 4 }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: 'var(--primary)', zIndex: 4 }} />
 
         {/* Logo */}
         <div style={{ position: 'relative', zIndex: 4, padding: '32px 40px' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--cta-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(56,189,248,0.35)' }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(83,74,183,0.3)' }}>
               <MapPin style={{ width: 18, height: 18, color: 'white' }} />
             </div>
-            <span style={{ fontSize: 20, fontWeight: 700, color: 'white', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>YatraSecure</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: 'white', letterSpacing: '-0.02em' }}>YatraSecure</span>
           </Link>
         </div>
 
         {/* Quote */}
         <div style={{ position: 'relative', zIndex: 4, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 48px 56px' }}>
-          <div style={{ width: 48, height: 3, background: 'var(--accent)', borderRadius: 2, marginBottom: 20 }} />
-          <p style={{ fontStyle: 'italic', fontSize: 'clamp(18px, 2vw, 26px)', color: 'white', lineHeight: 1.55, textShadow: '0 2px 16px rgba(0,0,0,0.5)', marginBottom: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+          <div style={{ width: 48, height: 4, background: 'var(--primary)', borderRadius: 2, marginBottom: 20 }} />
+          <p style={{ fontStyle: 'italic', fontSize: 'clamp(18px, 2vw, 26px)', color: 'white', lineHeight: 1.55, textShadow: '0 2px 12px rgba(0,0,0,0.4)', marginBottom: 0 }}>
             {LOGIN_QUOTE}
           </p>
-          <div style={{ marginTop: 32, display: 'flex', gap: 28, animation: mounted ? 'fadeUp 0.8s 0.3s ease-out both' : 'none' }}>
+          <div style={{ marginTop: 36, display: 'flex', gap: 16, animation: mounted ? 'fadeUp 0.8s 0.3s ease-out both' : 'none', flexWrap: 'wrap' }}>
             {[['2M+', 'Happy Travelers'], ['50K+', 'Group Trips'], ['4.9★', 'Avg Rating']].map(([v, l]) => (
-              <div key={l}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{l}</div>
+              <div key={l} style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', padding: '10px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: 'white' }}>{v}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2, fontWeight: 500 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -118,7 +118,7 @@ export default function LoginPage() {
       </div>
 
       {/* ══ RIGHT — FORM PANEL ══════════════════════════════════════════════ */}
-      <div style={{ flex: 1, background: 'var(--bg)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '48px 40px', overflowY: 'auto', position: 'relative' }}>
+      <div style={{ flex: 1, background: '#F0EFF8', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '48px 40px', overflowY: 'auto', position: 'relative' }}>
         
         {/* Animated floating travel icons background */}
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
@@ -134,11 +134,11 @@ export default function LoginPage() {
           ].map((item, i) => (
             <div key={i} style={{
               position: 'absolute', top: item.top, left: item.left,
-              fontSize: item.size, opacity: 0.07,
+              fontSize: item.size, opacity: 0.05,
               animation: `floatTravel ${item.dur} ease-in-out infinite`,
               animationDelay: item.delay,
               transform: `rotate(${item.rot})`,
-              filter: 'blur(0.5px)',
+              filter: 'blur(0.5px) grayscale(50%)',
             }}>
               {item.emoji}
             </div>
@@ -148,19 +148,19 @@ export default function LoginPage() {
         <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
 
           {/* Sliding pill account tab */}
-          <div style={{ position: 'relative', display: 'flex', marginBottom: 36, background: 'rgba(255,255,255,0.06)', borderRadius: 50, padding: 4, overflow: 'hidden' }}>
+          <div style={{ position: 'relative', display: 'flex', marginBottom: 36, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 50, padding: 4, overflow: 'hidden', boxShadow: '0 4px 12px rgba(83,74,183,0.06)' }}>
             <div style={{
               position: 'absolute', top: 4, bottom: 4,
               left: accountTab === 'personal' ? 4 : 'calc(50% + 2px)',
               width: 'calc(50% - 6px)',
-              background: 'var(--accent)', borderRadius: 50,
-              boxShadow: '0 4px 14px rgba(56,189,248,0.35)',
+              background: 'var(--primary)', borderRadius: 50,
+              boxShadow: '0 4px 12px rgba(83,74,183,0.2)',
               transition: 'left 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
             }} />
             {(['personal', 'business'] as const).map(tab => (
               <button key={tab} type="button" onClick={() => setAccountTab(tab)} style={{
                 flex: 1, padding: '11px 0', border: 'none', background: 'transparent',
-                fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600,
+                fontFamily: 'inherit', fontSize: 14, fontWeight: 600,
                 color: accountTab === tab ? 'white' : 'var(--text2)',
                 cursor: 'pointer', position: 'relative', zIndex: 1, transition: 'color 0.3s',
               }}>{tab === 'personal' ? 'Personal' : 'Business'}</button>
@@ -169,64 +169,64 @@ export default function LoginPage() {
 
           {/* Heading */}
           <div style={{ marginBottom: 28, animation: mounted ? 'slideInRight 0.5s cubic-bezier(0.25,0.46,0.45,0.94) both' : 'none' }}>
-            <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>Welcome back, Explorer</h1>
-            <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>{accountTab === 'personal' ? 'Sign in to continue your journey.' : 'Access your corporate travel dashboard.'}</p>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>Welcome back, Explorer</h1>
+            <p style={{ color: 'var(--text2)', fontSize: 15, lineHeight: 1.6 }}>{accountTab === 'personal' ? 'Sign in to continue your journey.' : 'Access your corporate travel dashboard.'}</p>
           </div>
 
           {/* Error */}
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, marginBottom: 20, background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.25)' }}>
-              <AlertCircle style={{ width: 16, height: 16, color: '#EF4444', flexShrink: 0 }} />
-              <p style={{ color: '#EF4444', fontSize: 13, fontWeight: 500, margin: 0 }}>{error}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, marginBottom: 20, background: 'var(--danger-light)', border: '1px solid rgba(226,75,74,0.3)', backgroundColor: '#FCEBEB' }}>
+              <AlertCircle style={{ width: 16, height: 16, color: 'var(--danger)', flexShrink: 0 }} />
+              <p style={{ color: 'var(--danger)', fontSize: 14, fontWeight: 600, margin: 0 }}>{error}</p>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {fields.map((field, i) => (
               <div key={field} style={{ animation: mounted ? `slideInRight 0.5s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 80 + 100}ms both` : 'none' }}>
 
                 {field === 'email' && (
                   <>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text2)', marginBottom: 7 }}>Email address</label>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Email address</label>
                     <div style={{ position: 'relative' }}>
-                      <Mail style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 17, height: 17, color: fe.email ? '#EF4444' : 'var(--text3)', pointerEvents: 'none' }} />
+                      <Mail style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: fe.email ? 'var(--danger)' : 'var(--text3)', pointerEvents: 'none' }} />
                       <input
                         type="email" value={email}
                         onChange={e => change('email', e.target.value)}
                         onBlur={e => blur('email', e.target.value)}
                         placeholder="name@example.com"
                         className={`input-field${fe.email ? ' error' : ''}`}
-                        style={{ paddingLeft: 44 }}
+                        style={{ paddingLeft: 44, height: 50 }}
                         autoComplete="email" required
                       />
                     </div>
-                    {fe.email && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 5 }}>{fe.email}</p>}
+                    {fe.email && <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 6, fontWeight: 500 }}>{fe.email}</p>}
                   </>
                 )}
 
                 {field === 'password' && (
                   <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)' }}>Password</label>
-                      <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Forgot password?</Link>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Password</label>
+                      <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Forgot password?</Link>
                     </div>
                     <div style={{ position: 'relative' }}>
-                      <Lock style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 17, height: 17, color: fe.password ? '#EF4444' : 'var(--text3)', pointerEvents: 'none' }} />
+                      <Lock style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: fe.password ? 'var(--danger)' : 'var(--text3)', pointerEvents: 'none' }} />
                       <input
                         type={showPw ? 'text' : 'password'} value={password}
                         onChange={e => change('password', e.target.value)}
                         onBlur={e => blur('password', e.target.value)}
                         placeholder="••••••••"
                         className={`input-field auth-pw-input${fe.password ? ' error' : ''}`}
-                        style={{ paddingLeft: 44, paddingRight: 44 }}
+                        style={{ paddingLeft: 44, paddingRight: 44, height: 50 }}
                         autoComplete="current-password" required
                       />
-                      <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', padding: 0 }}>
-                        {showPw ? <EyeOff style={{ width: 17, height: 17 }} /> : <Eye style={{ width: 17, height: 17 }} />}
+                      <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', padding: 0 }}>
+                        {showPw ? <EyeOff style={{ width: 18, height: 18 }} /> : <Eye style={{ width: 18, height: 18 }} />}
                       </button>
                     </div>
-                    {fe.password && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 5 }}>{fe.password}</p>}
+                    {fe.password && <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 6, fontWeight: 500 }}>{fe.password}</p>}
                   </>
                 )}
               </div>
@@ -234,45 +234,44 @@ export default function LoginPage() {
 
             {/* Submit */}
             <div style={{ animation: mounted ? `slideInRight 0.5s cubic-bezier(0.25,0.46,0.45,0.94) 260ms both` : 'none', marginTop: 4 }}>
-              <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', height: 52, fontSize: 16, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '-0.01em' }}>
-                {loading ? <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} /> : 'Sign In →'}
+              <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', height: 48, fontSize: 16, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
+                {loading ? <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} /> : 'Sign In'}
               </button>
             </div>
           </form>
 
           {/* Terms */}
-          <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginTop: 14, lineHeight: 1.7 }}>
+          <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', marginTop: 20, lineHeight: 1.7, fontWeight: 500 }}>
             By continuing, you agree to our{' '}
-            <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Terms</a>{' '}and{' '}
-            <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Privacy Policy</a>.
+            <a href="#" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Terms</a>{' '}and{' '}
+            <a href="#" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Privacy Policy</a>.
           </p>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0' }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '24px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>or</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
           {/* Google */}
           <button type="button"
-            style={{ width: '100%', height: 50, borderRadius: 12, border: '1.5px solid var(--border2)', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 15, fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(56,189,248,0.06)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+            style={{ width: '100%', height: 52, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 15, fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--primary-light)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--card)'; }}
           >
             <GoogleIcon /> Sign in with Google
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text2)', marginTop: 28 }}>
+          <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--text2)', marginTop: 32 }}>
             Don&apos;t have an account?{' '}
-            <Link href="/signup" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Create one free →</Link>
+            <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Create one free →</Link>
           </p>
         </div>
       </div>
 
       <style>{`
         @keyframes slideInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
         @keyframes floatTravel {
           0%   { transform: translateY(0px) rotate(var(--r, 0deg)) scale(1); }

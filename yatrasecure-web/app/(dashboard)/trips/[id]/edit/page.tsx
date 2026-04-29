@@ -58,31 +58,35 @@ export default function EditTripPage() {
 
   async function loadTrip() {
     try {
-      const token      = getAccessToken();
-      const storedUser = localStorage.getItem("user");
-      const res        = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Trip not found");
-      const data = await res.json();
-      const cu   = storedUser ? JSON.parse(storedUser) : null;
-      if (cu && data.adminId !== cu.id && data.admin?.id !== cu.id) {
-        toast.error("Only the trip admin can edit");
-        router.replace(`/trips/${tripId}`);
-        return;
+      const stored = localStorage.getItem("yatra_trips");
+      if (stored) {
+        const trips = JSON.parse(stored);
+        const data = trips.find((t: any) => t.id === tripId);
+        if (!data) throw new Error("Trip not found");
+        
+        const storedUser = localStorage.getItem("user");
+        const cu = storedUser ? JSON.parse(storedUser) : null;
+        if (cu && data.createdBy !== cu.username) {
+          toast.error("Only the trip admin can edit");
+          router.replace(`/trip/${tripId}`);
+          return;
+        }
+
+        setOriginalTrip(data);
+        setForm({
+          name:        data.title || data.name || "",
+          fromCity:    data.fromCity || (data.route ? data.route.split('→')[0].trim() : ""),
+          toCity:      data.toCity || data.destination || "",
+          startDate:   data.startDate ? fmtForInput(data.startDate) : today(),
+          endDate:     data.endDate ? fmtForInput(data.endDate) : today(),
+          budget:      String(data.budget || ""),
+          tripType:    data.tripType || "Group",
+          description: data.description || "",
+          isPublic:    data.privacy === 'public',
+        });
+      } else {
+        throw new Error("Trip not found");
       }
-      setOriginalTrip(data);
-      setForm({
-        name:        data.name,
-        fromCity:    data.fromCity,
-        toCity:      data.toCity,
-        startDate:   fmtForInput(data.startDate),
-        endDate:     fmtForInput(data.endDate),
-        budget:      String(data.budget),
-        tripType:    data.tripType || "Group",
-        description: data.description || "",
-        isPublic:    data.isPublic,
-      });
     } catch (e: any) {
       toast.error(e.message);
       setError(e.message);
@@ -132,24 +136,31 @@ export default function EditTripPage() {
     if (!isDirty)       { toast("No changes to save", { icon: "ℹ️" }); return; }
     setSaving(true); setError("");
     try {
-      const token = getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          ...form,
-          budget: Number(form.budget),
-          startDate: new Date(form.startDate).toISOString(),
-          endDate:   new Date(form.endDate).toISOString(),
-          description: form.description.trim() || null,
-        }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || "Failed"); }
-      const updated = await res.json();
+      const stored = localStorage.getItem("yatra_trips");
+      let trips = stored ? JSON.parse(stored) : [];
+      const idx = trips.findIndex((t: any) => t.id === tripId);
+      if (idx === -1) throw new Error("Trip not found");
+      
+      const updated = {
+        ...trips[idx],
+        title: form.name,
+        destination: form.toCity,
+        route: `${form.fromCity} → ${form.toCity}`,
+        budget: Number(form.budget),
+        startDate: new Date(form.startDate).toISOString(),
+        endDate:   new Date(form.endDate).toISOString(),
+        description: form.description.trim() || null,
+        tripType: form.tripType,
+        privacy: form.isPublic ? 'public' : 'private'
+      };
+      
+      trips[idx] = updated;
+      localStorage.setItem("yatra_trips", JSON.stringify(trips));
+
       setOriginalTrip(updated);
       setIsDirty(false);
       toast.success("Trip updated!");
-      router.push(`/trips/${tripId}`);
+      router.push(`/trip/${tripId}`);
     } catch (err: any) { setError(err.message || "Something went wrong"); }
     finally { setSaving(false); }
   }

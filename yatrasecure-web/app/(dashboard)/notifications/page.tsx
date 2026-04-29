@@ -1,165 +1,276 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Bell, Check, CheckCheck, Trash2, Loader2, BellOff } from "lucide-react";
-import { fetchWithAuth } from "@/app/lib/api";
+
+import React, { useState, useMemo } from "react";
+import { 
+  Bell, UserPlus, Wallet, AlertTriangle, Info, Sparkles,
+  CheckCircle2, XCircle, Trash2, Check, Settings, Compass,
+  ChevronRight, CalendarClock
+} from "lucide-react";
 import toast from "react-hot-toast";
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)  return "Just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+type NotificationType = 'join_request' | 'trip_update' | 'expense' | 'safety' | 'system' | 'ai';
+
+interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  time: Date;
+  isRead: boolean;
+  actionDone?: boolean;
 }
 
+// Generate base dates for grouping
+const now = new Date();
+const today = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+const yesterday = new Date(now.getTime() - 26 * 60 * 60 * 1000); // 26 hours ago
+const thisWeek = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000); // 4 days ago
+const older = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000); // 15 days ago
+
+const INITIAL_NOTIFICATIONS: Notification[] = [
+  { id: 'n1', type: 'join_request', title: 'Join request from Rahul', message: 'Rahul wants to join your Goa Beach Escape trip.', time: today, isRead: false },
+  { id: 'n2', type: 'safety', title: 'Heavy Rain Alert for Goa', message: 'Check the weather before heading out. High tides expected.', time: today, isRead: false },
+  { id: 'n3', type: 'expense', title: 'New expense added', message: 'Priya added "Dinner" (₹450) – you owe ₹150.', time: yesterday, isRead: false },
+  { id: 'n4', type: 'join_request', title: 'Join request from Sneha', message: 'Sneha wants to join your Manali Trek.', time: yesterday, isRead: false },
+  { id: 'n5', type: 'system', title: 'Profile Verified', message: 'Your profile verification is complete! Your trust score increased.', time: thisWeek, isRead: true },
+  { id: 'n6', type: 'trip_update', title: 'Trip Budget Updated', message: 'Your Manali trip budget was updated by +₹2000.', time: thisWeek, isRead: true },
+  { id: 'n7', type: 'ai', title: 'New matches found', message: 'New trips matching your interests: Rishikesh Adventure.', time: older, isRead: true },
+  { id: 'n8', type: 'system', title: 'Welcome to YatraSecure', message: 'Thanks for joining. Complete your profile to unlock features.', time: older, isRead: true },
+];
+
 export default function NotificationsPage() {
-  const [notifs, setNotifs]   = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
-  useEffect(() => { fetchNotifs(); }, []);
+  // Actions
+  const handleMarkRead = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
 
-  async function fetchNotifs() {
-    try {
-      const res = await fetchWithAuth("/notifications");
-      const data = await res.json();
-      setNotifs(Array.isArray(data) ? data : data?.notifications || []);
-    } catch { setNotifs([]); }
-    finally { setLoading(false); }
-  }
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const target = notifications.find(n => n.id === id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    toast('Notification dismissed', {
+      icon: '🗑️',
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          if (target) setNotifications(prev => [target, ...prev].sort((a,b) => b.time.getTime() - a.time.getTime()));
+        }
+      }
+    });
+  };
 
-  async function markRead(id: string) {
-    try {
-      await fetchWithAuth(`/notifications/${id}/read`, { method: "PATCH" });
-      setNotifs(p => p.map(n => n.id === id ? { ...n, isRead: true } : n));
-    } catch { toast.error("Failed"); }
-  }
+  const handleJoinAction = (id: string, action: 'accept' | 'decline', e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.success(`Join request ${action}ed`);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, actionDone: true, isRead: true } : n));
+  };
 
-  async function markAll() {
-    try {
-      await fetchWithAuth("/notifications/read-all", { method: "PATCH" });
-      setNotifs(p => p.map(n => ({ ...n, isRead: true })));
-      toast.success("All marked as read");
-    } catch { toast.error("Failed"); }
-  }
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    toast.success("All notifications marked as read");
+  };
 
-  async function deleteNotif(id: string) {
-    try {
-      await fetchWithAuth(`/notifications/${id}`, { method: "DELETE" });
-      setNotifs(p => p.filter(n => n.id !== id));
-    } catch { toast.error("Failed"); }
-  }
+  const handleSimulate = () => {
+    const newNotif: Notification = {
+      id: `sim-${Date.now()}`,
+      type: 'expense',
+      title: 'New Expense Split',
+      message: 'Someone added "Snacks" (₹200) – you owe ₹50.',
+      time: new Date(),
+      isRead: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+    toast.success("New notification received!");
+  };
 
-  async function clearRead() {
-    try {
-      await fetchWithAuth("/notifications/clear-read", { method: "DELETE" });
-      setNotifs(p => p.filter(n => !n.isRead));
-      toast.success("Read notifications cleared");
-    } catch { toast.error("Failed"); }
-  }
+  const handleCardClick = (n: Notification) => {
+    handleMarkRead(n.id);
+    if (n.type === 'join_request') toast(`Navigating to join requests...`, { icon: '↗️' });
+    else if (n.type === 'expense') toast(`Navigating to group wallet...`, { icon: '↗️' });
+    else if (n.type === 'trip_update') toast(`Navigating to trip details...`, { icon: '↗️' });
+    else if (n.type === 'ai') toast(`Navigating to explore page...`, { icon: '↗️' });
+    else toast(`Navigating to details...`, { icon: '↗️' });
+  };
 
-  const unread = notifs.filter(n => !n.isRead).length;
+  // Grouping Logic
+  const filteredNotifs = notifications.filter(n => activeTab === 'all' || !n.isRead);
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const typeColor: Record<string, string> = {
-    memberremoved: "#ef4444",
-    memberleft:    "#f97316",
-    joinrequest:   "#3b82f6",
-    accepted:      "#22c55e",
-    rejected:      "#ef4444",
-    default:       "#f97316",
+  const grouped = useMemo(() => {
+    const groups = { today: [] as Notification[], yesterday: [] as Notification[], thisWeek: [] as Notification[], older: [] as Notification[] };
+    const nowT = Date.now();
+    filteredNotifs.forEach(n => {
+      const diffDays = (nowT - n.time.getTime()) / (1000 * 3600 * 24);
+      if (diffDays < 1) groups.today.push(n);
+      else if (diffDays < 2) groups.yesterday.push(n);
+      else if (diffDays < 7) groups.thisWeek.push(n);
+      else groups.older.push(n);
+    });
+    return groups;
+  }, [filteredNotifs]);
+
+  const getIcon = (type: NotificationType) => {
+    switch(type) {
+      case 'join_request': return <UserPlus style={{ color: "var(--primary)" }} />;
+      case 'expense': return <Wallet style={{ color: "#D97706" }} />;
+      case 'safety': return <AlertTriangle style={{ color: "var(--danger)" }} />;
+      case 'system': return <Info style={{ color: "var(--text3)" }} />;
+      case 'trip_update': return <Compass style={{ color: "var(--success)" }} />;
+      case 'ai': return <Sparkles style={{ color: "#9333EA" }} />;
+    }
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
 
   return (
-    <div className="anim-in">
-
-      {/* Header */}
-      <div className="page-header">
+    <div style={{ maxWidth: 800, margin: "0 auto", paddingBottom: 60, color: "var(--text)" }}>
+      
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
         <div>
-          <h1 className="page-title">Notifications</h1>
-          <p className="page-subtitle">
-            {unread > 0 ? <><span style={{ color: "#f97316", fontWeight: 700 }}>{unread}</span> unread notifications</> : "All caught up!"}
-          </p>
+          <h1 style={{ fontSize: 32, fontWeight: 900, margin: "0 0 8px", color: "var(--text)", letterSpacing: "-0.02em" }}>Notifications</h1>
+          <p style={{ color: "var(--text2)", margin: 0, fontSize: 15 }}>Stay updated with your trips and group activities.</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          {unread > 0 && (
-            <button onClick={markAll} className="btn-ghost" style={{ padding: "9px 16px", fontSize: 13 }}>
-              <CheckCheck style={{ width: 14, height: 14 }} /> Mark all read
-            </button>
-          )}
-          {notifs.some(n => n.isRead) && (
-            <button onClick={clearRead} className="btn-danger" style={{ padding: "9px 16px", fontSize: 13 }}>
-              <Trash2 style={{ width: 14, height: 14 }} /> Clear read
-            </button>
-          )}
+        <div style={{ display: "flex", gap: 12 }}>
+          <button onClick={handleSimulate} style={{ background: "var(--primary-light)", color: "var(--primary)", border: "none", padding: "10px 16px", borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
+            Simulate New
+          </button>
+          <button style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text)", width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Settings style={{ width: 18, height: 18 }} />
+          </button>
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
-          <Loader2 style={{ width: 28, height: 28, color: "#f97316", animation: "spin 1s linear infinite" }} />
+      {/* ── Tabs & Actions ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", marginBottom: 24 }}>
+        <div style={{ display: "flex", gap: 32 }}>
+          <button 
+            onClick={() => setActiveTab('all')}
+            style={{ padding: "12px 0", background: "none", border: "none", borderBottom: activeTab === 'all' ? "3px solid var(--primary)" : "3px solid transparent", color: activeTab === 'all' ? "var(--primary)" : "var(--text2)", fontWeight: activeTab === 'all' ? 800 : 600, fontSize: 15, cursor: "pointer" }}
+          >
+            All
+          </button>
+          <button 
+            onClick={() => setActiveTab('unread')}
+            style={{ padding: "12px 0", background: "none", border: "none", borderBottom: activeTab === 'unread' ? "3px solid var(--primary)" : "3px solid transparent", color: activeTab === 'unread' ? "var(--primary)" : "var(--text2)", fontWeight: activeTab === 'unread' ? 800 : 600, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+          >
+            Unread {unreadCount > 0 && <span style={{ background: "var(--primary)", color: "white", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 800 }}>{unreadCount}</span>}
+          </button>
         </div>
-      ) : notifs.length === 0 ? (
-        <div className="card" style={{ padding: "64px 24px", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <BellOff style={{ width: 28, height: 28, color: "#334155" }} />
+        {unreadCount > 0 && (
+          <button onClick={handleMarkAllRead} style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} className="hover:text-primary">
+            <Check style={{ width: 14, height: 14 }} /> Mark all as read
+          </button>
+        )}
+      </div>
+
+      {/* ── Notification Feed ── */}
+      {filteredNotifs.length === 0 ? (
+        <div className="anim-in" style={{ textAlign: "center", padding: "80px 20px", background: "var(--card)", borderRadius: 24, border: "1px solid var(--border)" }}>
+          <div style={{ width: 80, height: 80, background: "var(--bg2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <Bell style={{ width: 32, height: 32, color: "var(--text3)" }} />
           </div>
-          <p style={{ color: "white", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>No notifications</p>
-          <p style={{ color: "#334155", fontSize: 13 }}>You're all caught up! 🎉</p>
+          <h3 style={{ fontSize: 22, margin: "0 0 12px", color: "var(--text)" }}>All caught up!</h3>
+          <p style={{ color: "var(--text2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
+            {activeTab === 'unread' ? "You have no unread notifications." : "You don't have any notifications yet."}
+          </p>
+          {activeTab === 'unread' && (
+            <button onClick={() => setActiveTab('all')} style={{ background: "var(--primary)", color: "white", border: "none", padding: "10px 24px", borderRadius: 10, fontWeight: 600, cursor: "pointer" }}>
+              View All Notifications
+            </button>
+          )}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {notifs.map(n => {
-            const color = typeColor[n.type] || typeColor.default;
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          
+          {Object.entries(grouped).map(([groupName, items]) => {
+            if (items.length === 0) return null;
+            const title = groupName === 'today' ? 'Today' : groupName === 'yesterday' ? 'Yesterday' : groupName === 'thisWeek' ? 'This Week' : 'Older';
+            
             return (
-              <div
-                key={n.id}
-                className="card"
-                style={{
-                  padding: "16px 18px",
-                  display: "flex", alignItems: "flex-start", gap: 14,
-                  borderColor: !n.isRead ? "rgba(249,115,22,0.2)" : "#1e293b",
-                  background: !n.isRead ? "rgba(249,115,22,0.04)" : "#1a2744",
-                  transition: "all 0.2s",
-                }}
-              >
-                {/* Icon dot */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                  background: `${color}15`, border: `1px solid ${color}25`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Bell style={{ width: 15, height: 15, color }} />
-                </div>
+              <div key={groupName} className="anim-in">
+                <h3 style={{ fontSize: 13, fontWeight: 800, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>{title}</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {items.map(n => (
+                    <div 
+                      key={n.id} 
+                      onClick={() => handleCardClick(n)}
+                      style={{ 
+                        background: n.isRead ? "var(--card)" : "var(--bg2)",
+                        border: "1px solid",
+                        borderColor: n.isRead ? "var(--border)" : "var(--border-focus)",
+                        borderRadius: 16, padding: "16px 20px",
+                        display: "flex", gap: 16, alignItems: "flex-start",
+                        cursor: "pointer", transition: "all 0.2s",
+                        position: "relative"
+                      }}
+                      className="hover:shadow-md hover:-translate-y-[2px]"
+                    >
+                      {/* Unread Dot */}
+                      {!n.isRead && <div style={{ position: "absolute", left: -4, top: 24, width: 8, height: 8, borderRadius: "50%", background: "var(--primary)" }} />}
 
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                    <p style={{ fontSize: 13, fontWeight: n.isRead ? 500 : 700, color: n.isRead ? "#94a3b8" : "white", margin: 0 }}>
-                      {n.title}
-                    </p>
-                    {!n.isRead && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />}
-                  </div>
-                  <p style={{ fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.5 }}>{n.message}</p>
-                  <p style={{ fontSize: 11, color: "#334155", margin: "6px 0 0" }}>{timeAgo(n.createdAt)}</p>
-                </div>
+                      {/* Icon */}
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--card)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {getIcon(n.type)}
+                      </div>
 
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                  {!n.isRead && (
-                    <button onClick={() => markRead(n.id)} title="Mark read" style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Check style={{ width: 13, height: 13 }} />
-                    </button>
-                  )}
-                  <button onClick={() => deleteNotif(n.id)} title="Delete" style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Trash2 style={{ width: 13, height: 13 }} />
-                  </button>
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 4 }}>
+                          <h4 style={{ margin: 0, fontSize: 16, fontWeight: n.isRead ? 600 : 800, color: "var(--text)" }}>{n.title}</h4>
+                          <span style={{ fontSize: 12, color: "var(--text3)", fontWeight: 600, whiteSpace: "nowrap" }}>{formatTime(n.time)}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 14, color: n.isRead ? "var(--text3)" : "var(--text2)", lineHeight: 1.5, marginBottom: 12 }}>{n.message}</p>
+                        
+                        {/* Action Buttons for Join Requests */}
+                        {n.type === 'join_request' && !n.actionDone && (
+                          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                            <button onClick={(e) => handleJoinAction(n.id, 'accept', e)} style={{ background: "var(--primary)", color: "white", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                              <CheckCircle2 style={{ width: 16, height: 16 }} /> Accept
+                            </button>
+                            <button onClick={(e) => handleJoinAction(n.id, 'decline', e)} style={{ background: "transparent", color: "var(--text2)", border: "1px solid var(--border)", padding: "8px 20px", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                              <XCircle style={{ width: 16, height: 16 }} /> Decline
+                            </button>
+                          </div>
+                        )}
+                        {n.type === 'join_request' && n.actionDone && (
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--success)", display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                            <Check style={{ width: 14, height: 14 }} /> Request handled
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right side actions */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {!n.isRead && (
+                          <button onClick={(e) => handleMarkRead(n.id, e)} title="Mark as read" style={{ background: "none", border: "none", color: "var(--primary)", padding: 6, borderRadius: "50%", cursor: "pointer" }} className="hover:bg-primary-light">
+                            <Check style={{ width: 16, height: 16 }} />
+                          </button>
+                        )}
+                        <button onClick={(e) => handleDelete(n.id, e)} title="Delete" style={{ background: "none", border: "none", color: "var(--text3)", padding: 6, borderRadius: "50%", cursor: "pointer" }} className="hover:text-danger hover:bg-danger/10">
+                          <Trash2 style={{ width: 16, height: 16 }} />
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* ── Footer ── */}
+      <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--border)", textAlign: "center", color: "var(--text3)", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        Logged in as test123@gmail.com
+      </div>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export default function JoinByInviteCode() {
           <KeyRound style={{ width: 16, height: 16, color: '#a78bfa' }} />
         </div>
         <div>
-          <p style={{ fontSize: 14, fontWeight: 700, color: 'white', margin: 0 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
             Join Private Trip
           </p>
           <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>
@@ -84,7 +84,7 @@ export default function JoinByInviteCode() {
             maxLength={8}
             style={{
               width: '100%', height: 42, paddingLeft: 34, paddingRight: 14,
-              borderRadius: 10, fontSize: 14, color: '#E2E8F0',
+              borderRadius: 10, fontSize: 14, color: 'var(--text)',
               background: '#0F172A', border: '1px solid rgba(148,163,184,0.12)',
               outline: 'none', fontFamily: 'monospace', letterSpacing: '0.15em',
               textTransform: 'uppercase',
@@ -103,7 +103,7 @@ export default function JoinByInviteCode() {
             background: code.trim()
               ? 'linear-gradient(135deg, #7C3AED, #4F46E5)'
               : 'rgba(148,163,184,0.08)',
-            border: 'none', color: 'white', fontSize: 13, fontWeight: 700,
+            border: 'none', color: 'var(--text)', fontSize: 13, fontWeight: 700,
             cursor: code.trim() ? 'pointer' : 'not-allowed',
             display: 'flex', alignItems: 'center', gap: 6,
             opacity: loading ? 0.6 : 1, transition: 'all 0.15s',

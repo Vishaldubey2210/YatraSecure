@@ -128,14 +128,14 @@ export default function ChatPage() {
       </div>
 
       {/* ── MESSAGES ── */}
-      <div style={{ flex: 1, overflowY: "auto", padding: '24px 20px', display: "flex", flexDirection: "column", gap: 8, background: 'rgba(15,23,42,0.4)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'thin' }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: '24px 20px', display: "flex", flexDirection: "column", gap: 8, background: 'var(--bg)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'thin' }}>
         {messages.length === 0 ? (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ textAlign: "center", opacity: 0.5 }}>
               <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                 <MessageCircle style={{ width: 40, height: 40, color: '#3b82f6' }} />
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 8 }}>No messages yet</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>No messages yet</h3>
               <p style={{ fontSize: 14, color: "#94a3b8" }}>Be the first to say hello or ask <br/> <span style={{ color: '#a78bfa', fontWeight: 700 }}>@ai</span> for help!</p>
             </div>
           </div>
@@ -144,9 +144,9 @@ export default function ChatPage() {
             <div key={gi}>
               {/* Day separator */}
               <div style={{ display: "flex", alignItems: "center", gap: 16, margin: '24px 0' }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                 <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>{g.day}</span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               </div>
 
               {/* Messages */}
@@ -159,14 +159,14 @@ export default function ChatPage() {
                   <div key={m.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", marginBottom: mi < g.msgs.length - 1 && g.msgs[mi+1].userId === m.userId ? 4 : 16, alignItems: 'flex-end', gap: 10 }}>
                     
                     {!isMe && showAvatar && (
-                      <div style={{ width: 32, height: 32, borderRadius: 10, background: isAI ? 'linear-gradient(135deg, #7c3aed, #db2777)' : 'linear-gradient(135deg, #1e293b, #334155)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'white', flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 10, background: isAI ? 'linear-gradient(135deg, #7c3aed, #db2777)' : 'linear-gradient(135deg, #1e293b, #334155)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text)', flexShrink: 0 }}>
                         {isAI ? <Sparkles style={{ width: 14, height: 14 }} /> : (m.username?.[0].toUpperCase() || '?')}
                       </div>
                     )}
                     {!isMe && !showAvatar && <div style={{ width: 32 }} />}
 
                     <div style={{ maxWidth: "80%", display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                      {showAvatar && <p style={{ fontSize: 11, color: isAI ? '#a78bfa' : '#94a3b8', fontWeight: 700, margin: '0 0 4px 4px' }}>{isAI ? 'AI COMPANION' : `@${m.username}`}</p>}
+                      {showAvatar && <p style={{ fontSize: 11, color: isAI ? '#a78bfa' : 'var(--text2)', fontWeight: 700, margin: '0 0 4px 4px' }}>{isAI ? 'AI COMPANION' : `@${m.username}`}</p>}
                       
                       <div style={{
                         padding: "12px 16px",
@@ -180,7 +180,7 @@ export default function ChatPage() {
                         boxShadow: isAI ? '0 0 20px rgba(124, 58, 237, 0.1)' : 'none',
                         position: 'relative'
                       }}>
-                        <p style={{ fontSize: 14, color: 'white', margin: 0, lineHeight: 1.6, wordBreak: "break-word" }}>{m.content}</p>
+                        <p style={{ fontSize: 14, color: 'var(--text)', margin: 0, lineHeight: 1.6, wordBreak: "break-word" }}>{m.content}</p>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 4, opacity: 0.6 }}>
                           <Clock style={{ width: 10, height: 10 }} />
                           <span style={{ fontSize: 9 }}>{formatTime(m.createdAt)}</span>
@@ -188,7 +188,7 @@ export default function ChatPage() {
 
                         {isAI && (
                           <div style={{ position: 'absolute', top: -10, right: -10, width: 24, height: 24, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0f172a' }}>
-                            <Bot style={{ width: 12, height: 12, color: 'white' }} />
+                            <Bot style={{ width: 12, height: 12, color: 'var(--text)' }} />
                           </div>
                         )}
                       </div>
@@ -247,7 +247,7 @@ export default function ChatPage() {
           }}
           className="hover:scale-105 active:scale-95 disabled:opacity-50"
         >
-          <Send style={{ width: 20, height: 20, color: 'white' }} />
+          <Send style={{ width: 20, height: 20, color: 'var(--text)' }} />
         </button>
       </div>
     </div>

@@ -129,20 +129,20 @@ export default function AssistantPage() {
     <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#020617' }}>
       
       {/* HEADER */}
-      <div style={{ padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(15,23,42,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={() => router.push(`/trips/${tripId}`)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10 hover:text-white">
+          <button onClick={() => router.push(`/trips/${tripId}`)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '50%', background: 'var(--border)', border: 'none', color: 'var(--text2)', cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10 hover:text-white">
             <ArrowLeft style={{ width: 18, height: 18 }} />
           </button>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Bot style={{ color: '#f97316' }} /> AI Travel Companion
             </h1>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>{trip?.name || 'Your Trip'}</p>
+            <p style={{ fontSize: 13, color: 'var(--text3)', margin: '2px 0 0' }}>{trip?.name || 'Your Trip'}</p>
           </div>
         </div>
 
-        <button onClick={clearHistory} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-red-400 transition-colors">
+        <button onClick={clearHistory} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)', background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-red-400 transition-colors">
           <Trash2 style={{ width: 14, height: 14 }} /> Clear Chat
         </button>
       </div>
@@ -153,11 +153,11 @@ export default function AssistantPage() {
           <div key={idx} style={{ display: 'flex', gap: 16, maxWidth: '80%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
             {msg.role === 'assistant' && (
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
+                <Sparkles style={{ width: 16, height: 16, color: 'var(--text)' }} />
               </div>
             )}
             
-            <div style={{ background: msg.role === 'user' ? '#1e293b' : 'rgba(255,255,255,0.03)', border: `1px solid ${msg.role === 'user' ? '#334155' : 'rgba(255,255,255,0.06)'}`, padding: '16px 20px', borderRadius: 16, borderTopRightRadius: msg.role === 'user' ? 4 : 16, borderTopLeftRadius: msg.role === 'assistant' ? 4 : 16, color: '#e2e8f0', fontSize: 14, lineHeight: 1.6 }}>
+            <div style={{ background: msg.role === 'user' ? 'var(--card)' : 'var(--bg)', border: `1px solid ${msg.role === 'user' ? 'var(--border)' : 'rgba(255,255,255,0.06)'}`, padding: '16px 20px', borderRadius: 16, borderTopRightRadius: msg.role === 'user' ? 4 : 16, borderTopLeftRadius: msg.role === 'assistant' ? 4 : 16, color: 'var(--text)', fontSize: 14, lineHeight: 1.6 }}>
               {msg.role === 'user' ? (
                  <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
               ) : (
@@ -168,8 +168,8 @@ export default function AssistantPage() {
             </div>
 
             {msg.role === 'user' && (
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <User style={{ width: 16, height: 16, color: 'white' }} />
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <User style={{ width: 16, height: 16, color: 'var(--text)' }} />
               </div>
             )}
           </div>
@@ -177,9 +177,9 @@ export default function AssistantPage() {
         {loading && (
            <div style={{ display: 'flex', gap: 16, maxWidth: '80%', alignSelf: 'flex-start' }}>
              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-               <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
+               <Sparkles style={{ width: 16, height: 16, color: 'var(--text)' }} />
              </div>
-             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: '16px 20px', borderRadius: 16, borderTopLeftRadius: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+             <div style={{ background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.06)', padding: '16px 20px', borderRadius: 16, borderTopLeftRadius: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fbbf24', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite', animationDelay: '0.2s' }} />
                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fb923c', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite', animationDelay: '0.4s' }} />
@@ -190,7 +190,7 @@ export default function AssistantPage() {
       </div>
 
       {/* INPUT AREA */}
-      <div style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(15,23,42,0.8)', flexShrink: 0 }}>
+      <div style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'var(--bg)', flexShrink: 0 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
           <textarea
             value={input}
@@ -199,19 +199,19 @@ export default function AssistantPage() {
             placeholder="Ask about your trip (e.g., 'Suggest good cafes near our hotel')"
             rows={1}
             disabled={loading}
-            style={{ width: '100%', borderRadius: 24, padding: '16px 24px', paddingRight: 60, background: 'rgba(255,255,255,0.03)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: 15, outline: 'none', resize: 'none', lineHeight: 1.5, minHeight: 56, maxHeight: 200, fontFamily: 'inherit' }}
+            style={{ width: '100%', borderRadius: 24, padding: '16px 24px', paddingRight: 60, background: 'var(--bg)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 15, outline: 'none', resize: 'none', lineHeight: 1.5, minHeight: 56, maxHeight: 200, fontFamily: 'inherit' }}
             onFocus={e => e.target.style.borderColor = 'rgba(249,115,22,0.5)'}
-            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            style={{ position: 'absolute', right: 8, top: 8, bottom: 8, width: 40, borderRadius: 20, background: input.trim() && !loading ? '#f97316' : 'rgba(255,255,255,0.1)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
+            style={{ position: 'absolute', right: 8, top: 8, bottom: 8, width: 40, borderRadius: 20, background: input.trim() && !loading ? '#f97316' : 'var(--border)', border: 'none', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
           >
             <Send style={{ width: 18, height: 18, marginLeft: 2 }} />
           </button>
         </div>
-        <p style={{ textAlign: 'center', fontSize: 12, color: '#64748b', marginTop: 12, marginBottom: 0 }}>
+        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text3)', marginTop: 12, marginBottom: 0 }}>
           AI Travel Companion can make mistakes. Consider verifying important details.
         </p>
       </div>

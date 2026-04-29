@@ -17,7 +17,7 @@ const CATEGORIES = ["Food", "Transport", "Accommodation", "Shopping", "Activitie
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
-  borderRadius: 16, background: 'rgba(255,255,255,0.02)',
+  borderRadius: 16, background: 'var(--card)',
   border: '1px solid rgba(255,255,255,0.04)', padding: 28,
 };
 const badge = (color: string, bg: string): React.CSSProperties => ({
@@ -25,7 +25,7 @@ const badge = (color: string, bg: string): React.CSSProperties => ({
   padding: '6px 12px', borderRadius: 8, fontSize: 11,
   fontWeight: 600, color, background: bg, border: `1px solid ${bg.replace(',0.1)', ',0.2)')}`
 });
-const btn = (bg: string, color = 'white'): React.CSSProperties => ({
+const btn = (bg: string, color = 'var(--text)'): React.CSSProperties => ({
   display: 'inline-flex', alignItems: 'center', gap: 6,
   padding: '10px 18px', borderRadius: 10, fontSize: 13,
   fontWeight: 600, color, background: bg,
@@ -90,7 +90,10 @@ export default function WalletPage() {
         fetch(`${API_BASE_URL}/trips/${tripId}/members`, { headers: h }),
       ]);
       if (tripRes.ok) setTrip(await tripRes.json());
-      if (memRes.ok) setMembers(await memRes.json());
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        setMembers(Array.isArray(memData) ? memData : (memData?.data ?? memData?.members ?? []));
+      }
 
       const wRes = await fetch(`${API_BASE_URL}/trips/${tripId}/wallet`, { headers: h });
       if (wRes.ok) {
@@ -291,8 +294,8 @@ export default function WalletPage() {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
-                    itemStyle={{ color: 'white' }}
+                    contentStyle={{ background: 'var(--bg)', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
+                    itemStyle={{ color: 'var(--text)' }}
                   />
                   <Legend />
                 </PieChart>
@@ -312,11 +315,11 @@ export default function WalletPage() {
             <div style={{ flex: 1, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={memberContributionData}>
-                  <XAxis dataKey="name" fontSize={10} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" fontSize={10} tick={{ fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
+                  <YAxis fontSize={10} tick={{ fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
                   <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                    contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
+                    cursor={{ fill: 'var(--card)' }}
+                    contentStyle={{ background: 'var(--bg)', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
                   />
                   <Bar dataKey="amount" fill="#3b82f6" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -341,10 +344,10 @@ export default function WalletPage() {
                     <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" fontSize={10} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis fontSize={10} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" fontSize={10} tick={{ fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
+                <YAxis fontSize={10} tick={{ fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
                 <Tooltip 
-                  contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--bg)', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#f97316" fillOpacity={1} fill="url(#colorAmt)" strokeWidth={2} />
               </AreaChart>
@@ -424,8 +427,8 @@ export default function WalletPage() {
                 <Users style={{ width: 20, height: 20, color: '#60A5FA' }} />
               </div>
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: 0 }}>Settlement Roadmap</h3>
-                <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>Optimized paths to balance the trip budget</p>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Settlement Roadmap</h3>
+                <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>Optimized paths to balance the trip budget</p>
               </div>
             </div>
           </div>
@@ -437,25 +440,25 @@ export default function WalletPage() {
               const isCurrentUserDebtor = (fromUser?.userId || fromUser?.user?.id) === currentUser?.id;
               
               return (
-                <div key={idx} style={{ padding: 16, borderRadius: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div key={idx} style={{ padding: 16, borderRadius: 16, background: 'var(--card)', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: -8 }}>
-                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EF4444', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'white', zIndex: 2 }}>
+                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EF4444', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text)', zIndex: 2 }}>
                         {fromUser?.user?.username?.[0].toUpperCase() || '?'}
                      </div>
-                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#22C55E', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'white', marginLeft: -12, zIndex: 1 }}>
+                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#22C55E', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text)', marginLeft: -12, zIndex: 1 }}>
                         {toUser?.user?.username?.[0].toUpperCase() || '?'}
                      </div>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 13, color: 'white', fontWeight: 600, margin: 0 }}>
+                    <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, margin: 0 }}>
                       <span style={{ color: '#F87171' }}>@{fromUser?.user?.username || fromUser?.username}</span>
-                      <span style={{ margin: '0 6px', color: '#64748b' }}>→</span>
+                      <span style={{ margin: '0 6px', color: 'var(--text3)' }}>→</span>
                       <span style={{ color: '#4ADE80' }}>@{toUser?.user?.username || toUser?.username}</span>
                     </p>
-                    <p style={{ fontSize: 18, fontWeight: 900, color: 'white', margin: '4px 0 0' }}>₹{Math.round(s.amount).toLocaleString()}</p>
+                    <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', margin: '4px 0 0' }}>₹{Math.round(s.amount).toLocaleString()}</p>
                   </div>
                   {isCurrentUserDebtor ? (
-                    <button onClick={() => toast.success("Marked as paid!")} style={{ background: '#22C55E', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }} className="hover:bg-green-600 transition-all">
+                    <button onClick={() => toast.success("Marked as paid!")} style={{ background: '#22C55E', color: 'var(--text)', border: 'none', padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }} className="hover:bg-green-600 transition-all">
                       Settle Up
                     </button>
                   ) : (

@@ -14,7 +14,7 @@ async function main() {
       data: {
         email: 'testmatchuser@example.com',
         username: 'testmatchuser',
-        passwordHash: 'dummyhash',
+        password: 'dummyhash',
         firstName: 'Test',
         lastName: 'Match',
         city: 'Mumbai',

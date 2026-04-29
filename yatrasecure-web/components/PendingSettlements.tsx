@@ -69,8 +69,8 @@ export default function PendingSettlements({ tripId }: { tripId: string }) {
      <div className="glass-card" style={{ padding: 24, borderRadius: 24, display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)' }}>
         <CheckCircle2 style={{ width: 24, height: 24, color: '#10b981' }} />
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>All Settled Up!</div>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>No pending expenses in this trip.</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>All Settled Up!</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)' }}>No pending expenses in this trip.</div>
         </div>
      </div>
   );
@@ -82,26 +82,26 @@ export default function PendingSettlements({ tripId }: { tripId: string }) {
           <Wallet style={{ width: 20, height: 20, color: '#3b82f6' }} />
         </div>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: 0 }}>Pending Settlements</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>Who owes whom in the group</p>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Pending Settlements</h3>
+          <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0 }}>Who owes whom in the group</p>
         </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {settlements.map((s, i) => (
           <div key={i} style={{ 
-            padding: '16px 20px', borderRadius: 16, background: 'rgba(255,255,255,0.02)', 
+            padding: '16px 20px', borderRadius: 16, background: 'var(--card)', 
             border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' 
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                <div style={{ textAlign: 'right' }}>
-                 <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{s.fromUsername}</div>
-                 <div style={{ fontSize: 10, color: '#64748b' }}>Owes</div>
+                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{s.fromUsername}</div>
+                 <div style={{ fontSize: 10, color: 'var(--text3)' }}>Owes</div>
                </div>
-               <Send style={{ width: 14, height: 14, color: '#64748b' }} />
+               <Send style={{ width: 14, height: 14, color: 'var(--text3)' }} />
                <div>
-                 <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{s.toUsername}</div>
-                 <div style={{ fontSize: 10, color: '#64748b' }}>To receive</div>
+                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{s.toUsername}</div>
+                 <div style={{ fontSize: 10, color: 'var(--text3)' }}>To receive</div>
                </div>
             </div>
 
@@ -131,7 +131,7 @@ export default function PendingSettlements({ tripId }: { tripId: string }) {
       
       <div style={{ marginTop: 20, padding: 12, borderRadius: 12, background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <AlertCircle style={{ width: 14, height: 14, color: '#7c3aed' }} />
-        <span style={{ fontSize: 11, color: '#94a3b8' }}>Reminders are sent as in-app notifications to fellow travelers.</span>
+        <span style={{ fontSize: 11, color: 'var(--text2)' }}>Reminders are sent as in-app notifications to fellow travelers.</span>
       </div>
     </div>
   );

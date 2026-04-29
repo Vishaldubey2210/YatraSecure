@@ -119,12 +119,12 @@ export default function LiveTripMap({ tripId, toCity, members }: LiveTripMapProp
   if (loading || !destCoords) {
     return (
       <div style={{
-        height: 400, borderRadius: 24, background: 'rgba(15,23,42,0.8)',
+        height: 400, borderRadius: 24, background: 'var(--bg)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         border: '1px solid rgba(148,163,184,0.1)', overflow: 'hidden'
       }}>
         <Radar className="anim-pulse" style={{ width: 48, height: 48, color: '#f97316', marginBottom: 16 }} />
-        <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 700 }}>Initializing Live Radar…</span>
+        <span style={{ color: 'var(--text2)', fontSize: 13, fontWeight: 700 }}>Initializing Live Radar…</span>
       </div>
     );
   }
@@ -138,14 +138,14 @@ export default function LiveTripMap({ tripId, toCity, members }: LiveTripMapProp
         display: 'flex', flexDirection: 'column', gap: 10
       }}>
         <div style={{
-          background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(10px)',
+          background: 'var(--bg)', backdropFilter: 'blur(10px)',
           padding: '12px 16px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
           display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
         }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e', animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
           <div>
-            <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Live Signal</div>
-            <div style={{ fontSize: 13, color: 'white', fontWeight: 900 }}>{memberLocs.length} Active Members</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 800, textTransform: 'uppercase' }}>Live Signal</div>
+            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 900 }}>{memberLocs.length} Active Members</div>
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function LiveTripMap({ tripId, toCity, members }: LiveTripMapProp
           `
         })}>
           <Popup>
-            <div style={{ color: '#0f172a', fontWeight: 700 }}>{toCity} Destination</div>
+            <div style={{ color: 'var(--bg)', fontWeight: 700 }}>{toCity} Destination</div>
           </Popup>
         </Marker>
 
@@ -191,8 +191,8 @@ export default function LiveTripMap({ tripId, toCity, members }: LiveTripMapProp
           >
             <Popup>
               <div style={{ minWidth: 120 }}>
-                <div style={{ fontWeight: 800, color: '#0f172a' }}>{loc.username}</div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Active 2m ago</div>
+                <div style={{ fontWeight: 800, color: 'var(--bg)' }}>{loc.username}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>Active 2m ago</div>
               </div>
             </Popup>
           </Marker>
@@ -202,17 +202,17 @@ export default function LiveTripMap({ tripId, toCity, members }: LiveTripMapProp
       {/* Footer Meta */}
       <div style={{
         position: 'absolute', bottom: 20, left: 20, right: 20, zIndex: 1000,
-        background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(10px)',
+        background: 'var(--bg)', backdropFilter: 'blur(10px)',
         padding: '12px 20px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Radar style={{ width: 16, height: 16, color: '#f97316' }} />
-          <span style={{ fontSize: 12, color: 'white', fontWeight: 700 }}>Real-time location sharing active</span>
+          <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 700 }}>Real-time location sharing active</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Navigation style={{ width: 12, height: 12, color: '#64748b' }} />
-          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800 }}>VIBRANT MAP ENGINE v2.0</span>
+          <Navigation style={{ width: 12, height: 12, color: 'var(--text3)' }} />
+          <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 800 }}>VIBRANT MAP ENGINE v2.0</span>
         </div>
       </div>
     </div>

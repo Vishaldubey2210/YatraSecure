@@ -61,15 +61,15 @@ export default function SuggestedTravelers() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, background: 'rgba(255,255,255,0.02)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.04)' }}>
-        <div style={{ height: 20, width: 140, background: 'rgba(255,255,255,0.1)', borderRadius: 6, marginBottom: 20, animation: 'pulse 1.5s infinite' }} />
+      <div style={{ padding: 24, background: 'var(--card)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ height: 20, width: 140, background: 'var(--border)', borderRadius: 6, marginBottom: 20, animation: 'pulse 1.5s infinite' }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[1,2,3].map(i => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.05)', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'var(--border)', animation: 'pulse 1.5s infinite' }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ height: 14, width: '40%', background: 'rgba(255,255,255,0.05)', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
-                <div style={{ height: 12, width: '60%', background: 'rgba(255,255,255,0.05)', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
+                <div style={{ height: 14, width: '40%', background: 'var(--border)', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
+                <div style={{ height: 12, width: '60%', background: 'var(--border)', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
               </div>
             </div>
           ))}
@@ -89,10 +89,10 @@ export default function SuggestedTravelers() {
       boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
           <Sparkles style={{ width: 16, height: 16, color: '#f59e0b' }} /> Network Suggestions
         </h3>
-        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>AI MATCHED</span>
+        <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em' }}>AI MATCHED</span>
         <Link href="/network" style={{ fontSize: 13, color: '#38bdf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }} className="hover:text-blue-400 transition-colors">
           View All <ArrowRight style={{ width: 14, height: 14 }} />
         </Link>
@@ -111,7 +111,7 @@ export default function SuggestedTravelers() {
               style={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                 padding: '16px', borderRadius: '16px',
-                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.06)',
                 cursor: 'pointer', textDecoration: 'none',
                 animation: `fadeIn 0.3s ease-out ${i * 0.1}s both`,
               }}
@@ -127,7 +127,7 @@ export default function SuggestedTravelers() {
                     fontSize: 16, fontWeight: 800, color: '#cbd5e1', overflow: 'hidden',
                     boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                   }}>
-                    {u.profileImage ? <img src={u.profileImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User style={{ width: 20, height: 20, color: '#64748b' }}/>}
+                    {u.profileImage ? <img src={u.profileImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User style={{ width: 20, height: 20, color: 'var(--text3)' }}/>}
                   </div>
                   {/* Match Match indicator dot */}
                   <div style={{ 
@@ -139,14 +139,14 @@ export default function SuggestedTravelers() {
 
                 <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'white', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {u.username}
                     </p>
                     {u.isVerified && <ShieldCheck style={{ width: 14, height: 14, color: '#38bdf8', flexShrink: 0 }} />}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94a3b8', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', minWidth: 0 }}>
                       <MapPin style={{ width: 10, height: 10, flexShrink: 0 }} />
                       <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{location}</span>
                     </div>

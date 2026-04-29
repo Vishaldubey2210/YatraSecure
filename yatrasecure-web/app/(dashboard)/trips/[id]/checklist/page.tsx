@@ -207,7 +207,7 @@ export default function ChecklistPage() {
       {loading && items.length === 0 ? (
         <div style={{ padding: 100, textAlign: "center" }}>
           <Loader2 style={{ width: 40, height: 40, color: "#f59e0b", animation: "spin 1s linear infinite", margin: "0 auto" }} />
-          <p style={{ marginTop: 20, color: '#64748b', fontSize: 14 }}>Synchronizing list...</p>
+          <p style={{ marginTop: 20, color: 'var(--text3)', fontSize: 14 }}>Synchronizing list...</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: 32, alignItems: 'start' }}>
@@ -223,9 +223,9 @@ export default function ChecklistPage() {
                 <div style={{ height: "100%", width: `${progressPct}%`, background: progressPct === 100 ? "#4ade80" : "linear-gradient(90deg, #f59e0b, #f97316)", borderRadius: 999, transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)" }} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, padding: '12px', borderRadius: 16, background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
+                <div style={{ flex: 1, padding: '12px', borderRadius: 16, background: 'var(--card)', textAlign: 'center' }}>
                    <p style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>{items.length}</p>
-                   <p style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', fontWeight: 700, margin: 4 }}>Total</p>
+                   <p style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', fontWeight: 700, margin: 4 }}>Total</p>
                 </div>
                 <div style={{ flex: 1, padding: '12px', borderRadius: 16, background: 'rgba(34,197,94,0.05)', textAlign: 'center' }}>
                    <p style={{ fontSize: 18, fontWeight: 900, margin: 0, color: '#4ade80' }}>{completedCount}</p>
@@ -236,7 +236,7 @@ export default function ChecklistPage() {
 
             {/* ADD INPUT */}
             <div style={{ background: "rgba(15,23,42,0.4)", borderRadius: 24, padding: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <h3 style={{ fontSize: 14, fontWeight: 800, color: 'white', marginBottom: 16 }}>Quick Add</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 16 }}>Quick Add</h3>
               <div style={{ position: 'relative', marginBottom: 12 }}>
                 <input 
                    value={newItemName}
@@ -287,7 +287,7 @@ export default function ChecklistPage() {
                        <p style={{ fontSize: 16, fontWeight: 700, color: "white", margin: "0 0 6px", textDecoration: item.isCompleted ? "line-through" : "none", transition: 'all 0.2s' }}>{item.name}</p>
                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--border)', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
                               {item.addedBy.username?.[0].toUpperCase()}
                             </div>
                             <span style={{ fontSize: 11, color: "#64748b" }}>@{item.addedBy.username}</span>

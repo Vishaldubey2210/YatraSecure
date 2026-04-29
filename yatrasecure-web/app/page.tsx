@@ -1,759 +1,326 @@
 "use client";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  MapPin, Shield, MessageCircle, Wallet, Star, ArrowRight, Users,
-  CheckCircle, ChevronDown, Menu, X, Zap, Globe, Lock,
-  TrendingUp, Mountain, Waves, Building2, Leaf, Backpack,
-  Calendar, UserCheck, Plus, LayoutDashboard, CreditCard, Eye,
-  Compass,
+  MapPin, UserCheck, MessageCircle, Wallet, Map, Bot, Lock,
+  Star, Play, CheckCircle, ShieldCheck, HelpCircle,
+  Menu, X, Search, UserPlus, Youtube, X as XIcon, ChevronRight
 } from "lucide-react";
+import toast from "react-hot-toast";
 
-// ─── Static Data ────────────────────────────────────────────────────────────
-
-const tripCategories = [
-  {
-    type: "Mountains",
-    emoji: "🏔️",
-    count: "48 trips",
-    icon: Mountain,
-    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=75",
-    palette: "mountains",
-  },
-  {
-    type: "Beach & Ocean",
-    emoji: "🏖️",
-    count: "62 trips",
-    icon: Waves,
-    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=75",
-    palette: "beach",
-  },
-  {
-    type: "Forest & Nature",
-    emoji: "🌲",
-    count: "31 trips",
-    icon: Leaf,
-    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75",
-    palette: "forest",
-  },
-  {
-    type: "Desert",
-    emoji: "🏜️",
-    count: "19 trips",
-    icon: Compass,
-    img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&q=75",
-    palette: "desert",
-  },
-  {
-    type: "City Tours",
-    emoji: "🌆",
-    count: "74 trips",
-    icon: Building2,
-    img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=75",
-    palette: "city",
-  },
-  {
-    type: "Adventure",
-    emoji: "🧗",
-    count: "55 trips",
-    icon: Backpack,
-    img: "https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&q=75",
-    palette: "adventure",
-  },
-];
-
+// --- Static Data ---
 const features = [
-  {
-    icon: Shield,
-    title: "Verified Travelers Only",
-    desc: "Every member undergoes email verification. Trip admins control who joins — full transparancy, zero spam.",
-    gradient: "linear-gradient(135deg, #22c55e, #16a34a)",
-  },
-  {
-    icon: MessageCircle,
-    title: "Real-time Group Chat",
-    desc: "Live messaging with your trip group. Share photos, locations, and plans — no WhatsApp chaos.",
-    gradient: "linear-gradient(135deg, #38bdf8, #0284c7)",
-  },
-  {
-    icon: Wallet,
-    title: "Shared Group Wallet",
-    desc: "Log every expense, auto-split bills equally, and settle up with full transparency.",
-    gradient: "linear-gradient(135deg, #a855f7, #7c3aed)",
-  },
-  {
-    icon: MapPin,
-    title: "Live Trip Tracking",
-    desc: "Real-time location sharing and interactive itinerary map — always know where your group is.",
-    gradient: "linear-gradient(135deg, #f59e0b, #d97706)",
-  },
-  {
-    icon: UserCheck,
-    title: "AI Matchmaking",
-    desc: "Smart personality-based matching. Find co-travelers whose travel style perfectly matches yours.",
-    gradient: "linear-gradient(135deg, #ec4899, #be185d)",
-  },
-  {
-    icon: Lock,
-    title: "Bank-Grade Security",
-    desc: "Your data and payments are protected with enterprise-level encryption and secure authentication.",
-    gradient: "linear-gradient(135deg, #ef4444, #b91c1c)",
-  },
+  { icon: UserCheck, title: "Verified Travelers Only", desc: "ID & phone verified. No fake profiles." },
+  { icon: Map, title: "Live Trip Tracking", desc: "Real-time location sharing & interactive map." },
+  { icon: Bot, title: "AI Matchmaking", desc: "Find compatible travel buddies based on your style." },
+  { icon: Wallet, title: "Shared Group Wallet", desc: "Split bills equally, log expenses, settle up." },
+  { icon: MessageCircle, title: "Real-Time Group Chat", desc: "Share photos, plans, updates – all in one place." },
+  { icon: Lock, title: "Bank-Grade Security", desc: "Enterprise encryption for your data & payments." },
 ];
 
-const statsData = [
-  { value: 5000,   suffix: "+",   label: "Verified Travelers", icon: Users       },
-  { value: 49,     suffix: "★",   label: "Average Rating",     icon: Star        },
-  { value: 500,    suffix: "+",   label: "Completed Trips",    icon: CheckCircle },
-  { value: 200,    suffix: "Cr+", label: "Expenses Tracked",   icon: TrendingUp  },
+const testimonials = [
+  { name: "Priya, Delhi", text: "Planned a Goa trip with 6 strangers. YatraSecure made safety and expenses so easy!", rating: 5, avatar: "https://i.pravatar.cc/150?u=priya" },
+  { name: "Amit, Mumbai", text: "The AI matchmaking found me trekking buddies who were perfect. Best travel decision.", rating: 5, avatar: "https://i.pravatar.cc/150?u=amit" },
+  { name: "Sneha, Bangalore", text: "Emergency SOS feature gave my parents peace of mind. Highly recommend.", rating: 5, avatar: "https://i.pravatar.cc/150?u=sneha" },
 ];
 
 const publicTrips = [
-  { from: "Delhi",     to: "Manali",     dates: "10 Jul – 15 Jul", members: "4/8",   organizer: "Rahul V.", category: "Mountains" },
-  { from: "Mumbai",    to: "Goa",        dates: "20 Jul – 24 Jul", members: "6/10",  organizer: "Priya S.", category: "Beach" },
-  { from: "Bangalore", to: "Coorg",      dates: "5 Aug – 8 Aug",   members: "3/6",   organizer: "Ankit M.", category: "Forest" },
-  { from: "Delhi",     to: "Rishikesh",  dates: "12 Aug – 16 Aug", members: "5/8",   organizer: "Sneha K.", category: "Adventure" },
-  { from: "Pune",      to: "Lonavala",   dates: "1 Sep – 3 Sep",   members: "7/10",  organizer: "Vikram R.", category: "City Tours" },
-  { from: "Chennai",   to: "Pondicherry",dates: "15 Sep – 18 Sep", members: "2/6",   organizer: "Megha D.", category: "Beach" },
+  { id: 1, name: "Manali Trek", dates: "10-15 Jul", spots: "4 spots left", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80" },
+  { id: 2, name: "Goa Beach Escape", dates: "20-24 Jul", spots: "6 travelers", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80" },
+  { id: 3, name: "Coorg Forest Camp", dates: "15-18 Sep", spots: "8 spots left", img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80" },
+  { id: 4, name: "Rishikesh Adventure", dates: "12-19 Aug", spots: "3 spots left", img: "https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&q=80" },
+  { id: 5, name: "Lonavala Weekend", dates: "1-3 Sep", spots: "5 travelers", img: "https://images.unsplash.com/photo-1444228308431-7bd517d66ce1?w=600&q=80" },
+  { id: 6, name: "Varanasi Ganges Tour", dates: "17-22 Sep", spots: "2 spots left", img: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&q=80" },
 ];
 
-const demoScreens = [
-  {
-    title: "Trip Dashboard",
-    icon: LayoutDashboard,
-    desc: "View all your trips, upcoming activities, and quick stats at a glance.",
-    items: [
-      { label: "Active Trips", value: "3" },
-      { label: "Upcoming", value: "Manali · Jul 10" },
-      { label: "Total Spent", value: "₹12,450" },
-      { label: "Group Size", value: "8 members" },
-    ],
-  },
-  {
-    title: "Group Chat",
-    icon: MessageCircle,
-    desc: "Real-time messaging with your trip group. Share photos, locations & plans.",
-    items: [
-      { label: "Rahul", value: "Let's book Rohtang pass! 🏔️" },
-      { label: "Priya", value: "Added hotel to shared wallet" },
-      { label: "Ankit", value: "Everyone pack warm clothes ❄️" },
-      { label: "You", value: "Sounds great, see you there!" },
-    ],
-  },
-  {
-    title: "Shared Wallet",
-    icon: CreditCard,
-    desc: "Track every expense, auto-split bills, and settle up transparently.",
-    items: [
-      { label: "Hotel Stay", value: "₹8,000 · Split 4 ways" },
-      { label: "Bus Tickets", value: "₹2,400 · Split 4 ways" },
-      { label: "Food & Drinks", value: "₹3,200 · Split 4 ways" },
-      { label: "Your Balance", value: "₹850 owed" },
-    ],
-  },
-  {
-    title: "Trip Members",
-    icon: Users,
-    desc: "See verified members, their profiles, and manage join requests.",
-    items: [
-      { label: "Rahul Verma", value: "✅ Verified · Admin" },
-      { label: "Priya Sharma", value: "✅ Verified" },
-      { label: "Ankit Mehta", value: "✅ Verified" },
-      { label: "2 Pending", value: "⏳ Awaiting approval" },
-    ],
-  },
+const howItWorks = [
+  { icon: UserPlus, title: "Create an Account", desc: "Sign up free and verify your profile." },
+  { icon: Search, title: "Find or Build a Trip", desc: "Join public trips or create a private one." },
+  { icon: MessageCircle, title: "Connect & Plan", desc: "Chat with verified members and share itineraries." },
+  { icon: Wallet, title: "Split & Settle", desc: "Manage all group expenses securely on the go." },
 ];
 
-const faqs = [
-  { q: "Is YatraSecure free to use?", a: "Yes! Creating an account, joining trips, and using chat are completely free." },
-  { q: "How does member verification work?", a: "Users verify their email and complete their profile. Trip admins can approve or reject join requests." },
-  { q: "How does the group wallet work?", a: "Members contribute to a shared pool. Expenses are logged and auto-split. Settlement is calculated inside the app." },
-  { q: "Can I create a private trip?", a: "Absolutely. Set your trip to private — only people with your approval can join." },
-  { q: "What happens if someone leaves the trip?", a: "The admin is notified and wallet shares are recalculated automatically." },
-];
-
-const avatarColors = ["#38bdf8", "#a855f7", "#f59e0b", "#22c55e", "#ef4444"];
-const avatarInitials = ["RS", "PM", "AK", "VD", "NK"];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getCategoryPaletteKey(cat: string) {
-  const c = cat.toLowerCase();
-  if (c.includes("mountain")) return "mountains";
-  if (c.includes("beach") || c.includes("ocean")) return "beach";
-  if (c.includes("forest") || c.includes("nature")) return "forest";
-  if (c.includes("desert")) return "desert";
-  if (c.includes("city")) return "city";
-  return "adventure";
-}
-
-// ─── FAQ Item ─────────────────────────────────────────────────────────────────
-
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div
-      onClick={() => setOpen(!open)}
-      className="glass-card"
-      style={{ padding: "20px 24px", cursor: "pointer", borderColor: open ? "rgba(56,189,248,0.3)" : undefined }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <p style={{ fontWeight: 600, color: "#f1f5f9", fontSize: 14, margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{q}</p>
-        <ChevronDown style={{
-          width: 16, height: 16, color: "var(--accent)", flexShrink: 0,
-          transition: "transform 0.25s",
-          transform: open ? "rotate(180deg)" : "rotate(0deg)",
-        }} />
-      </div>
-      <div style={{ maxHeight: open ? 200 : 0, overflow: "hidden", transition: "max-height 0.3s ease" }}>
-        <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 12, lineHeight: 1.7, marginBottom: 0 }}>{a}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Section Label ────────────────────────────────────────────────────────────
-
-function SectionLabel({ text }: { text: string }) {
-  return (
-    <p style={{
-      color: "var(--accent)", fontSize: 11, fontWeight: 800,
-      letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 12,
-    }}>{text}</p>
-  );
-}
-
-// ─── Counter ──────────────────────────────────────────────────────────────────
-
-function AnimatedStat({ value, suffix, label, icon: Icon }: typeof statsData[0] & { icon: any }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const animated = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !animated.current) {
-        animated.current = true;
-        const start = performance.now();
-        const duration = 1400;
-        const tick = (now: number) => {
-          const p = Math.min(1, (now - start) / duration);
-          const ease = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.floor(value * ease).toLocaleString("en-IN") + suffix;
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-        io.disconnect();
-      }
-    }, { threshold: 0.5 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [value, suffix]);
-
-  return (
-    <div className="stat-cell">
-      <div style={{
-        width: 44, height: 44, borderRadius: 12,
-        background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.15)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <Icon style={{ width: 20, height: 20, color: "var(--accent)" }} />
-      </div>
-      <span
-        ref={ref}
-        className="gradient-text"
-        style={{ fontSize: 26, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace" }}
-      >
-        0{suffix}
-      </span>
-      <p style={{ color: "var(--text3)", fontSize: 12, textAlign: "center", margin: 0 }}>{label}</p>
-    </div>
-  );
-}
-
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
-
-export default function HomePage() {
+export default function LandingPage() {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isCookieConsentVisible, setIsCookieConsentVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
+  // Scroll effect for header
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleCategoryHover = (palette: string) => {
-    window.setCategoryPalette?.(palette);
+  // Handlers
+  const handleAuthSubmit = (e: React.FormEvent, type: "login" | "signup") => {
+    e.preventDefault();
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      if (type === "signup") setIsSignupModalOpen(false);
+      else setIsLoginModalOpen(false);
+      toast.success(type === "signup" ? "Account created successfully!" : "Logged in successfully!");
+      console.log(`Mock ${type} API called`);
+      router.push('/dashboard');
+    }, 1000);
   };
-  const handleCategoryLeave = () => {
-    let stored = "default";
-    try { stored = localStorage.getItem("active_palette") || "default"; } catch (e) {}
-    window.setCategoryPalette?.(stored);
+
+  const scrollToSection = (id: string) => {
+    setIsMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      window.scrollTo({
+        top: element.offsetTop - 80,
+        behavior: "smooth"
+      });
+    }
   };
 
   return (
-    <div style={{ backgroundColor: "var(--bg)", minHeight: "100vh", overflowX: "hidden" }}>
+    <>
+      {/* ─── STYLES ───────────────────────────────────────────── */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        :root {
+          --primary: #0F7B3A;
+          --primary-hover: #0D6932;
+          --secondary: #0066CC;
+          --bg-white: #FFFFFF;
+          --bg-alt: #F8FAFC;
+          --text-dark: #1E293B;
+          --text-muted: #64748B;
+          --font-heading: 'Poppins', sans-serif;
+          --font-body: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); color: var(--text-dark); line-height: 1.5; background: var(--bg-white); }
+        h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 700; color: var(--text-dark); }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .section-padding { padding: 80px 0; }
+        @media (max-width: 768px) { .section-padding { padding: 48px 0; } }
 
-      {/* ══ NAVBAR ═══════════════════════════════════════════════════════════ */}
+        /* Buttons */
+        .btn { display: inline-flex; justify-content: center; alignItems: center; gap: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 16px; border-radius: 40px; padding: 12px 28px; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn-secondary { background: transparent; border: 2px solid var(--secondary); color: var(--secondary); }
+        .btn-secondary:hover { background: rgba(0,102,204,0.05); transform: translateY(-2px); }
+        
+        /* Cards */
+        .card { background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); padding: 24px; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.03); }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+
+        /* Inputs */
+        .form-input { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid #CBD5E1; margin-bottom: 16px; font-family: var(--font-body); font-size: 15px; outline: none; transition: border-color 0.2s; }
+        .form-input:focus { border-color: var(--primary); }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 480px; padding: 32px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; cursor: pointer; color: var(--text-muted); }
+      `}} />
+
+      {/* ─── STICKY HEADER ──────────────────────────────────────── */}
       <header style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: scrolled ? "rgba(11,17,32,0.93)" : "transparent",
-        backdropFilter: scrolled ? "blur(24px)" : "none",
-        borderBottom: scrolled ? "1px solid var(--border)" : "none",
-        transition: "all 0.35s ease",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: isScrolled ? "rgba(255,255,255,0.95)" : "transparent",
+        backdropFilter: isScrolled ? "blur(10px)" : "none",
+        boxShadow: isScrolled ? "0 2px 10px rgba(0,0,0,0.05)" : "none",
+        transition: "all 0.3s ease",
+        padding: "16px 0"
       }}>
-        <nav style={{ maxWidth: 1200, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 11,
-              background: "var(--cta-gradient)",
-              boxShadow: "0 4px 16px rgba(56,189,248,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "box-shadow 0.4s",
-            }}>
-              <MapPin style={{ width: 19, height: 19, color: "white" }} />
+        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Logo */}
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MapPin style={{ width: 20, height: 20, color: "white" }} />
             </div>
-            <span style={{ fontSize: 19, fontWeight: 700, color: "white", letterSpacing: "-0.03em", fontFamily: "'Space Grotesk', sans-serif" }}>
+            <span style={{ fontSize: 22, fontWeight: 700, color: isScrolled ? "var(--text-dark)" : "white", fontFamily: "var(--font-heading)" }}>
               YatraSecure
             </span>
           </Link>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 28 }} className="hidden md:flex">
-            {["Features", "How It Works", "Explore", "FAQ"].map((item) => (
-              <a key={item}
-                href={`#${item.toLowerCase().replace(/ /g, "-")}`}
-                style={{ fontSize: 13, color: "var(--text2)", fontWeight: 500, textDecoration: "none", transition: "color 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--text2)")}
-              >{item}</a>
+          {/* Desktop Nav */}
+          <nav style={{ display: "none" }} className="md-flex gap-8">
+            <style>{`
+              @media (min-width: 768px) { .md-flex { display: flex !important; } }
+            `}</style>
+            {["Features", "How It Works", "Explore", "FAQ"].map(item => (
+              <button key={item} onClick={() => scrollToSection(item.toLowerCase().replace(/ /g, "-"))} style={{ 
+                background: "none", border: "none", cursor: "pointer", 
+                fontSize: 16, fontWeight: 500, color: isScrolled ? "var(--text-dark)" : "rgba(255,255,255,0.9)",
+                fontFamily: "var(--font-body)"
+              }}>
+                {item}
+              </button>
             ))}
-          </div>
+          </nav>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }} className="hidden md:flex">
-            <button onClick={() => router.push("/login")} className="btn-ghost" style={{ padding: "9px 20px", fontSize: 13 }}>Login</button>
-            <button onClick={() => router.push("/signup")} className="btn-primary" style={{ padding: "9px 20px", fontSize: 13 }}>
-              Get Started <ArrowRight style={{ width: 14, height: 14 }} />
+          {/* Desktop Actions */}
+          <div style={{ display: "none", alignItems: "center", gap: 16 }} className="md-flex">
+            <button onClick={() => setIsLoginModalOpen(true)} className="btn btn-secondary" style={{ padding: "8px 24px", color: isScrolled ? "var(--secondary)" : "white", borderColor: isScrolled ? "var(--secondary)" : "white" }}>
+              Login
+            </button>
+            <button onClick={() => setIsSignupModalOpen(true)} className="btn btn-primary" style={{ padding: "8px 24px" }}>
+              Get Started
             </button>
           </div>
 
-          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", display: "flex" }} className="flex md:hidden">
-            {menuOpen ? <X style={{ width: 24, height: 24 }} /> : <Menu style={{ width: 24, height: 24 }} />}
+          {/* Mobile Hamburger */}
+          <button onClick={() => setIsMenuOpen(true)} style={{ display: "block", background: "none", border: "none", color: isScrolled ? "var(--text-dark)" : "white", cursor: "pointer" }} className="md-hidden">
+            <style>{`
+              @media (min-width: 768px) { .md-hidden { display: none !important; } }
+            `}</style>
+            <Menu style={{ width: 28, height: 28 }} />
           </button>
-        </nav>
-
-        {menuOpen && (
-          <div style={{ background: "rgba(11,17,32,0.98)", backdropFilter: "blur(20px)", borderTop: "1px solid var(--border)", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
-            {["Features", "How It Works", "Explore", "FAQ"].map(item => (
-              <a key={item} href={`#${item.toLowerCase().replace(/ /g, "-")}`} onClick={() => setMenuOpen(false)} style={{ fontSize: 14, color: "var(--text)", fontWeight: 500, textDecoration: "none" }}>{item}</a>
-            ))}
-            <div style={{ display: "flex", gap: 12, paddingTop: 8 }}>
-              <button onClick={() => router.push("/login")} className="btn-ghost" style={{ flex: 1, padding: 10, fontSize: 13 }}>Login</button>
-              <button onClick={() => router.push("/signup")} className="btn-primary" style={{ flex: 1, padding: 10, fontSize: 13 }}>Sign Up</button>
-            </div>
-          </div>
-        )}
+        </div>
       </header>
 
-      {/* ══ HERO — Full bleed image ═══════════════════════════════════════════ */}
-      <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-        {/* Background image */}
-        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-          <img
-            src="https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1600&q=80"
-            alt="Group hiking"
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-          />
-          {/* 60% dark navy overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "rgba(11,17,32,0.62)" }} />
-          {/* Radial accent glow */}
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 60%, rgba(56,189,248,0.12) 0%, transparent 55%)" }} />
-        </div>
-
-        <div className="hero-split anim-in" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "130px 24px 80px", display: "flex", alignItems: "center", gap: 60, width: "100%" }}>
-          {/* Left — Text */}
-          <div className="hero-text" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 18px",
-              borderRadius: 999, background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.35)",
-              color: "var(--accent)", fontSize: 12, fontWeight: 700, marginBottom: 28,
-            }}>
-              <Zap style={{ width: 13, height: 13, fill: "var(--accent)" }} />
-              India&apos;s Most Trusted Group Travel Platform
-            </div>
-
-            <h1 style={{
-              fontSize: "clamp(40px, 5.5vw, 72px)", fontWeight: 700,
-              color: "white", lineHeight: 1.08, letterSpacing: "-0.035em",
-              marginBottom: 22, fontFamily: "'Space Grotesk', sans-serif",
-            }}>
-              Travel Together,{" "}
-              <span className="gradient-text">Stay Safe</span>
-              <br />
-              <span style={{ color: "var(--text2)", fontSize: "0.56em", fontWeight: 700 }}>Every Single Trip.</span>
-            </h1>
-
-            <p style={{ color: "var(--text2)", fontSize: 17, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
-              Plan group trips with verified travelers. Real-time chat, shared wallet,
-              smart expense splitting — everything in one secure place.
-            </p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 36 }}>
-              <button onClick={() => router.push("/signup")} className="btn-primary anim-glow" style={{ padding: "16px 36px", fontSize: 15 }}>
-                Start Your Journey <ArrowRight style={{ width: 18, height: 18 }} />
+      {/* Mobile Drawer */}
+      {isMenuOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)" }} onClick={() => setIsMenuOpen(false)}>
+          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "280px", background: "white", padding: 24, display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setIsMenuOpen(false)} style={{ alignSelf: "flex-end", background: "none", border: "none", cursor: "pointer", marginBottom: 24 }}>
+              <X style={{ width: 24, height: 24, color: "var(--text-dark)" }} />
+            </button>
+            {["Features", "How It Works", "Explore", "FAQ"].map(item => (
+              <button key={item} onClick={() => scrollToSection(item.toLowerCase().replace(/ /g, "-"))} style={{ background: "none", border: "none", textAlign: "left", fontSize: 18, fontWeight: 600, padding: "12px 0", color: "var(--text-dark)", borderBottom: "1px solid #E2E8F0" }}>
+                {item}
               </button>
-              <button onClick={() => router.push("/trips")} className="btn-ghost" style={{ padding: "16px 36px", fontSize: 15 }}>
-                <Eye style={{ width: 18, height: 18 }} /> Browse Trips
-              </button>
-            </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 20, fontSize: 13, fontWeight: 600 }}>
-              {["No credit card required", "Free to join", "Verified community"].map((t) => (
-                <span key={t} style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.07)", padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}>
-                  <CheckCircle style={{ width: 14, height: 14, color: "var(--accent)" }} /> {t}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Right — Glassmorphism product mockup */}
-          <div className="hero-mockup anim-in-delay anim-float" style={{ flex: 1, maxWidth: 500, minWidth: 300 }}>
-            <div style={{
-              background: "rgba(19,28,46,0.6)", backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, overflow: "hidden",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(56,189,248,0.07)",
-            }}>
-              {/* Title bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(11,17,32,0.7)" }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444" }} />
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fbbf24" }} />
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ marginLeft: 12, fontSize: 12, color: "var(--text3)", fontWeight: 500 }}>YatraSecure — Trip Dashboard</span>
-              </div>
-              {/* Mock content */}
-              <div style={{ padding: "20px 18px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
-                  {[
-                    { label: "Active Trips", val: "3", icon: Compass },
-                    { label: "Members", val: "24", icon: Users },
-                    { label: "Wallet", val: "₹18.5K", icon: Wallet },
-                  ].map(({ label, val, icon: I }) => (
-                    <div key={label} style={{ background: "rgba(56,189,248,0.07)", border: "1px solid rgba(56,189,248,0.15)", borderRadius: 14, padding: "12px 10px", textAlign: "center" }}>
-                      <I style={{ width: 15, height: 15, color: "var(--accent)", marginBottom: 5 }} />
-                      <p style={{ fontSize: 17, fontWeight: 900, color: "white", margin: "0 0 2px", fontFamily: "'JetBrains Mono', monospace" }}>{val}</p>
-                      <p style={{ fontSize: 10, color: "var(--text3)", margin: 0 }}>{label}</p>
-                    </div>
-                  ))}
-                </div>
-                {[
-                  { dest: "Delhi → Manali", date: "Jul 10–15", members: "4/8", color: "#38bdf8" },
-                  { dest: "Mumbai → Goa", date: "Jul 20–24", members: "6/10", color: "#a855f7" },
-                ].map((trip) => (
-                  <div key={trip.dest} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(11,17,32,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 10, background: `${trip.color}18`, border: `1px solid ${trip.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <MapPin style={{ width: 14, height: 14, color: trip.color }} />
-                      </div>
-                      <div>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: "white", margin: 0 }}>{trip.dest}</p>
-                        <p style={{ fontSize: 10, color: "var(--text3)", margin: 0 }}>{trip.date}</p>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: trip.color, background: `${trip.color}15`, padding: "4px 10px", borderRadius: 8 }}>
-                      {trip.members}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ SOCIAL PROOF + STATS ═════════════════════════════════════════════ */}
-      <section style={{ padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto" }} className="anim-in-delay">
-          {/* Avatar row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 48, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {avatarInitials.map((init, i) => (
-                <div key={init} style={{
-                  width: 36, height: 36, borderRadius: "50%", background: avatarColors[i],
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 700, color: "white",
-                  marginLeft: i > 0 ? -10 : 0, border: "2px solid var(--bg)", zIndex: 5 - i,
-                }}>{init}</div>
-              ))}
-            </div>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "white", margin: 0 }}>
-                Trusted by <span className="gradient-text">5,000+</span> explorers
-              </p>
-              <p style={{ fontSize: 12, color: "var(--text3)", margin: 0 }}>Join our growing community</p>
-            </div>
-          </div>
-
-          {/* Glassmorphism stats */}
-          <div className="stats-grid-4">
-            {statsData.map((s) => <AnimatedStat key={s.label} {...s} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ TRIP CATEGORIES — Dynamic hover palette ═══════════════════════════ */}
-      <section id="trips" style={{ padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <SectionLabel text="Explore by Category" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              Find Your Kind of <span className="gradient-text-category">Adventure</span>
-            </h2>
-            <p style={{ color: "var(--text2)", fontSize: 15, marginTop: 12, maxWidth: 480, margin: "12px auto 0" }}>
-              Hover over a category to feel its mood — or click to explore trips.
-            </p>
-          </div>
-
-          <div className="category-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16 }}>
-            {tripCategories.map(({ type, emoji, count, icon: Icon, img, palette }) => (
-              <div
-                key={type}
-                className="category-card"
-                onClick={() => {
-                  window.setCategoryPalette?.(palette, true);
-                  router.push("/trips");
-                }}
-                onMouseEnter={() => handleCategoryHover(palette)}
-                onMouseLeave={handleCategoryLeave}
-              >
-                {/* Background image */}
-                <div className="cat-bg" style={{ backgroundImage: `url(${img})` }} />
-                {/* Gradient overlay */}
-                <div className="cat-overlay" />
-                {/* Content */}
-                <div className="cat-content">
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)",
-                    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                  }}>
-                    <Icon style={{ width: 18, height: 18, color: "white" }} />
-                  </div>
-                  <p style={{ fontWeight: 800, color: "white", fontSize: 14, margin: "0 0 2px", fontFamily: "'Space Grotesk', sans-serif" }}>{type}</p>
-                  <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, margin: 0 }}>{count}</p>
-                </div>
-              </div>
             ))}
+            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+              <button onClick={() => { setIsMenuOpen(false); setIsLoginModalOpen(true); }} className="btn btn-secondary">Login</button>
+              <button onClick={() => { setIsMenuOpen(false); setIsSignupModalOpen(true); }} className="btn btn-primary">Get Started</button>
+            </div>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* ══ FEATURES ═════════════════════════════════════════════════════════ */}
-      <section id="features" style={{ padding: "100px 24px", background: "linear-gradient(180deg, var(--bg) 0%, #0d1729 50%, var(--bg) 100%)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <SectionLabel text="Why YatraSecure" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              Everything for a <span className="gradient-text">Safe Group Trip</span>
-            </h2>
-            <p style={{ color: "var(--text3)", maxWidth: 500, margin: "16px auto 0", lineHeight: 1.7, fontSize: 15 }}>
-              Built for Indian group travelers who want safety, transparency, and zero drama.
-            </p>
-          </div>
-
-          <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-            {features.map(({ icon: Icon, title, desc, gradient }) => (
-              <div key={title} className="glass-card" style={{ padding: 30 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, marginBottom: 20, background: gradient, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.22)" }}>
-                  <Icon style={{ width: 24, height: 24, color: "white" }} />
-                </div>
-                <h3 style={{ fontWeight: 800, color: "white", fontSize: 16, marginBottom: 10, fontFamily: "'Space Grotesk', sans-serif" }}>{title}</h3>
-                <p style={{ color: "var(--text2)", fontSize: 13, lineHeight: 1.75, margin: 0 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ PRODUCT DEMO ═════════════════════════════════════════════════════ */}
-      <section style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <SectionLabel text="Product Preview" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              See How YatraSecure <span className="gradient-text">Works</span>
-            </h2>
-          </div>
-
-          <div className="demo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
-            {demoScreens.map(({ title, icon: Icon, desc, items }) => (
-              <div key={title} className="demo-card">
-                <div className="demo-card-header">
-                  <div className="demo-card-dot" style={{ background: "#ef4444" }} />
-                  <div className="demo-card-dot" style={{ background: "#fbbf24" }} />
-                  <div className="demo-card-dot" style={{ background: "#22c55e" }} />
-                  <span style={{ marginLeft: 8, fontSize: 12, color: "var(--text3)", fontWeight: 500 }}>{title}</span>
-                </div>
-                <div className="demo-card-body">
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Icon style={{ width: 20, height: 20, color: "var(--accent)" }} />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "white", margin: 0 }}>{title}</p>
-                      <p style={{ fontSize: 11, color: "var(--text3)", margin: 0 }}>{desc}</p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {items.map(({ label, value }) => (
-                      <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(11,17,32,0.5)", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 14px" }}>
-                        <span style={{ fontSize: 12, color: "var(--text2)", fontWeight: 500 }}>{label}</span>
-                        <span style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ EXPLORE PUBLIC TRIPS ══════════════════════════════════════════════ */}
-      <section id="explore" style={{ padding: "100px 24px", background: "linear-gradient(180deg, var(--bg) 0%, #0d1729 50%, var(--bg) 100%)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <SectionLabel text="Open for Everyone" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              Explore <span className="gradient-text">Public Trips</span>
-            </h2>
-            <p style={{ color: "var(--text3)", maxWidth: 480, margin: "16px auto 0", lineHeight: 1.7, fontSize: 15 }}>
-              Browse trips created by real travelers. Find one that matches your vibe and join instantly.
-            </p>
-          </div>
-
-          <div className="trips-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-            {publicTrips.map((trip) => {
-              const catKey = getCategoryPaletteKey(trip.category);
-              const catColors: Record<string, { accent: string; tint: string }> = {
-                mountains: { accent: "#4A6FA5", tint: "rgba(74,111,165,0.12)" },
-                beach:     { accent: "#00B4D8", tint: "rgba(0,180,216,0.12)" },
-                forest:    { accent: "#52B788", tint: "rgba(82,183,136,0.12)" },
-                desert:    { accent: "#E9C46A", tint: "rgba(233,196,106,0.12)" },
-                city:      { accent: "#7B2FBE", tint: "rgba(123,47,190,0.12)" },
-                adventure: { accent: "#FF6B35", tint: "rgba(255,107,53,0.12)" },
-              };
-              const cc = catColors[catKey];
-              return (
-                <div
-                  key={`${trip.from}-${trip.to}`}
-                  className="trip-card"
-                  style={{ background: cc.tint }}
-                  onClick={() => router.push("/login")}
-                  onMouseEnter={() => handleCategoryHover(catKey)}
-                  onMouseLeave={handleCategoryLeave}
-                >
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: `${cc.accent}1a`, border: `1px solid ${cc.accent}40`, borderRadius: 8, padding: "5px 10px", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: cc.accent }}>{trip.category}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <MapPin style={{ width: 15, height: 15, color: cc.accent, flexShrink: 0 }} />
-                    <p style={{ fontSize: 15, fontWeight: 800, color: "white", margin: 0 }}>
-                      {trip.from} <span style={{ color: "var(--text3)", fontSize: 12 }}>→</span> {trip.to}
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <Calendar style={{ width: 12, height: 12, color: "var(--text3)" }} />
-                      <span style={{ fontSize: 12, color: "var(--text2)" }}>{trip.dates}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <Users style={{ width: 12, height: 12, color: "var(--text3)" }} />
-                      <span style={{ fontSize: 12, color: "var(--text2)" }}>{trip.members} members</span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: `linear-gradient(135deg, ${cc.accent}, ${cc.accent}99)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: "white" }}>
-                        {trip.organizer.split(" ").map(n => n[0]).join("")}
-                      </div>
-                      <span style={{ fontSize: 12, color: "var(--text2)" }}>{trip.organizer}</span>
-                    </div>
-                    <ArrowRight style={{ width: 13, height: 13, color: "var(--text3)" }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 40 }}>
-            <button onClick={() => router.push("/signup")} className="btn-primary" style={{ padding: "14px 36px", fontSize: 14 }}>
-              View All Trips <ArrowRight style={{ width: 16, height: 16 }} />
+      {/* ─── HERO SECTION ───────────────────────────────────────── */}
+      <section style={{
+        position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", paddingTop: 80,
+        background: `url('https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1600&q=80') center/cover no-repeat`
+      }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)" }} />
+        <div className="container" style={{ position: "relative", zIndex: 1, textAlign: "center", width: "100%" }}>
+          <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", color: "white", lineHeight: 1.1, marginBottom: 24 }}>
+            Travel Together, Stay Safe
+          </h1>
+          <p style={{ fontSize: "clamp(16px, 2vw, 20px)", color: "rgba(255,255,255,0.9)", maxWidth: 700, margin: "0 auto 40px", fontWeight: 400 }}>
+            Plan group trips with verified travelers. Real-time chat, shared wallet, and smart expense splitting — everything in one secure place.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16, marginBottom: 48 }}>
+            <button onClick={() => setIsSignupModalOpen(true)} className="btn btn-primary">
+              Start Your Journey – Free <ChevronRight style={{ width: 18, height: 18, marginLeft: 4 }} />
+            </button>
+            <button onClick={() => setIsVideoModalOpen(true)} className="btn btn-secondary" style={{ background: "rgba(255,255,255,0.1)", color: "white", borderColor: "white" }}>
+              <Play style={{ width: 18, height: 18, marginRight: 8, fill: "white" }} /> Watch Demo
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* ══ CREATE TRIP ══════════════════════════════════════════════════════ */}
-      <section style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <SectionLabel text="Start Planning" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              Create Your <span className="gradient-text">Dream Trip</span>
-            </h2>
-          </div>
-          <div className="glass-card" style={{ padding: "36px 32px" }}>
-            <div className="create-trip-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              {[
-                { label: "From", placeholder: "Starting city", icon: MapPin },
-                { label: "To", placeholder: "Destination", icon: MapPin },
-                { label: "Start Date", placeholder: "Pick a date", icon: Calendar },
-                { label: "Max Members", placeholder: "e.g. 8", icon: Users },
-              ].map(({ label, placeholder, icon: I }) => (
-                <div key={label}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", marginBottom: 6, display: "block" }}>{label}</label>
-                  <div style={{ position: "relative" }}>
-                    <I style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--text3)", pointerEvents: "none" }} />
-                    <input type="text" placeholder={placeholder} readOnly onClick={() => router.push("/signup")} className="input-field" style={{ paddingLeft: 40, cursor: "pointer" }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => router.push("/signup")} className="btn-primary" style={{ width: "100%", padding: "16px", fontSize: 15 }}>
-              <Plus style={{ width: 18, height: 18 }} /> Create Trip — Sign Up Free
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ HOW IT WORKS ═════════════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ padding: "100px 24px", background: "linear-gradient(180deg, var(--bg) 0%, #0d1729 50%, var(--bg) 100%)" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <SectionLabel text="How It Works" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              From Sign Up to <span className="gradient-text">Takeoff</span>
-            </h2>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24 }}>
             {[
-              { step: "01", title: "Create an Account", desc: "Sign up free in under 60 seconds. Verify your email to unlock all features.", icon: UserCheck },
-              { step: "02", title: "Discover or Create a Trip", desc: "Browse public trips or create your own with full control over privacy & capacity.", icon: Compass },
-              { step: "03", title: "Invite & Chat", desc: "Share your invite code. Real-time group chat keeps everyone coordinated.", icon: MessageCircle },
-              { step: "04", title: "Split Expenses", desc: "Log every cost to the shared wallet. YatraSecure auto-calculates who owes what.", icon: Wallet },
-            ].map(({ step, title, desc, icon: Icon }, i) => (
-              <div key={step} style={{ display: "flex", gap: 24, position: "relative" }}>
-                {i < 3 && <div style={{ position: "absolute", left: 20, top: 48, bottom: -1, width: 1, background: "linear-gradient(180deg, var(--accent) 0%, rgba(56,189,248,0.1) 100%)" }} />}
-                <div style={{ flex: "0 0 40px" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(56,189,248,0.12)", border: "2px solid var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "var(--accent)", fontFamily: "'JetBrains Mono', monospace" }}>{step}</div>
+              { icon: ShieldCheck, text: "Verified community" },
+              { icon: CheckCircle, text: "No credit card required" },
+              { icon: Star, text: "Free forever" }
+            ].map((badge, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, color: "white", fontSize: 14, fontWeight: 600 }}>
+                <badge.icon style={{ width: 18, height: 18, color: "var(--primary)" }} /> {badge.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TRUST & SAFETY BANNER ────────────────────────────── */}
+      <div style={{ background: "var(--text-dark)", padding: "20px 0" }}>
+        <div className="container" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 20 }}>
+          {[
+            { text: "100% verified travelers", icon: "🔒" },
+            { text: "24/7 emergency support", icon: "🆘" },
+            { text: "Live location sharing", icon: "📍" }
+          ].map((item, i) => (
+            <div key={i} style={{ color: "white", fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              <span>{item.icon}</span> {item.text}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── FEATURES GRID ──────────────────────────────────────── */}
+      <section id="features" className="section-padding" style={{ background: "var(--bg-alt)" }}>
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", marginBottom: 16 }}>Everything for a Safe Group Trip</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: 18 }}>Built for modern explorers who want transparency and zero drama.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {features.map((feature, i) => (
+              <div key={i} className="card">
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(15,123,58,0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+                  <feature.icon style={{ width: 28, height: 28, color: "var(--primary)" }} />
                 </div>
-                <div style={{ paddingBottom: 40 }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "white", margin: "8px 0 8px", fontFamily: "'Space Grotesk', sans-serif" }}>{title}</h3>
-                  <p style={{ color: "var(--text2)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>{desc}</p>
+                <h3 style={{ fontSize: 20, marginBottom: 12 }}>{feature.title}</h3>
+                <p style={{ color: "var(--text-muted)", fontSize: 15 }}>{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HOW IT WORKS ───────────────────────────────────────── */}
+      <section id="how-it-works" className="section-padding" style={{ background: "var(--bg-white)" }}>
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>From Sign Up to Takeoff</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32, position: "relative" }}>
+            <style>{`
+              @media (min-width: 1024px) {
+                .step-connector::after { content: ''; position: absolute; top: 40px; left: calc(50% + 40px); width: calc(100% - 80px); height: 2px; background: #E2E8F0; z-index: 0; }
+                .step-connector:last-child::after { display: none; }
+              }
+            `}</style>
+            {howItWorks.map((step, i) => (
+              <div key={i} className="step-connector" style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+                <div style={{ width: 80, height: 80, borderRadius: "50%", background: "white", border: "2px solid var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", position: "relative", zIndex: 2 }}>
+                  <step.icon style={{ width: 32, height: 32, color: "var(--primary)" }} />
+                </div>
+                <h3 style={{ fontSize: 20, marginBottom: 12 }}>{step.title}</h3>
+                <p style={{ color: "var(--text-muted)", fontSize: 15 }}>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── EXPLORE PUBLIC TRIPS ───────────────────────────────── */}
+      <section id="explore" className="section-padding" style={{ background: "var(--bg-alt)" }}>
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", marginBottom: 16 }}>Explore Public Trips</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: 18 }}>Join verified travelers on upcoming adventures.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {publicTrips.map(trip => (
+              <div key={trip.id} className="card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <img src={trip.img} alt={trip.name} loading="lazy" style={{ width: "100%", height: 200, objectFit: "cover" }} />
+                <div style={{ padding: 24, flex: 1, display: "flex", flexDirection: "column" }}>
+                  <h3 style={{ fontSize: 20, marginBottom: 12 }}>{trip.name}</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, color: "var(--text-muted)", fontSize: 14, marginBottom: 24 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin style={{ width: 16, height: 16 }} /> {trip.dates}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}><UserCheck style={{ width: 16, height: 16 }} /> {trip.spots}</span>
+                  </div>
+                  <button onClick={() => toast("Trip details page coming soon.", { icon: "ℹ️" })} className="btn btn-secondary" style={{ width: "100%", marginTop: "auto", padding: "10px" }}>
+                    View Trip
+                  </button>
                 </div>
               </div>
             ))}
@@ -761,69 +328,236 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══ FAQ ══════════════════════════════════════════════════════════════ */}
-      <section id="faq" style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      {/* ─── TESTIMONIALS CAROUSEL ──────────────────────────────── */}
+      <section className="section-padding" style={{ background: "var(--bg-white)" }}>
+        <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <SectionLabel text="FAQ" />
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: "white", lineHeight: 1.15, letterSpacing: "-0.025em" }}>
-              Got <span className="gradient-text">Questions?</span>
-            </h2>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Loved by Verified Travelers</h2>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {faqs.map(faq => <FaqItem key={faq.q} {...faq} />)}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {testimonials.map((t, i) => (
+              <div key={i} className="card" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+                  {[1,2,3,4,5].map(star => <Star key={star} style={{ width: 18, height: 18, fill: "#FBBF24", color: "#FBBF24" }} />)}
+                </div>
+                <p style={{ fontSize: 16, fontStyle: "italic", marginBottom: 24, flex: 1 }}>"{t.text}"</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <img src={t.avatar} alt={t.name} loading="lazy" style={{ width: 48, height: 48, borderRadius: "50%" }} />
+                  <span style={{ fontWeight: 700 }}>{t.name}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ══ CTA BANNER ═══════════════════════════════════════════════════════ */}
-      <section style={{ padding: "80px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{
-            position: "relative", overflow: "hidden", borderRadius: 32, padding: "70px 48px", textAlign: "center",
-            background: "linear-gradient(135deg, rgba(56,189,248,0.12) 0%, rgba(56,189,248,0.04) 100%)",
-            border: "1px solid rgba(56,189,248,0.2)",
-          }}>
-            <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, background: "radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%)", filter: "blur(40px)" }} />
+      {/* ─── PRICING ────────────────────────────────────────────── */}
+      <section id="pricing" className="section-padding" style={{ background: "var(--bg-alt)" }}>
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Simple, Transparent Pricing</h2>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 32 }}>
+            <div className="card" style={{ flex: "1 1 350px", maxWidth: 400, borderTop: "4px solid var(--primary)" }}>
+              <h3 style={{ fontSize: 24, marginBottom: 8 }}>Free</h3>
+              <div style={{ fontSize: 40, fontWeight: 800, marginBottom: 24 }}>₹0 <span style={{ fontSize: 16, fontWeight: 400, color: "var(--text-muted)" }}>forever</span></div>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+                {["Basic features", "Up to 5 trips", "10 members per trip", "Standard support"].map(f => (
+                  <li key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}><CheckCircle style={{ width: 20, height: 20, color: "var(--primary)" }} /> {f}</li>
+                ))}
+              </ul>
+              <button onClick={() => setIsSignupModalOpen(true)} className="btn btn-primary" style={{ width: "100%" }}>Get Started Free</button>
+            </div>
+
+            <div className="card" style={{ flex: "1 1 350px", maxWidth: 400, position: "relative", opacity: 0.8 }}>
+              <div style={{ position: "absolute", top: -14, right: 24, background: "var(--secondary)", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>Launching in 2 months</div>
+              <h3 style={{ fontSize: 24, marginBottom: 8 }}>Premium</h3>
+              <div style={{ fontSize: 40, fontWeight: 800, marginBottom: 24 }}>₹499 <span style={{ fontSize: 16, fontWeight: 400, color: "var(--text-muted)" }}>/month</span></div>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+                {["AI concierge", "Unlimited trips", "Unlimited members", "Priority support", "Advanced analytics"].map(f => (
+                  <li key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}><CheckCircle style={{ width: 20, height: 20, color: "var(--secondary)" }} /> {f}</li>
+                ))}
+              </ul>
+              <button className="btn btn-secondary" style={{ width: "100%", cursor: "not-allowed" }} disabled>Coming Soon</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CTA & SOCIAL PROOF ─────────────────────────────────── */}
+      <section className="section-padding" style={{ background: "var(--bg-white)" }}>
+        <div className="container" style={{ textAlign: "center" }}>
+          <div style={{ background: "var(--text-dark)", borderRadius: 32, padding: "80px 24px", color: "white", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, opacity: 0.1, background: "url('https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1200&q=80') center/cover" }} />
             <div style={{ position: "relative", zIndex: 1 }}>
-              <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 700, color: "white", marginBottom: 16, letterSpacing: "-0.03em", fontFamily: "'Space Grotesk', sans-serif" }}>
-                Ready to <span className="gradient-text">Travel Safe</span>?
-              </h2>
-              <p style={{ color: "var(--text2)", fontSize: 16, maxWidth: 480, margin: "0 auto 32px", lineHeight: 1.7 }}>
-                Join thousands of verified travelers who plan smarter, spend transparently, and adventure safely.
-              </p>
-              <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-                <button onClick={() => router.push("/signup")} className="btn-primary anim-glow" style={{ padding: "16px 40px", fontSize: 15 }}>
-                  Create Free Account <ArrowRight style={{ width: 18, height: 18 }} />
-                </button>
-                <button onClick={() => router.push("/trips")} className="btn-ghost" style={{ padding: "16px 32px", fontSize: 15 }}>
-                  <Globe style={{ width: 16, height: 16 }} /> Browse Trips
-                </button>
+              <div style={{ display: "inline-block", background: "rgba(255,255,255,0.1)", padding: "8px 16px", borderRadius: 20, fontSize: 14, fontWeight: 600, marginBottom: 24 }}>
+                Join 10,000+ verified travelers today
+              </div>
+              <h2 style={{ fontSize: "clamp(32px, 5vw, 48px)", color: "white", marginBottom: 32 }}>Ready to Travel Safe?</h2>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16 }}>
+                <button onClick={() => setIsSignupModalOpen(true)} className="btn btn-primary" style={{ background: "white", color: "var(--text-dark)" }}>Create Free Account</button>
+                <button onClick={() => scrollToSection("explore")} className="btn btn-secondary" style={{ color: "white", borderColor: "white" }}>Browse Trips</button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══ FOOTER ═══════════════════════════════════════════════════════════ */}
-      <footer style={{ padding: "48px 24px", borderTop: "1px solid var(--border)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="footer-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: "var(--cta-gradient)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MapPin style={{ width: 17, height: 17, color: "white" }} />
-              </div>
-              <span style={{ fontSize: 17, fontWeight: 700, color: "white", fontFamily: "'Space Grotesk', sans-serif" }}>YatraSecure</span>
+      {/* ─── FOOTER ─────────────────────────────────────────────── */}
+      <footer style={{ background: "var(--bg-alt)", padding: "80px 0 40px", borderTop: "1px solid #E2E8F0" }}>
+        <div className="container">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 48, marginBottom: 64 }}>
+            <div>
+              <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", marginBottom: 24 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MapPin style={{ width: 16, height: 16, color: "white" }} />
+                </div>
+                <span style={{ fontSize: 20, fontWeight: 700, color: "var(--text-dark)", fontFamily: "var(--font-heading)" }}>YatraSecure</span>
+              </Link>
+              <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 24 }}>India's most trusted group travel platform. Travel together, stay safe.</p>
+              <form onSubmit={(e) => { e.preventDefault(); toast.success("Thanks for subscribing!"); }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input type="email" placeholder="Enter your email" required className="form-input" style={{ marginBottom: 0, padding: "10px 16px" }} />
+                  <button type="submit" className="btn btn-primary" style={{ padding: "10px 20px" }}>Subscribe</button>
+                </div>
+              </form>
             </div>
-            <p style={{ fontSize: 13, color: "var(--text3)" }}>© 2025 YatraSecure. Safe journeys for everyone.</p>
-            <div style={{ display: "flex", gap: 20 }}>
-              {["Privacy", "Terms", "Contact"].map(l => (
-                <a key={l} href="#" style={{ fontSize: 13, color: "var(--text3)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => (e.currentTarget.style.color = "var(--accent)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--text3)")}>{l}</a>
-              ))}
+            
+            <div>
+              <h4 style={{ fontSize: 16, marginBottom: 20 }}>Product</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {["Features", "How It Works", "Pricing", "FAQ"].map(l => <li key={l}><a href={`#${l.toLowerCase().replace(/ /g, "-")}`} style={{ color: "var(--text-muted)", textDecoration: "none" }}>{l}</a></li>)}
+              </ul>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 16, marginBottom: 20 }}>Company</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {["About", "Blog", "Careers"].map(l => <li key={l}><a href="#" style={{ color: "var(--text-muted)", textDecoration: "none" }}>{l}</a></li>)}
+              </ul>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 16, marginBottom: 20 }}>Legal</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {["Privacy", "Terms", "Cookie Policy"].map(l => <li key={l}><a href="#" style={{ color: "var(--text-muted)", textDecoration: "none" }}>{l}</a></li>)}
+              </ul>
+            </div>
+          </div>
+          
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", paddingTop: 32, borderTop: "1px solid #E2E8F0", color: "var(--text-muted)", fontSize: 14 }}>
+            <p>© 2026 YatraSecure. Safe journeys for everyone.</p>
+            <div style={{ display: "flex", gap: 16 }}>
+              {/* Dummy App Badges */}
+              <div style={{ background: "black", color: "white", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>App Store</div>
+              <div style={{ background: "black", color: "white", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Google Play</div>
             </div>
           </div>
         </div>
       </footer>
-    </div>
+
+      {/* ─── MODALS & OVERLAYS ──────────────────────────────────── */}
+      
+      {/* Video Modal */}
+      {isVideoModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsVideoModalOpen(false)}>
+          <div className="modal-content" style={{ padding: 0, maxWidth: 800, background: "transparent", overflow: "visible" }} onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsVideoModalOpen(false)} style={{ top: -40, right: -40, color: "white" }}>
+              <XIcon style={{ width: 32, height: 32 }} />
+            </button>
+            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, background: "black", borderRadius: 16, overflow: "hidden" }}>
+              <iframe 
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" 
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} 
+                frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signup Modal */}
+      {isSignupModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsSignupModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsSignupModalOpen(false)}><XIcon /></button>
+            <h2 style={{ fontSize: 24, marginBottom: 8 }}>Create Free Account</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>Join the safest group travel platform.</p>
+            
+            <button className="btn" style={{ width: "100%", background: "white", border: "1px solid #E2E8F0", color: "var(--text-dark)", marginBottom: 24 }}>
+              <Youtube style={{ width: 20, height: 20, color: "#EA4335" }} /> Sign up with Google
+            </button>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, color: "var(--text-muted)", fontSize: 14 }}>
+              <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} /> OR <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+            </div>
+
+            <form onSubmit={e => handleAuthSubmit(e, "signup")}>
+              <input type="text" placeholder="Username" required className="form-input" />
+              <input type="email" placeholder="Email" required className="form-input" />
+              <input type="password" placeholder="Password" required className="form-input" />
+              <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+                 <div style={{ height: 4, flex: 1, background: "var(--primary)", borderRadius: 2 }} />
+                 <div style={{ height: 4, flex: 1, background: "var(--primary)", borderRadius: 2 }} />
+                 <div style={{ height: 4, flex: 1, background: "#E2E8F0", borderRadius: 2 }} />
+              </div>
+              <label style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>
+                <input type="checkbox" required /> I agree to the Terms & Privacy Policy.
+              </label>
+              <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={isLoading}>
+                {isLoading ? "Loading..." : "Create Account"}
+              </button>
+            </form>
+            <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "var(--text-muted)" }}>
+              Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsSignupModalOpen(false); setIsLoginModalOpen(true); }} style={{ color: "var(--primary)", fontWeight: 600 }}>Login</a>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Login Modal */}
+      {isLoginModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsLoginModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsLoginModalOpen(false)}><XIcon /></button>
+            <h2 style={{ fontSize: 24, marginBottom: 8 }}>Welcome Back</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>Login to manage your trips.</p>
+            
+            <button className="btn" style={{ width: "100%", background: "white", border: "1px solid #E2E8F0", color: "var(--text-dark)", marginBottom: 24 }}>
+              <Youtube style={{ width: 20, height: 20, color: "#EA4335" }} /> Login with Google
+            </button>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, color: "var(--text-muted)", fontSize: 14 }}>
+              <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} /> OR <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+            </div>
+
+            <form onSubmit={e => handleAuthSubmit(e, "login")}>
+              <input type="email" placeholder="Email" required className="form-input" />
+              <input type="password" placeholder="Password" required className="form-input" />
+              <div style={{ textAlign: "right", marginBottom: 24 }}>
+                <a href="#" style={{ fontSize: 13, color: "var(--secondary)", textDecoration: "none", fontWeight: 500 }}>Forgot Password?</a>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={isLoading}>
+                {isLoading ? "Loading..." : "Login"}
+              </button>
+            </form>
+            <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "var(--text-muted)" }}>
+              New here? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginModalOpen(false); setIsSignupModalOpen(true); }} style={{ color: "var(--primary)", fontWeight: 600 }}>Create an account</a>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cookie Consent Banner */}
+      {isCookieConsentVisible && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--text-dark)", color: "white", padding: "16px 24px", zIndex: 900, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <p style={{ margin: 0, fontSize: 14 }}>We use cookies to improve your experience. By using our site, you agree to our Cookie Policy.</p>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={() => setIsCookieConsentVisible(false)} className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: 14, color: "white", borderColor: "rgba(255,255,255,0.3)" }}>Decline</button>
+            <button onClick={() => setIsCookieConsentVisible(false)} className="btn btn-primary" style={{ padding: "8px 16px", fontSize: 14 }}>Accept</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

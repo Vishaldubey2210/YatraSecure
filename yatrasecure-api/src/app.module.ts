@@ -19,6 +19,7 @@ import { UploadModule } from './upload/upload.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SocialModule } from './social/social.module';
 import { MatchmakingModule } from './common/matchmaking/matchmaking.module';
+import { SafetyModule } from './safety/safety.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { MatchmakingModule } from './common/matchmaking/matchmaking.module';
     NotificationsModule,
     SocialModule,
     MatchmakingModule,
+    SafetyModule,
   ],
   controllers: [AppController],
   providers: [

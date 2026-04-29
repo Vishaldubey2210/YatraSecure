@@ -152,12 +152,12 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
                 </div>
                 <div>
                    <p style={{ fontSize: 11, fontWeight: 800, color: p.color, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Persona Matched</p>
-                   <h3 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: '2px 0 4px 0' }}>{p.title}</h3>
+                   <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: '2px 0 4px 0' }}>{p.title}</h3>
                 </div>
               </div>
               <button 
                 onClick={() => { setFinalPersonality(""); setStep(1); }}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', padding: '8px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s' }}
+                style={{ background: 'var(--border)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text2)', padding: '8px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s' }}
                 className="hover:text-white hover:bg-white/10"
                 title="Retake Quiz"
               >
@@ -165,26 +165,26 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
               </button>
            </div>
            
-           <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+           <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 20px 0', lineHeight: 1.5 }}>
              {p.desc}
            </p>
 
-           <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 20 }} />
+           <div style={{ height: 1, background: 'var(--border)', marginBottom: 20 }} />
            
-           <p style={{ fontSize: 12, fontWeight: 700, color: 'white', marginBottom: 12 }}>Recommended Actions</p>
+           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Recommended Actions</p>
            
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
               <button onClick={() => router.push('/trips/create')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'linear-gradient(135deg, rgba(249,115,22,0.15), rgba(249,115,22,0.05))', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 10, color: '#f97316', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-orange-500/20">
                  <Plus style={{ width: 14, height: 14 }} /> New Trip
               </button>
-              <button onClick={() => router.push('/trips')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
-                 <Search style={{ width: 14, height: 14, color: '#94a3b8' }} /> Find Trips
+              <button onClick={() => router.push('/trips')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'var(--text)', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
+                 <Search style={{ width: 14, height: 14, color: 'var(--text2)' }} /> Find Trips
               </button>
-              <button onClick={() => router.push('/explore')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
-                 <Compass style={{ width: 14, height: 14, color: '#94a3b8' }} /> Explore
+              <button onClick={() => router.push('/explore')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'var(--text)', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
+                 <Compass style={{ width: 14, height: 14, color: 'var(--text2)' }} /> Explore
               </button>
-              <button onClick={() => router.push('/community')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
-                 <Users style={{ width: 14, height: 14, color: '#94a3b8' }} /> Connect
+              <button onClick={() => router.push('/community')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: 'var(--text)', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover:bg-white/10">
+                 <Users style={{ width: 14, height: 14, color: 'var(--text2)' }} /> Connect
               </button>
            </div>
         </div>
@@ -206,8 +206,8 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
            }}>
               <Compass style={{ width: 28, height: 28, color: '#f97316' }} className="anim-float" />
            </div>
-           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'white', marginBottom: 8 }}>Travel Persona</h2>
-           <p style={{ color: '#94a3b8', fontSize: 13, margin: '0 0 24px 0', lineHeight: 1.5 }}>
+           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>Travel Persona</h2>
+           <p style={{ color: 'var(--text2)', fontSize: 13, margin: '0 0 24px 0', lineHeight: 1.5 }}>
              A quick 3-question quiz to curate your perfect dashboard experience.
            </p>
            <button 
@@ -215,7 +215,7 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
              onClick={() => setStep(1)}
              style={{ 
                background: 'linear-gradient(135deg, #f97316, #fbbf24)', padding: '12px 24px', 
-               borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 800,
+               borderRadius: 12, border: 'none', color: 'var(--text)', fontSize: 14, fontWeight: 800,
                boxShadow: '0 8px 20px -6px rgba(249,115,22,0.4)', cursor: 'pointer', width: '100%'
              }}
              className="hover:scale-[1.02] active:scale-95 transition-transform"
@@ -232,12 +232,12 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
               <span style={{ fontSize: 10, fontWeight: 800, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Q{step} of {QUESTIONS.length}</span>
               <div style={{ display: 'flex', gap: 4 }}>
                  {[1,2,3].map(i => (
-                   <div key={i} style={{ width: 16, height: 4, borderRadius: 2, background: i <= step ? '#f97316' : 'rgba(255,255,255,0.1)' }} />
+                   <div key={i} style={{ width: 16, height: 4, borderRadius: 2, background: i <= step ? '#f97316' : 'var(--border)' }} />
                  ))}
               </div>
            </div>
            
-           <h2 style={{ fontSize: 16, fontWeight: 800, color: 'white', marginBottom: 20, lineHeight: 1.3 }}>{QUESTIONS[step-1].text}</h2>
+           <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 20, lineHeight: 1.3 }}>{QUESTIONS[step-1].text}</h2>
            
            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {QUESTIONS[step-1].options.map(opt => {
@@ -249,7 +249,7 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
                     onClick={() => handleAnswer(step, opt.value)}
                     style={{ 
                       display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', padding: '12px 16px', borderRadius: 12, 
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.06)',
                       transition: 'all 0.2s', cursor: 'pointer' 
                     }}
                     className="hover:bg-white/10 hover:border-white/20 group"
@@ -257,7 +257,7 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
                     <div style={{ background: `${opt.color}15`, width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                        <Icon style={{ width: 16, height: 16, color: opt.color || '#fff' }} className="group-hover:scale-110 transition-transform" />
                     </div>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: 'white', margin: 0 }}>{opt.label}</p>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{opt.label}</p>
                   </button>
                 );
               })}
@@ -269,7 +269,7 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
       {step === QUESTIONS.length + 1 && loading && (
         <div style={{ textAlign: 'center', padding: '32px 0' }}>
            <Loader2 style={{ width: 32, height: 32, color: '#f97316', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Analyzing...</h3>
+           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>Analyzing...</h3>
         </div>
       )}
 
@@ -279,7 +279,7 @@ export default function PersonalityQuiz({ onComplete, initialPersonality }: { on
             <button 
               suppressHydrationWarning
               onClick={calculateResult}
-              style={{ width: '100%', padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}
+              style={{ width: '100%', padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', color: 'var(--text)', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}
               className="hover:scale-[1.02] active:scale-95 transition-transform"
             >
               Reveal My Persona

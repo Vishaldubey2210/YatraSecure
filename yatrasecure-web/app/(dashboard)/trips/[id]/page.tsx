@@ -16,7 +16,7 @@ import { API_BASE_URL, getAccessToken } from '@/app/lib/api';
 // Dynamic import for map (SSR fix)
 const ItineraryMapWrapper = dynamic(
   () => import('@/components/ItineraryMapWrapper'),
-  { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(15,23,42,0.7)', borderRadius: 14 }} /> }
+  { ssr: false, loading: () => <div style={{ height: 200, background: 'var(--bg)', borderRadius: 14 }} /> }
 );
 const LiveTripMapWrapper = dynamic(
   () => import('@/components/LiveTripMapWrapper'),
@@ -26,22 +26,30 @@ import PendingSettlements from '@/components/PendingSettlements';
 import FollowButton from '@/components/FollowButton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type ItinerarySlot  = { activity: string; place: string; tip: string; cost: number };
+type ItinerarySlot  = { activity: string; place?: string; description?: string; cost_range?: string; travel_time?: string; tip: string; cost?: number; travelTime?: string; lat?: number; lng?: number; type?: string };
 type ItineraryDay   = {
   day: number; date: string; title: string;
-  morning: ItinerarySlot; afternoon: ItinerarySlot; evening: ItinerarySlot;
-  meals: { breakfast: string; lunch: string; dinner: string };
-  transport: string; safety_tip: string; estimated_daily_cost: number;
+  flow?: ItinerarySlot[];
+  morning?: ItinerarySlot; afternoon?: ItinerarySlot; evening?: ItinerarySlot;
+  meals?: { breakfast: string; lunch: string; dinner: string };
+  transport?: string; transportMode?: string; safety_tip?: string; safetyTips?: string[];
+  estimated_daily_cost?: number; bestExperience?: string;
+  stay?: { name: string; cost: number; lat?: number; lng?: number };
 };
 type ItineraryData  = {
   summary: string;
+  whyThisPlan?: string;
+  budgetTier?: string;
   totalBudgetBreakdown: Record<string, number>;
+  warnings?: string[];
+  scamWarnings?: string[];
   days: ItineraryDay[];
   general_tips: string[];
   emergency_contacts: Record<string, string>;
+  mapData?: { center?: { lat: number; lng: number }; zoom?: number };
 };
 
-const defaultSlot: ItinerarySlot = { activity: '–', place: '', tip: '', cost: 0 };
+const defaultSlot: ItinerarySlot = { activity: '–', place: '', tip: '', cost: 0, travelTime: '', type: 'attraction' };
 const periodMeta: Record<string, { icon: string; color: string }> = {
   morning:   { icon: '🌅', color: '#fbbf24' },
   afternoon: { icon: '☀️', color: '#fb923c' },
@@ -50,7 +58,7 @@ const periodMeta: Record<string, { icon: string; color: string }> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
-  borderRadius: 16, background: 'rgba(255,255,255,0.02)',
+  borderRadius: 16, background: 'var(--card)',
   border: '1px solid rgba(255,255,255,0.04)', padding: 28,
 };
 const badge = (color: string, bg: string): React.CSSProperties => ({
@@ -58,7 +66,7 @@ const badge = (color: string, bg: string): React.CSSProperties => ({
   padding: '6px 12px', borderRadius: 8, fontSize: 11,
   fontWeight: 600, color, background: bg, border: `1px solid ${bg.replace(',0.1)', ',0.2)')}`
 });
-const btn = (bg: string, color = 'white'): React.CSSProperties => ({
+const btn = (bg: string, color = 'var(--text)'): React.CSSProperties => ({
   display: 'inline-flex', alignItems: 'center', gap: 6,
   padding: '10px 18px', borderRadius: 10, fontSize: 13,
   fontWeight: 600, color, background: bg,
@@ -147,21 +155,31 @@ export default function TripDetailPage() {
       if (parsed?.days) {
         const safe: ItineraryData = {
           summary:              parsed.summary || 'Trip itinerary',
+          whyThisPlan:          parsed.whyThisPlan || '',
+          budgetTier:           parsed.budgetTier || '',
           totalBudgetBreakdown: (parsed.totalBudgetBreakdown && typeof parsed.totalBudgetBreakdown === 'object') ? parsed.totalBudgetBreakdown : {},
+          warnings:             Array.isArray(parsed.warnings) ? parsed.warnings : [],
+          scamWarnings:         Array.isArray(parsed.scamWarnings) ? parsed.scamWarnings : [],
           days: (Array.isArray(parsed.days) ? parsed.days : []).map((d: any) => ({
             day:      d.day  || 0,
             date:     d.date || '',
             title:    d.title || `Day ${d.day}`,
-            morning:   (d.morning   && typeof d.morning   === 'object') ? d.morning   : defaultSlot,
-            afternoon: (d.afternoon && typeof d.afternoon === 'object') ? d.afternoon : defaultSlot,
-            evening:   (d.evening   && typeof d.evening   === 'object') ? d.evening   : defaultSlot,
-            meals: (d.meals && typeof d.meals === 'object') ? d.meals : { breakfast: '–', lunch: '–', dinner: '–' },
+            bestExperience: d.bestExperience || '',
+            flow:      Array.isArray(d.flow) ? d.flow : undefined,
+            morning:   (d.morning   && typeof d.morning   === 'object') ? d.morning   : undefined,
+            afternoon: (d.afternoon && typeof d.afternoon === 'object') ? d.afternoon : undefined,
+            evening:   (d.evening   && typeof d.evening   === 'object') ? d.evening   : undefined,
+            meals: (d.meals && typeof d.meals === 'object') ? d.meals : undefined,
             transport:            d.transport   || '–',
-            safety_tip:           d.safety_tip  || '–',
+            transportMode:        d.transportMode || '',
+            safety_tip:           d.safety_tip  || '',
+            safetyTips:           Array.isArray(d.safetyTips) ? d.safetyTips : (d.safety_tip ? [d.safety_tip] : []),
             estimated_daily_cost: d.estimated_daily_cost || 0,
+            stay: (d.stay && typeof d.stay === 'object') ? d.stay : undefined,
           })),
           general_tips:       Array.isArray(parsed.general_tips) ? parsed.general_tips : [],
           emergency_contacts: (parsed.emergency_contacts && typeof parsed.emergency_contacts === 'object') ? parsed.emergency_contacts : {},
+          mapData: parsed.mapData || undefined,
         };
         setItineraryData(safe);
       } else {
@@ -292,7 +310,7 @@ export default function TripDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Booking generation failed');
-      setBookingPackage(data.package);
+      setBookingPackage(data);
       toast.success('AI Booking Deals generated!');
     } catch (e: any) {
       setBookingError(e.message || 'Failed to generate bookings');
@@ -409,7 +427,7 @@ export default function TripDetailPage() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ width: 36, height: 36, border: '3px solid #1E293B', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-        <p style={{ fontSize: 13, color: '#64748B', marginTop: 12 }}>Loading trip...</p>
+        <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 12 }}>Loading trip...</p>
       </div>
     </div>
   );
@@ -431,7 +449,7 @@ export default function TripDetailPage() {
 
       {/* Back */}
       <button onClick={() => router.push('/trips')}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#94A3B8', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20, padding: 0 }}>
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20, padding: 0 }}>
         <ArrowLeft style={{ width: 16, height: 16 }} /> Back to Trips
       </button>
 
@@ -459,8 +477,8 @@ export default function TripDetailPage() {
                  <span style={badge('#F97316', 'rgba(249,115,22,0.1)')}>{trip.tripType?.toUpperCase()}</span>
                  {isUpcoming && <span style={badge('#22C55E', 'rgba(34,197,94,0.1)')}>UPCOMING</span>}
               </div>
-              <h1 style={{ fontSize: 42, fontWeight: 900, color: 'white', letterSpacing: '-0.04em', margin: '0 0 8px' }}>{trip.name}</h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#94A3B8', fontSize: 14 }}>
+              <h1 style={{ fontSize: 42, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.04em', margin: '0 0 8px' }}>{trip.name}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--text2)', fontSize: 14 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin style={{ width: 14, height: 14 }} /> {trip.toCity}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar style={{ width: 14, height: 14 }} /> {new Date(trip.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} - {new Date(trip.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users style={{ width: 14, height: 14 }} /> {members.length} Members</span>
@@ -477,8 +495,8 @@ export default function TripDetailPage() {
                   { label: 'secs', val: timeLeft.secs },
                 ].map(item => (
                   <div key={item.label} style={{ width: 68, height: 72, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: 'white', lineHeight: 1 }}>{String(item.val).padStart(2, '0')}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginTop: 4 }}>{item.label}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{String(item.val).padStart(2, '0')}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', marginTop: 4 }}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -488,11 +506,11 @@ export default function TripDetailPage() {
 
         {/* Floating Action Buttons */}
         <div style={{ position: 'absolute', top: 24, right: 24, display: 'flex', gap: 8 }}>
-           <button style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} className="hover:bg-white/10">
+           <button style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }} className="hover:bg-white/10">
               <Share2 style={{ width: 18, height: 18 }} />
            </button>
            {isAdmin && (
-             <Link href={`/trips/${tripId}/edit`} style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }} className="hover:bg-white/10">
+             <Link href={`/trips/${tripId}/edit`} style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)' }} className="hover:bg-white/10">
                 <Edit2 style={{ width: 18, height: 18 }} />
              </Link>
            )}
@@ -538,7 +556,7 @@ export default function TripDetailPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                <Radar className="anim-pulse" style={{ width: 20, height: 20, color: '#f97316' }} />
-               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Live Traveler Radar</h3>
+               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Live Traveler Radar</h3>
                <span style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 20 }}>REAL-TIME</span>
             </div>
             <LiveTripMapWrapper tripId={tripId} toCity={trip.toCity} members={members} />
@@ -563,8 +581,8 @@ export default function TripDetailPage() {
                 <Icon style={{ width: 22, height: 22, color }} />
               </div>
               <div>
-                <p style={{ fontSize: 12, color: '#94A3B8', margin: 0, fontWeight: 500 }}>{label}</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: 'white', margin: 0 }}>{value}</p>
+                <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0, fontWeight: 500 }}>{label}</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{value}</p>
               </div>
             </div>
           </div>
@@ -573,8 +591,8 @@ export default function TripDetailPage() {
 
       {/* ══ DESCRIPTION ══════════════════════════════════════════════════════ */}
       <div style={{ ...card, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 12 }}>Trip Details</h3>
-        <p style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Trip Details</h3>
+        <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
           {trip.description || 'No description provided for this trip.'}
         </p>
       </div>
@@ -583,7 +601,7 @@ export default function TripDetailPage() {
       <div style={{ ...card, marginBottom: 24 }}>
         {/* Header row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#E2E8F0', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Sparkles style={{ width: 16, height: 16, color: '#f97316' }} />
             AI Itinerary
             {itinerary && <span style={{ fontSize: 11, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 20, marginLeft: 4 }}>✓ Saved</span>}
@@ -593,7 +611,7 @@ export default function TripDetailPage() {
             {itinerary && (
               <button
                 onClick={() => setShowItinerary(p => !p)}
-                style={{ ...btn('rgba(30,41,59,0.8)', '#94a3b8'), padding: '7px 14px', fontSize: 12, border: '1px solid #334155' }}
+                style={{ ...btn('rgba(30,41,59,0.8)', 'var(--text2)'), padding: '7px 14px', fontSize: 12, border: '1px solid #334155' }}
               >
                 {showItinerary ? 'Hide' : 'View'} Itinerary
               </button>
@@ -612,7 +630,7 @@ export default function TripDetailPage() {
               <>
                 <button
                   onClick={() => setShowPromptBox(p => !p)}
-                  style={{ ...btn(showPromptBox ? 'rgba(34,197,94,0.15)' : 'rgba(30,41,59,0.8)', showPromptBox ? '#4ade80' : '#64748b'), padding: '7px 14px', fontSize: 12, border: `1px solid ${showPromptBox ? 'rgba(34,197,94,0.3)' : '#334155'}` }}
+                  style={{ ...btn(showPromptBox ? 'rgba(34,197,94,0.15)' : 'rgba(30,41,59,0.8)', showPromptBox ? '#4ade80' : 'var(--text3)'), padding: '7px 14px', fontSize: 12, border: `1px solid ${showPromptBox ? 'rgba(34,197,94,0.3)' : 'var(--border)'}` }}
                 >
                   ✏️ Instructions
                 </button>
@@ -620,7 +638,7 @@ export default function TripDetailPage() {
                 <button
                   onClick={handleGenerateItinerary}
                   disabled={generatingAI}
-                  style={{ ...btn(generatingAI ? '#1e293b' : 'rgba(249,115,22,0.15)', generatingAI ? '#475569' : '#fb923c'), padding: '7px 16px', fontSize: 12, border: '1px solid rgba(249,115,22,0.3)' }}
+                  style={{ ...btn(generatingAI ? 'var(--card)' : 'rgba(249,115,22,0.15)', generatingAI ? '#475569' : '#fb923c'), padding: '7px 16px', fontSize: 12, border: '1px solid rgba(249,115,22,0.3)' }}
                 >
                   {generatingAI
                     ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> Generating…</>
@@ -634,9 +652,9 @@ export default function TripDetailPage() {
 
         {/* Custom Prompt Box */}
         {isAdmin && showPromptBox && (
-          <div style={{ marginBottom: 16, padding: 16, background: 'rgba(15,23,42,0.6)', borderRadius: 10, border: '1px solid #1e293b' }}>
-            <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 6px', fontWeight: 600 }}>
-              ✏️ Extra instructions for AI <span style={{ color: '#475569', fontWeight: 400 }}>(optional)</span>
+          <div style={{ marginBottom: 16, padding: 16, background: 'var(--bg)', borderRadius: 14, border: '1px solid rgba(34,197,94,0.15)' }}>
+            <p style={{ color: '#4ade80', fontSize: 12, margin: '0 0 6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              ✏️ Extra instructions for AI <span style={{ color: '#475569', fontWeight: 400 }}>(type & apply)</span>
             </p>
             <p style={{ color: '#475569', fontSize: 11, margin: '0 0 10px' }}>
               Example: "Include temple visits", "Budget-friendly dhaba options", "Add adventure activities"
@@ -644,19 +662,50 @@ export default function TripDetailPage() {
             <textarea
               value={customPrompt}
               onChange={e => setCustomPrompt(e.target.value)}
-              placeholder="Kuch extra chahiye toh yahan likho…"
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey && customPrompt.trim()) {
+                  e.preventDefault();
+                  handleGenerateItinerary();
+                }
+              }}
+              placeholder="Kuch extra chahiye toh yahan likho… (Enter to apply & generate)"
               rows={3}
-              style={{ width: '100%', borderRadius: 10, padding: '10px 14px', background: 'rgba(15,23,42,0.9)', color: '#e2e8f0', border: '1px solid #334155', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', borderRadius: 10, padding: '10px 14px', background: 'var(--bg)', color: 'var(--text)', border: '1px solid #334155', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
             />
             {/* Suggestion chips */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-              {['🏛️ Historical places','🍜 Street food focus','💸 Budget-friendly','🏔️ Adventure activities','🌿 Nature & trekking','🛕 Temple visits','📸 Photography spots'].map(chip => (
+              {['🏛️ Historical places','🍜 Street food focus','💸 Budget-friendly','🏔️ Adventure activities','🌿 Nature & trekking','🛕 Temple visits','📸 Photography spots','🌊 Beach activities','🎭 Cultural experiences','🍷 Nightlife'].map(chip => (
                 <button key={chip} onClick={() => setCustomPrompt(p => p ? `${p}, ${chip}` : chip)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, background: 'rgba(30,41,59,0.8)', color: '#64748b', border: '1px solid #334155', cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, background: 'rgba(30,41,59,0.8)', color: 'var(--text3)', border: '1px solid #334155', cursor: 'pointer', transition: 'all 0.15s' }}
+                  className="hover:bg-white/10 hover:text-white"
+                >
                   {chip}
                 </button>
               ))}
             </div>
+            {/* 🚀 APPLY & REGENERATE BUTTON — the missing submit button */}
+            <button
+              onClick={handleGenerateItinerary}
+              disabled={generatingAI}
+              style={{
+                width: '100%', marginTop: 14, height: 44, borderRadius: 10,
+                background: generatingAI ? 'var(--card)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                border: 'none', color: 'var(--text)', fontSize: 14, fontWeight: 700,
+                cursor: generatingAI ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: generatingAI ? 'none' : '0 4px 14px rgba(34,197,94,0.3)',
+                transition: 'all 0.2s', opacity: generatingAI ? 0.6 : 1,
+              }}
+              className={generatingAI ? '' : 'hover:scale-[1.01] active:scale-[0.99]'}
+            >
+              {generatingAI
+                ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Generating with your instructions…</>
+                : <>🚀 Apply Instructions & {itinerary ? 'Regenerate' : 'Generate'}</>
+              }
+            </button>
+            <p style={{ fontSize: 10, color: '#475569', marginTop: 6, textAlign: 'center' }}>
+              Press Enter or click the button above to apply your instructions
+            </p>
           </div>
         )}
 
@@ -671,8 +720,8 @@ export default function TripDetailPage() {
         {generatingAI && (
           <div style={{ padding: '32px 0', textAlign: 'center' }}>
             <Loader2 style={{ width: 28, height: 28, margin: '0 auto 12px', animation: 'spin 1s linear infinite', color: '#f97316' }} />
-            <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 4px' }}>Groq AI is crafting your itinerary…</p>
-            <p style={{ fontSize: 11, color: '#334155' }}>Usually takes 10–20 seconds ☕</p>
+            <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 4px' }}>Groq AI is crafting your itinerary…</p>
+            <p style={{ fontSize: 11, color: 'var(--border)' }}>Usually takes 10–20 seconds ☕</p>
           </div>
         )}
 
@@ -680,7 +729,7 @@ export default function TripDetailPage() {
         {!itinerary && !generatingAI && (
           <div style={{ padding: '32px 0', textAlign: 'center' }}>
             <Sparkles style={{ width: 28, height: 28, margin: '0 auto 10px', opacity: 0.2, color: '#f97316' }} />
-            <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 4px', fontWeight: 600 }}>No itinerary yet</p>
+            <p style={{ fontSize: 14, color: 'var(--text3)', margin: '0 0 4px', fontWeight: 600 }}>No itinerary yet</p>
             <p style={{ fontSize: 12, color: '#475569' }}>
               {isAdmin ? 'Click "Generate with AI" to auto-create a day-wise plan' : 'Admin ne abhi itinerary nahi banayi'}
             </p>
@@ -690,16 +739,16 @@ export default function TripDetailPage() {
         {/* Edit Mode */}
         {editingItinerary && (
           <div>
-            <p style={{ color: '#64748b', fontSize: 12, marginBottom: 8 }}>⚠️ Raw JSON edit — structure mat todna</p>
+            <p style={{ color: 'var(--text3)', fontSize: 12, marginBottom: 8 }}>⚠️ Raw JSON edit — structure mat todna</p>
             <textarea
               value={editedItinerary}
               onChange={e => setEditedItinerary(e.target.value)}
               rows={18}
-              style={{ width: '100%', borderRadius: 10, padding: 14, background: 'rgba(15,23,42,0.9)', color: '#e2e8f0', border: '1px solid #334155', fontSize: 12, lineHeight: 1.7, fontFamily: 'monospace', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', borderRadius: 10, padding: 14, background: 'var(--bg)', color: 'var(--text)', border: '1px solid #334155', fontSize: 12, lineHeight: 1.7, fontFamily: 'monospace', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
               <button onClick={() => { setEditingItinerary(false); setItineraryError(''); }}
-                style={{ ...btn('#1e293b', '#94a3b8'), border: '1px solid #334155', padding: '8px 16px' }}>
+                style={{ ...btn('var(--card)', 'var(--text2)'), border: '1px solid #334155', padding: '8px 16px' }}>
                 <X style={{ width: 13, height: 13 }} /> Cancel
               </button>
               <button onClick={handleSaveItinerary} disabled={savingItinerary}
@@ -715,11 +764,45 @@ export default function TripDetailPage() {
         {itinerary && itineraryData && !editingItinerary && !generatingAI && showItinerary && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginTop: 16 }}>
 
-            {/* Total Summary Mini-Card */}
+            {/* ── Warnings Banner ── */}
+            {itineraryData.warnings && itineraryData.warnings.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {itineraryData.warnings.map((w, i) => (
+                  <div key={i} style={{
+                    padding: '12px 16px', borderRadius: 12, fontSize: 13, lineHeight: 1.5,
+                    background: w.includes('⚠️') ? 'rgba(249,115,22,0.08)' : w.includes('✨') ? 'rgba(234,179,8,0.08)' : 'rgba(59,130,246,0.08)',
+                    border: `1px solid ${w.includes('⚠️') ? 'rgba(249,115,22,0.2)' : w.includes('✨') ? 'rgba(234,179,8,0.2)' : 'rgba(59,130,246,0.2)'}`,
+                    color: w.includes('⚠️') ? '#fb923c' : w.includes('✨') ? '#fbbf24' : '#60a5fa',
+                    fontWeight: 500,
+                  }}>
+                    {w}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Budget Tier Badge + Summary ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div style={{ padding: '20px', background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 20 }}>
-                <p style={{ color: '#60A5FA', fontSize: 11, fontWeight: 700, margin: '0 0 8px', textTransform: 'uppercase' }}>📝 Summary</p>
-                <p style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{itineraryData.summary}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <p style={{ color: '#60A5FA', fontSize: 11, fontWeight: 700, margin: 0, textTransform: 'uppercase' }}>📝 Summary</p>
+                  {itineraryData.budgetTier && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                      background: itineraryData.budgetTier === 'Luxury' ? 'rgba(234,179,8,0.15)' : itineraryData.budgetTier === 'Budget' ? 'rgba(34,197,94,0.15)' : 'rgba(59,130,246,0.15)',
+                      color: itineraryData.budgetTier === 'Luxury' ? '#fbbf24' : itineraryData.budgetTier === 'Budget' ? '#22c55e' : '#60a5fa',
+                      border: `1px solid ${itineraryData.budgetTier === 'Luxury' ? 'rgba(234,179,8,0.3)' : itineraryData.budgetTier === 'Budget' ? 'rgba(34,197,94,0.3)' : 'rgba(59,130,246,0.3)'}`,
+                    }}>
+                      {itineraryData.budgetTier === 'Luxury' ? '✨' : itineraryData.budgetTier === 'Budget' ? '💰' : '🎯'} {itineraryData.budgetTier}
+                    </span>
+                  )}
+                </div>
+                <p style={{ color: 'var(--text)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{itineraryData.summary}</p>
+                {itineraryData.whyThisPlan && (
+                  <p style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.5, margin: '10px 0 0', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
+                    💡 <strong style={{ color: '#a78bfa' }}>Why this plan:</strong> {itineraryData.whyThisPlan}
+                  </p>
+                )}
               </div>
               
               {itineraryData.totalBudgetBreakdown && Object.keys(itineraryData.totalBudgetBreakdown).length > 0 && (
@@ -727,9 +810,9 @@ export default function TripDetailPage() {
                   <p style={{ color: '#10B981', fontSize: 11, fontWeight: 700, margin: '0 0 10px', textTransform: 'uppercase' }}>💰 Budget Distribution</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {Object.entries(itineraryData.totalBudgetBreakdown).map(([k, v]) => (
-                      <div key={k} style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 8, padding: '6px 10px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                        <span style={{ color: '#64748b', fontSize: 10, textTransform: 'capitalize', marginRight: 6 }}>{k}:</span>
-                        <span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>₹{Number(v).toLocaleString('en-IN')}</span>
+                      <div key={k} style={{ background: 'var(--bg)', borderRadius: 8, padding: '6px 10px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                        <span style={{ color: 'var(--text3)', fontSize: 10, textTransform: 'capitalize', marginRight: 6 }}>{k}:</span>
+                        <span style={{ color: 'var(--text)', fontSize: 13, fontWeight: 700 }}>₹{Number(v).toLocaleString('en-IN')}</span>
                       </div>
                     ))}
                   </div>
@@ -754,65 +837,176 @@ export default function TripDetailPage() {
                   
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <div>
-                      <h4 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>{day.title}</h4>
-                      <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>Day {day.day} • {trip.startDate ? new Date(new Date(trip.startDate).getTime() + (day.day - 1) * 86400000).toLocaleDateString('en-IN', { weekday: 'long' }) : ''}</p>
+                      <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: 0 }}>{day.title}</h4>
+                      <p style={{ fontSize: 12, color: 'var(--text3)', margin: '4px 0 0' }}>Day {day.day} • {trip.startDate ? new Date(new Date(trip.startDate).getTime() + (day.day - 1) * 86400000).toLocaleDateString('en-IN', { weekday: 'long' }) : ''}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '0 0 2px', textTransform: 'uppercase' }}>Est. Cost</p>
+                      <p style={{ fontSize: 11, color: 'var(--text2)', margin: '0 0 2px', textTransform: 'uppercase' }}>Est. Cost</p>
                       <p style={{ fontSize: 16, fontWeight: 800, color: '#4ade80', margin: 0 }}>₹{Number(day.estimated_daily_cost).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
 
+                  {/* Best Experience Highlight */}
+                  {day.bestExperience && (
+                    <div style={{
+                      padding: '10px 16px', borderRadius: 12, marginBottom: 16,
+                      background: 'linear-gradient(135deg, rgba(234,179,8,0.08), rgba(234,179,8,0.02))',
+                      border: '1px solid rgba(234,179,8,0.2)',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                      <span style={{ fontSize: 16 }}>⭐</span>
+                      <div>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#eab308', margin: 0, textTransform: 'uppercase' }}>Best Experience</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', margin: 0 }}>{day.bestExperience}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                    {(['morning', 'afternoon', 'evening'] as const).map(period => {
-                      const slot = day[period] ?? defaultSlot;
-                      const meta = periodMeta[period];
-                      return (
-                        <div key={period} style={{ ...card, padding: 20, background: 'rgba(30,41,59,0.3)', position: 'relative', overflow: 'hidden' }} className="hover:border-slate-700 transition-all">
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                              {meta.icon}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, textTransform: 'uppercase' }}>{period}</span>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: '#4ade80' }}>₹{slot.cost}</span>
+                    {day.flow && day.flow.length > 0 ? (
+                      day.flow.map((slot, fIdx) => {
+                        const isBest = day.bestExperience && slot.activity?.toLowerCase().includes(day.bestExperience.toLowerCase().slice(0, 15));
+                        return (
+                          <div key={fIdx} style={{
+                            ...card, padding: 20, position: 'relative', overflow: 'hidden',
+                            background: isBest ? 'rgba(234,179,8,0.04)' : 'rgba(30,41,59,0.3)',
+                            border: isBest ? '1px solid rgba(234,179,8,0.15)' : undefined,
+                          }} className="hover:border-slate-700 transition-all">
+                            {isBest && <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 14 }}>⭐</div>}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                                📍
                               </div>
-                              <h5 style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: '0 0 6px' }}>{slot.activity}</h5>
-                              <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}><MapPin style={{ width: 12, height: 12 }} /> {slot.place}</p>
-                              {slot.tip && <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.03)', fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>💡 {slot.tip}</div>}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fb923c', textTransform: 'uppercase' }}>Activity {fIdx + 1}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    {slot.travel_time && (
+                                      <span style={{ fontSize: 10, color: '#475569', background: 'var(--bg)', padding: '1px 6px', borderRadius: 4 }}>🕐 {slot.travel_time}</span>
+                                    )}
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: '#4ade80' }}>{slot.cost_range}</span>
+                                  </div>
+                                </div>
+                                <h5 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{slot.activity}</h5>
+                                <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 10px', lineHeight: 1.5 }}>{slot.description}</p>
+                                {slot.tip && <div style={{ padding: '8px 10px', background: 'var(--card)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.03)', fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>💡 {slot.tip}</div>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    ) : (
+                      (['morning', 'afternoon', 'evening'] as const).map(period => {
+                        const slot = day[period] ?? defaultSlot;
+                        if (!slot.activity || slot.activity === '–') return null;
+                        const meta = periodMeta[period];
+                        const isBest = day.bestExperience && slot.activity?.toLowerCase().includes(day.bestExperience.toLowerCase().slice(0, 15));
+                        return (
+                          <div key={period} style={{
+                            ...card, padding: 20, position: 'relative', overflow: 'hidden',
+                            background: isBest ? 'rgba(234,179,8,0.04)' : 'rgba(30,41,59,0.3)',
+                            border: isBest ? '1px solid rgba(234,179,8,0.15)' : undefined,
+                          }} className="hover:border-slate-700 transition-all">
+                            {isBest && <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 14 }}>⭐</div>}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                                {meta.icon}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, textTransform: 'uppercase' }}>{period}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    {slot.travelTime && (
+                                      <span style={{ fontSize: 10, color: '#475569', background: 'var(--bg)', padding: '1px 6px', borderRadius: 4 }}>🕐 {slot.travelTime}</span>
+                                    )}
+                                    {slot.cost !== undefined && <span style={{ fontSize: 11, fontWeight: 600, color: '#4ade80' }}>₹{slot.cost}</span>}
+                                  </div>
+                                </div>
+                                <h5 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{slot.activity}</h5>
+                                {slot.place && <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}><MapPin style={{ width: 12, height: 12 }} /> {slot.place}</p>}
+                                {slot.tip && <div style={{ padding: '8px 10px', background: 'var(--card)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.03)', fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>💡 {slot.tip}</div>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
 
-                  {/* Transport & Safety Footer */}
-                  <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                    <div style={{ flex: 1, padding: '12px 16px', background: 'rgba(15,23,42,0.4)', borderRadius: 14, border: '1px solid rgba(148,163,184,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Plane style={{ width: 14, height: 14, color: '#60A5FA' }} />
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>{day.transport}</span>
+                  {/* Stay Info */}
+                  {day.stay?.name && (
+                    <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 16 }}>🏨</span>
+                        <div>
+                          <p style={{ fontSize: 10, fontWeight: 700, color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Night Stay</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{day.stay.name}</p>
+                        </div>
+                      </div>
+                      {day.stay.cost > 0 && (
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#4ade80' }}>₹{day.stay.cost.toLocaleString('en-IN')}</span>
+                      )}
                     </div>
-                    <div style={{ flex: 1, padding: '12px 16px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Shield style={{ width: 14, height: 14, color: '#F87171' }} />
-                      <span style={{ fontSize: 12, color: '#cbd5e1' }}>{day.safety_tip}</span>
+                  )}
+
+                  {/* Transport & Safety Footer */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                    <div style={{ flex: 1, padding: '12px 16px', background: 'var(--bg)', borderRadius: 14, border: '1px solid rgba(148,163,184,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Plane style={{ width: 14, height: 14, color: '#60A5FA' }} />
+                      <span style={{ fontSize: 12, color: 'var(--text2)' }}>{day.transport}</span>
+                      {day.transportMode && (
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#475569', background: 'var(--border)', padding: '2px 6px', borderRadius: 4, marginLeft: 'auto', textTransform: 'capitalize' }}>
+                          {day.transportMode === 'flight' ? '✈️' : day.transportMode === 'train' ? '🚆' : day.transportMode === 'bus' ? '🚌' : '🚕'} {day.transportMode}
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* Safety Tips (array) */}
+                  {day.safetyTips && day.safetyTips.length > 0 && (
+                    <div style={{ marginTop: 8, padding: '12px 16px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.08)', borderRadius: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        <Shield style={{ width: 13, height: 13, color: '#F87171' }} />
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#f87171', textTransform: 'uppercase' }}>Safety Tips</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {day.safetyTips.map((tip, ti) => (
+                          <p key={ti} style={{ fontSize: 12, color: '#cbd5e1', margin: 0, paddingLeft: 12, borderLeft: '2px solid rgba(239,68,68,0.2)' }}>{tip}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Scam Warnings */}
+            {itineraryData.scamWarnings && itineraryData.scamWarnings.length > 0 && (
+              <div style={{ ...card, border: '1px solid rgba(249,115,22,0.15)', background: 'rgba(249,115,22,0.02)' }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#fb923c', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  🚨 Scam Warnings
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {itineraryData.scamWarnings.map((w, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <span style={{ color: '#f97316', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>⚠️</span>
+                      <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>{w}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* General Tips & Emergency */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
               {itineraryData.general_tips.length > 0 && (
                 <div style={card}>
-                  <h4 style={{ fontSize: 15, fontWeight: 700, color: 'white', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Sparkles style={{ width: 16, height: 16, color: '#fb923c' }} /> Expert Tips</h4>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Sparkles style={{ width: 16, height: 16, color: '#fb923c' }} /> Expert Tips</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {itineraryData.general_tips.map((t, i) => (
                       <div key={i} style={{ display: 'flex', gap: 12 }}>
                         <span style={{ color: '#fb923c', fontSize: 13, fontWeight: 800 }}>{i + 1}.</span>
-                        <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>{t}</p>
+                        <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, lineHeight: 1.6 }}>{t}</p>
                       </div>
                     ))}
                   </div>
@@ -823,8 +1017,8 @@ export default function TripDetailPage() {
                   <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F87171', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle style={{ width: 16, height: 16 }} /> Emergency Support</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     {Object.entries(itineraryData.emergency_contacts).map(([k, v]) => (
-                      <div key={k} style={{ padding: 12, background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(239,68,68,0.05)' }}>
-                        <p style={{ fontSize: 10, color: '#64748b', margin: '0 0 4px', textTransform: 'uppercase' }}>{k.replace(/_/g, ' ')}</p>
+                      <div key={k} style={{ padding: 12, background: 'var(--bg)', borderRadius: 12, border: '1px solid rgba(239,68,68,0.05)' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text3)', margin: '0 0 4px', textTransform: 'uppercase' }}>{k.replace(/_/g, ' ')}</p>
                         <p style={{ fontSize: 14, fontWeight: 800, color: '#F87171', margin: 0 }}>{v}</p>
                       </div>
                     ))}
@@ -852,7 +1046,7 @@ export default function TripDetailPage() {
                 <Bot style={{ width: 18, height: 18 }} />
                 AI Booking Agents (CrewAI)
               </h3>
-              <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+              <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0 }}>
                 Our Python AI Crew will scout the web for the best packages and formatting them for you.
               </p>
             </div>
@@ -868,8 +1062,8 @@ export default function TripDetailPage() {
 
           {/* Customization Panel */}
           {bookingPackage && !generatingBookings && (
-            <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: 20, border: '1px solid rgba(148,163,184,0.1)', marginBottom: 20 }}>
-               <h4 style={{ fontSize: 15, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ background: 'var(--bg)', borderRadius: 12, padding: 20, border: '1px solid rgba(148,163,184,0.1)', marginBottom: 20 }}>
+               <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                  <Settings style={{ width: 16, height: 16, color: '#a855f7' }} /> AI Trip Customization
                </h4>
                
@@ -879,7 +1073,7 @@ export default function TripDetailPage() {
                    <select 
                      value={(bookingAnswers as any).accommodation || 'Any'} 
                      onChange={e => setBookingAnswers((prev: any) => ({...prev, accommodation: e.target.value}))}
-                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
+                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
                    >
                      <option value="Any" style={{ color: 'black' }}>Any</option>
                      <option value="Budget Hostel" style={{ color: 'black' }}>Budget Hostel</option>
@@ -894,7 +1088,7 @@ export default function TripDetailPage() {
                    <select 
                      value={(bookingAnswers as any).style || 'Any'} 
                      onChange={e => setBookingAnswers((prev: any) => ({...prev, style: e.target.value}))}
-                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
+                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
                    >
                      <option value="Any" style={{ color: 'black' }}>Balanced / Standard</option>
                      <option value="Adventure" style={{ color: 'black' }}>Adventure & Extreme</option>
@@ -909,7 +1103,7 @@ export default function TripDetailPage() {
                    <select 
                      value={(bookingAnswers as any).food || 'Any'} 
                      onChange={e => setBookingAnswers((prev: any) => ({...prev, food: e.target.value}))}
-                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
+                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
                    >
                      <option value="Any" style={{ color: 'black' }}>Mix of everything</option>
                      <option value="Street Food" style={{ color: 'black' }}>Street Food Focus</option>
@@ -924,7 +1118,7 @@ export default function TripDetailPage() {
                    <select 
                      value={(bookingAnswers as any).gemsToggle || 'Both'} 
                      onChange={e => setBookingAnswers((prev: any) => ({...prev, gemsToggle: e.target.value}))}
-                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
+                     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
                    >
                      <option value="Both" style={{ color: 'black' }}>Mix of Mainstream & Secret</option>
                      <option value="Hidden Gems" style={{ color: 'black' }}>100% Off-The-Beaten-Path</option>
@@ -948,18 +1142,18 @@ export default function TripDetailPage() {
                    style={{ width: '100%', accentColor: '#4ade80', cursor: 'pointer' }}
                  />
                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                   <span style={{ fontSize: 10, color: '#64748b' }}>Cheaper Look</span>
-                   <span style={{ fontSize: 10, color: '#64748b' }}>Luxury Vibe</span>
+                   <span style={{ fontSize: 10, color: 'var(--text3)' }}>Cheaper Look</span>
+                   <span style={{ fontSize: 10, color: 'var(--text3)' }}>Luxury Vibe</span>
                  </div>
                </div>
 
-               <label style={{ display: 'block', fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>Conversational AI Edit <span style={{ color: '#64748b' }}>(Modify specific activities, flights, etc.)</span></label>
+               <label style={{ display: 'block', fontSize: 12, color: '#cbd5e1', marginBottom: 6 }}>Conversational AI Edit <span style={{ color: 'var(--text3)' }}>(Modify specific activities, flights, etc.)</span></label>
                <div style={{ display: 'flex', gap: 12 }}>
                  <input 
                    value={bookingPrompt}
                    onChange={e => setBookingPrompt(e.target.value)}
                    placeholder="e.g. Remove paragliding, add a cooking class instead, make it 20% cheaper..."
-                   style={{ flex: 1, padding: '12px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
+                   style={{ flex: 1, padding: '12px 14px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)', border: '1px solid rgba(255,255,255,0.1)', outline: 'none', fontSize: 13 }}
                  />
                  <button onClick={handleRunBookingAgents} style={{ ...btn('#a855f7'), padding: '0 20px', borderRadius: 8, fontSize: 13, border: '1px solid #c084fc' }}>
                    <Sparkles style={{ width: 14, height: 14 }} /> Rebuild Package
@@ -969,10 +1163,10 @@ export default function TripDetailPage() {
           )}
 
           {generatingBookings && (
-            <div style={{ padding: '32px 0', textAlign: 'center', background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.05)' }}>
+            <div style={{ padding: '32px 0', textAlign: 'center', background: 'var(--bg)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.05)' }}>
               <Loader2 style={{ width: 32, height: 32, margin: '0 auto 12px', animation: 'spin 1s linear infinite', color: '#60A5FA' }} />
-              <p style={{ fontSize: 14, color: '#e2e8f0', margin: '0 0 6px', fontWeight: 600 }}>Agents are actively scouting deals...</p>
-              <p style={{ fontSize: 12, color: '#64748b', maxWidth: 400, margin: '0 auto' }}>
+              <p style={{ fontSize: 14, color: 'var(--text)', margin: '0 0 6px', fontWeight: 600 }}>Agents are actively scouting deals...</p>
+              <p style={{ fontSize: 12, color: 'var(--text3)', maxWidth: 400, margin: '0 auto' }}>
                 This is a multi-step process. "Booking Scouter" is traversing platforms, and "Travel Synthesizer" will format the final package. It may take roughly 30s-1m.
               </p>
             </div>
@@ -988,141 +1182,93 @@ export default function TripDetailPage() {
           {bookingPackage && !generatingBookings && (
              <div style={{ marginTop: 16 }}>
                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                 <button onClick={() => { setBookingPackage(null); setBookingPrompt(''); }} style={{ ...btn('rgba(255,255,255,0.05)', '#cbd5e1'), fontSize: 12, padding: '6px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                 <button onClick={() => { setBookingPackage(null); setBookingPrompt(''); }} style={{ ...btn('var(--border)', '#cbd5e1'), fontSize: 12, padding: '6px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                    Start Fresh
                  </button>
                </div>
                
-               {bookingPackage.structured ? (
+               {bookingPackage.deals ? (
                  <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                    {/* Summary & Budget */}
                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
-                     <div style={{ padding: 20, background: 'rgba(59,130,246,0.05)', borderRadius: 16, border: '1px solid rgba(59,130,246,0.1)' }}>
-                        <h4 style={{ fontSize: 13, color: '#60A5FA', textTransform: 'uppercase', fontWeight: 800, margin: '0 0 12px' }}>💰 AI Budget Estimate</h4>
-                        <p style={{ fontSize: 32, fontWeight: 900, color: 'white', margin: '0 0 8px' }}>₹{bookingPackage.totalEstimated?.toLocaleString()}</p>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {Object.entries((bookingPackage.budgetBreakdown || {}) as Record<string, number>).map(([k, v]) => (
-                            <span key={k} style={{ fontSize: 11, color: '#94a3b8', background: 'rgba(15,23,42,0.5)', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
-                              {k.charAt(0).toUpperCase() + k.slice(1)}: <b>{v}%</b>
-                            </span>
-                          ))}
-                        </div>
-                     </div>
+                     {bookingPackage.totalEstimate && (
+                       <div style={{ padding: 20, background: 'rgba(59,130,246,0.05)', borderRadius: 16, border: '1px solid rgba(59,130,246,0.1)' }}>
+                          <h4 style={{ fontSize: 13, color: '#60A5FA', textTransform: 'uppercase', fontWeight: 800, margin: '0 0 12px' }}>💰 AI Budget Estimate</h4>
+                          <p style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', margin: '0 0 8px' }}>₹{(bookingPackage.totalEstimate.total || 0).toLocaleString('en-IN')}</p>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {Object.entries((bookingPackage.totalEstimate || {}) as Record<string, number>).filter(([k]) => k !== 'total').map(([k, v]) => (
+                              <span key={k} style={{ fontSize: 11, color: 'var(--text2)', background: 'var(--bg)', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                {k.charAt(0).toUpperCase() + k.slice(1)}: <b>₹{v.toLocaleString('en-IN')}</b>
+                              </span>
+                            ))}
+                          </div>
+                       </div>
+                     )}
                      <div style={{ padding: 20, background: 'rgba(16,185,129,0.05)', borderRadius: 16, border: '1px solid rgba(16,185,129,0.1)' }}>
                         <h4 style={{ fontSize: 13, color: '#10B981', textTransform: 'uppercase', fontWeight: 800, margin: '0 0 12px' }}>💡 Saving Tips</h4>
                         <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {(bookingPackage.savingsTips || []).slice(0, 3).map((tip: string, i: number) => (
+                          {(bookingPackage.savingTips || []).slice(0, 3).map((tip: string, i: number) => (
                             <li key={i} style={{ fontSize: 13, color: '#d1d5db', display: 'flex', gap: 8 }}><CheckCircle style={{ width: 14, height: 14, color: '#34d399', flexShrink: 0, marginTop: 2 }} /> {tip}</li>
                           ))}
                         </ul>
                      </div>
                    </div>
 
-                   {/* Transport */}
-                   {bookingPackage.transport?.length > 0 && (
-                     <div>
-                       <h4 style={{ fontSize: 16, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><Plane style={{ width: 18, height: 18, color: '#60A5FA' }} /> Transport</h4>
-                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                         {bookingPackage.transport.map((t: any, i: number) => (
-                           <a key={i} href={t.bookingUrl !== '#' ? t.bookingUrl : undefined} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', padding: 16, background: 'rgba(15,23,42,0.6)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', display: 'block' }} className="hover:border-blue-500/30 transition-all">
-                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                               <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 12 }}>{t.mode}</span>
-                               <span style={{ fontSize: 16, fontWeight: 900, color: '#4ade80' }}>₹{t.estimatedPrice?.toLocaleString()}</span>
-                             </div>
-                             <h5 style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{t.provider} via {t.platform}</h5>
-                             <span style={{ fontSize: 12, color: '#60A5FA' }}>Check availability →</span>
-                           </a>
-                         ))}
-                       </div>
-                     </div>
-                   )}
+                   <div>
+                     <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><Sparkles style={{ width: 18, height: 18, color: '#f59e0b' }} /> Best Travel Deals</h4>
+                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                       {bookingPackage.deals.map((deal: any, i: number) => {
+                         const getIconAndColor = (cat: string) => {
+                           switch(cat?.toLowerCase()) {
+                             case 'flight': return { icon: <Plane style={{ width: 14, height: 14 }} />, color: '#60A5FA', bg: 'rgba(59,130,246,0.1)', text: 'rgba(59,130,246,0.2)' };
+                             case 'train': return { icon: '🚆', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', text: 'rgba(245,158,11,0.2)' };
+                             case 'bus': return { icon: '🚌', color: '#10B981', bg: 'rgba(16,185,129,0.1)', text: 'rgba(16,185,129,0.2)' };
+                             case 'hotel': return { icon: <Building style={{ width: 14, height: 14 }} />, color: '#F43F5E', bg: 'rgba(244,63,94,0.1)', text: 'rgba(244,63,94,0.2)' };
+                             case 'hostel': return { icon: <Building style={{ width: 14, height: 14 }} />, color: '#F43F5E', bg: 'rgba(244,63,94,0.1)', text: 'rgba(244,63,94,0.2)' };
+                             default: return { icon: <Compass style={{ width: 14, height: 14 }} />, color: '#a855f7', bg: 'rgba(168,85,247,0.1)', text: 'rgba(168,85,247,0.2)' };
+                           }
+                         };
+                         const meta = getIconAndColor(deal.category);
 
-                   {/* Hotels */}
-                   {bookingPackage.hotels?.length > 0 && (
-                     <div>
-                       <h4 style={{ fontSize: 16, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><Building style={{ width: 18, height: 18, color: '#F43F5E' }} /> Top Stays</h4>
-                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                         {bookingPackage.hotels.map((h: any, i: number) => (
-                           <div key={i} style={{ padding: 20, background: 'rgba(15,23,42,0.6)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }} className="hover:border-rose-500/30 transition-all">
-                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                               <h5 style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: 0, paddingRight: 10 }}>{h.name}</h5>
-                               <span style={{ fontSize: 16, fontWeight: 900, color: '#4ade80' }}>₹{h.price?.toLocaleString()}</span>
+                         return (
+                           <div key={i} style={{ padding: 16, background: 'var(--bg)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }} className="hover:border-slate-500/30 transition-all">
+                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' }}>
+                               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: meta.color, background: meta.bg, padding: '4px 8px', borderRadius: 12, textTransform: 'uppercase' }}>
+                                 {meta.icon} {deal.category}
+                               </span>
+                               <span style={{ fontSize: 16, fontWeight: 900, color: '#4ade80' }}>₹{deal.price?.toLocaleString('en-IN')}</span>
                              </div>
-                             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                               <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: 4 }}>★ {h.rating}</span>
-                               <span style={{ fontSize: 11, fontWeight: 700, color: h.trustScore >= 85 ? '#34d399' : '#fb923c', background: h.trustScore >= 85 ? 'rgba(52,211,153,0.1)' : 'rgba(251,146,60,0.1)', padding: '2px 6px', borderRadius: 4 }}>Trust: {h.trustScore}</span>
-                             </div>
-                             <p style={{ fontSize: 13, color: '#cbd5e1', margin: '0 0 16px', lineHeight: 1.5, flex: 1 }}>{h.description}</p>
                              
-                             {/* Bottom Action Buttons */}
+                             <h5 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>{deal.title}</h5>
+                             <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                               <strong style={{ color: 'var(--text)' }}>{deal.platform}</strong>
+                             </p>
+                             
+                             {deal.details && <p style={{ fontSize: 13, color: '#cbd5e1', margin: '0 0 8px', lineHeight: 1.4 }}>{deal.details}</p>}
+                             {deal.timing && <p style={{ fontSize: 12, color: 'var(--text2)', margin: '0 0 12px', background: 'var(--bg)', padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>🕒 {deal.timing}</p>}
+                             
+                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                               {deal.tag && <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: 4 }}>{deal.tag}</span>}
+                               {deal.discount && <span style={{ fontSize: 10, fontWeight: 700, color: '#A3E635', background: 'rgba(163,230,53,0.1)', padding: '2px 6px', borderRadius: 4 }}>{deal.discount}</span>}
+                               {deal.rating && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text)', background: 'var(--border)', padding: '2px 6px', borderRadius: 4 }}>★ {deal.rating}</span>}
+                             </div>
+                             
                              <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-                               <button onClick={() => toast.success('Saved to trip!')} style={{ flex: 1, padding: '10px 0', background: 'rgba(255,255,255,0.05)', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid rgba(255,255,255,0.05)' }} className="hover:bg-white/10 transition-all">
-                                 Save
+                               <button onClick={() => toast.success('Saved to trip deals!')} style={{ width: 40, flexShrink: 0, padding: 0, background: 'var(--border)', color: 'var(--text)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }} className="hover:bg-white/10 transition-all">
+                                 <Plus style={{ width: 16, height: 16 }} />
                                </button>
-                               <a href={h.bookingUrl !== '#' ? h.bookingUrl : undefined} target="_blank" rel="noreferrer" style={{ flex: 2, textDecoration: 'none', textAlign: 'center', padding: '10px 0', background: 'rgba(244,63,94,0.1)', color: '#fda4af', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid rgba(244,63,94,0.3)' }} className="hover:bg-rose-500 hover:text-white transition-all">
-                                 Book on {h.bookingPlatform}
+                               <a href={deal.url || '#'} target="_blank" rel="noreferrer" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', padding: '10px 0', background: meta.text, color: meta.color, borderRadius: 8, fontSize: 13, fontWeight: 700, border: `1px solid ${meta.color}40`, display: 'block' }} className="hover:brightness-125 transition-all">
+                                 Book via {deal.platform}
                                </a>
                              </div>
                            </div>
-                         ))}
-                       </div>
+                         );
+                       })}
                      </div>
-                   )}
-
-                   {/* Activities */}
-                   {bookingPackage.activities?.length > 0 && (
-                     <div>
-                       <h4 style={{ fontSize: 16, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><Compass style={{ width: 18, height: 18, color: '#f59e0b' }} /> Best Experiences</h4>
-                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                         {bookingPackage.activities.map((a: any, i: number) => (
-                           <div key={i} style={{ padding: 20, background: 'rgba(15,23,42,0.6)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }} className="hover:border-amber-500/30 transition-all">
-                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                               <h5 style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: 0, paddingRight: 10 }}>{a.name}</h5>
-                               <span style={{ fontSize: 16, fontWeight: 900, color: '#4ade80' }}>₹{a.price?.toLocaleString()}</span>
-                             </div>
-                             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                               <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: 4 }}>★ {a.rating}</span>
-                               <span style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.1)', padding: '2px 6px', borderRadius: 4 }}>{a.category?.toUpperCase()}</span>
-                             </div>
-                             <p style={{ fontSize: 13, color: '#cbd5e1', margin: '0 0 16px', lineHeight: 1.5, flex: 1 }}>{a.description}</p>
-                             
-                             {/* Bottom Action Buttons */}
-                             <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-                               <button onClick={() => toast.success('Saved to trip!')} style={{ flex: 1, padding: '10px 0', background: 'rgba(255,255,255,0.05)', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid rgba(255,255,255,0.05)' }} className="hover:bg-white/10 transition-all">
-                                 Save
-                               </button>
-                               <a href={a.bookingUrl !== '#' ? a.bookingUrl : undefined} target="_blank" rel="noreferrer" style={{ flex: 2, textDecoration: 'none', textAlign: 'center', padding: '10px 0', background: 'rgba(245,158,11,0.1)', color: '#fcd34d', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid rgba(245,158,11,0.3)' }} className="hover:bg-amber-500 hover:text-white transition-all">
-                                 Book on {a.bookingPlatform}
-                               </a>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Hidden Gems */}
-                   {bookingPackage.hiddenGems?.length > 0 && (
-                     <div>
-                       <h4 style={{ fontSize: 16, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><Sparkles style={{ width: 18, height: 18, color: '#a855f7' }} /> AI Hidden Gems</h4>
-                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                         {bookingPackage.hiddenGems.map((g: any, i: number) => (
-                           <div key={i} style={{ padding: 20, background: 'rgba(168,85,247,0.05)', borderRadius: 16, border: '1px solid rgba(168,85,247,0.1)' }}>
-                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                               <h5 style={{ fontSize: 15, fontWeight: 800, color: 'white', margin: 0 }}>{g.name}</h5>
-                             </div>
-                             <p style={{ fontSize: 13, color: '#cbd5e1', margin: '0 0 12px', lineHeight: 1.5 }}>{g.description}</p>
-                             <div style={{ background: 'rgba(15,23,42,0.4)', padding: 10, borderRadius: 8, fontSize: 12, color: '#94a3b8' }}>
-                               <strong style={{ color: '#c084fc' }}>💡 Insider Tip:</strong> {g.tip}
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   )}
+                   </div>
                  </div>
                ) : (
-                 <div style={{ padding: 24, background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.1)' }}>
+                 <div style={{ padding: 24, background: 'var(--bg)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.1)' }}>
                     <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 14, color: '#cbd5e1', lineHeight: 1.8, fontFamily: 'inherit', margin: 0 }}>
                       {bookingPackage.package ? bookingPackage.package : (typeof bookingPackage === 'string' ? bookingPackage : JSON.stringify(bookingPackage, null, 2))}
                     </pre>
@@ -1139,38 +1285,38 @@ export default function TripDetailPage() {
         {/* Members */}
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
               <Users style={{ width: 18, height: 18, color: '#f97316' }} /> Members
             </h3>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 20 }}>
-              {members.length}
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', background: 'var(--border)', padding: '2px 8px', borderRadius: 20 }}>
+              {Array.isArray(members) ? members.length : 0}
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {members.length === 0
-              ? <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: '10px 0' }}>No members yet</p>
+            {!Array.isArray(members) || members.length === 0
+              ? <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', padding: '10px 0' }}>No members yet</p>
               : members.map((m: any) => {
                   const u           = m.user || m;
                   const memberId    = m.userId || u.id;
                   const isAdminMem  = memberId === trip.adminId || memberId === trip.admin?.id;
                   return (
-                    <div key={memberId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', transition: 'transform 0.2s, background 0.2s' }} className="hover:bg-white/5 hover:scale-[1.01]">
+                    <div key={memberId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 16, background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.04)', transition: 'transform 0.2s, background 0.2s' }} className="hover:bg-white/5 hover:scale-[1.01]">
                       <div style={{ position: 'relative' }}>
-                        <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'white' }}>
+                        <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                           {u.profileImage ? <img src={u.profileImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} /> : (u.username ? u.username[0].toUpperCase() : '?')}
                         </div>
                         {isAdminMem && (
                           <div style={{ position: 'absolute', bottom: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#f97316', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Admin">
-                             <Shield style={{ width: 10, height: 10, color: 'white' }} />
+                             <Shield style={{ width: 10, height: 10, color: 'var(--text)' }} />
                           </div>
                         )}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: 'white', margin: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                           {u.username}
                         </p>
-                        <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>{u.city || 'Traveler'}</p>
+                        <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>{u.city || 'Traveler'}</p>
                       </div>
                       {currentUser?.id !== memberId && (
                         <FollowButton targetUserId={memberId} size="sm" variant="ghost" />
@@ -1192,21 +1338,21 @@ export default function TripDetailPage() {
           {isAdmin ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                   <UserPlus style={{ width: 18, height: 18, color: '#3b82f6' }} /> Join Requests
                 </h3>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 20 }}>
-                  {joinRequests.filter((r:any) => r.status === 'pending').length}
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', background: 'var(--border)', padding: '2px 8px', borderRadius: 20 }}>
+                  {(Array.isArray(joinRequests) ? joinRequests : []).filter((r:any) => r.status === 'pending').length}
                 </span>
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {joinRequests.filter((r:any) => r.status === 'pending').length === 0
-                  ? <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: '10px 0' }}>No pending requests</p>
+                {!Array.isArray(joinRequests) || joinRequests.filter((r:any) => r.status === 'pending').length === 0
+                  ? <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', padding: '10px 0' }}>No pending requests</p>
                   : joinRequests.filter((r:any) => r.status === 'pending').map((r:any) => (
-                      <div key={r.id} style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div key={r.id} style={{ padding: 16, borderRadius: 12, background: 'var(--card)', border: '1px solid rgba(255,255,255,0.04)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: r.message ? 10 : 0 }}>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: 'white', margin: 0 }}>{r.user?.username || 'unknown'}</p>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{r.user?.username || 'unknown'}</p>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button onClick={() => handleRequest(r.id, 'accepted')} title="Approve" style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} className="hover:bg-green-500/20">
                               <CheckCircle style={{ width: 16, height: 16, color: '#22C55E' }} />
@@ -1216,7 +1362,7 @@ export default function TripDetailPage() {
                             </button>
                           </div>
                         </div>
-                        {r.message && <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>"{r.message}"</p>}
+                        {r.message && <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>"{r.message}"</p>}
                       </div>
                     ))
                 }
@@ -1224,7 +1370,7 @@ export default function TripDetailPage() {
             </>
           ) : !isMember ? (
             <>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <UserPlus style={{ width: 18, height: 18, color: '#f97316' }} /> Join this Trip
               </h3>
               {hasPendingRequest ? (
@@ -1235,7 +1381,7 @@ export default function TripDetailPage() {
               ) : (
                 <>
                   <textarea placeholder="Add a message for the admin (optional)..." value={joinMsg} onChange={e => setJoinMsg(e.target.value)} maxLength={200}
-                    style={{ width: '100%', height: 100, padding: 14, borderRadius: 12, fontSize: 14, color: 'white', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', outline: 'none', resize: 'none', marginBottom: 16, fontFamily: 'inherit' }} 
+                    style={{ width: '100%', height: 100, padding: 14, borderRadius: 12, fontSize: 14, color: 'var(--text)', background: 'var(--card)', border: '1px solid rgba(255,255,255,0.08)', outline: 'none', resize: 'none', marginBottom: 16, fontFamily: 'inherit' }} 
                     onFocus={e => e.target.style.borderColor = 'rgba(249,115,22,0.5)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
                   />
@@ -1249,7 +1395,7 @@ export default function TripDetailPage() {
             </>
           ) : (
             <>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Shield style={{ width: 18, height: 18, color: '#22c55e' }} /> Quick Actions
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1263,14 +1409,14 @@ export default function TripDetailPage() {
                   { href: `/trips/${tripId}/wallet`, icon: Wallet,        label: 'Wallet & Expenses', color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
                 ].map(({ href, icon: Icon, label, color, bg }) => (
                   <Link key={href} href={href}
-                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)', textDecoration: 'none', transition: 'all 0.2s' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 12, background: 'var(--card)', border: '1px solid rgba(255,255,255,0.03)', textDecoration: 'none', transition: 'all 0.2s' }}
                     className="hover:bg-white/5"
                   >
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon style={{ width: 16, height: 16, color }} />
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>{label}</span>
-                    <ChevronRight style={{ width: 16, height: 16, color: '#64748b', marginLeft: 'auto' }} />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+                    <ChevronRight style={{ width: 16, height: 16, color: 'var(--text3)', marginLeft: 'auto' }} />
                   </Link>
                 ))}
               </div>

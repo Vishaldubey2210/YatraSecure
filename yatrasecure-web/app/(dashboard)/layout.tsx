@@ -5,29 +5,52 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   MapPin, LayoutDashboard, Compass, Bell,
   User, LogOut, Menu, X, Settings, Plus, Map, ShoppingBag,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Sun, Moon
 } from "lucide-react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import CurrentLocation from "@/components/CurrentLocation";
 
-// Nav items, "Wallet" has been removed to simplify user flow
 const navItems = [
-  { href: "/dashboard",       icon: LayoutDashboard, label: "Overview"      },
-  { href: "/trips",           icon: Compass,         label: "Trips"         },
-  { href: "/guides",          icon: Map,             label: "Destinations"  },
-  { href: "/marketplace",     icon: ShoppingBag,     label: "Marketplace"   },
-  { href: "/notifications",   icon: Bell,            label: "Alerts"        },
-  { href: "/profile",         icon: User,            label: "Profile"       },
+  { href: "/dashboard",     icon: LayoutDashboard, label: "Overview"     },
+  { href: "/trips",         icon: Compass,         label: "Trips"        },
+  { href: "/guides",        icon: Map,             label: "Destinations" },
+  { href: "/marketplace",   icon: ShoppingBag,     label: "Marketplace"  },
+  { href: "/notifications", icon: Bell,            label: "Alerts"       },
+  { href: "/profile",       icon: User,            label: "Profile"      },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const [user, setUser]           = useState<any>(null);
-  const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [user, setUser]                     = useState<any>(null);
+  const [mobileSidebar, setMobileSidebar]   = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
-  const [dropOpen, setDrop]       = useState(false);
+  const [dropOpen, setDrop]                 = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Check initial theme
+    const theme = localStorage.getItem("theme");
+    if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const nextTheme = !prev;
+      if (nextTheme) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+      return nextTheme;
+    });
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -57,14 +80,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const sidebarWidth = desktopCollapsed ? 80 : 260;
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", backgroundColor: "var(--bg)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", display: "flex", backgroundColor: "var(--dashboard-bg)", fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ══ SIDEBAR ══════════════════════════════════════════════════════════ */}
       {/* Mobile overlay */}
       {mobileSidebar && (
         <div
           onClick={() => setMobileSidebar(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(2,6,23,0.8)", zIndex: 40, backdropFilter: "blur(8px)" }}
+          style={{ position: "fixed", inset: 0, background: "rgba(26,26,46,0.5)", zIndex: 40, backdropFilter: "blur(4px)" }}
           className="lg:hidden"
         />
       )}
@@ -72,102 +95,118 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside style={{
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
         width: sidebarWidth,
-        background: "linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%)",
-        borderRight: "1px solid rgba(255,255,255,0.05)",
+        background: "var(--card)",
+        borderRight: "1px solid var(--border)",
         display: "flex", flexDirection: "column",
         transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        boxShadow: "4px 0 24px rgba(0,0,0,0.5)"
-      }} 
+        boxShadow: "2px 0 12px rgba(83,74,183,0.06)",
+      }}
       className={`transform ${mobileSidebar ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
-        {/* Logo Area */}
-        <div style={{ padding: desktopCollapsed ? "28px 12px 24px" : "28px 24px 24px", display: "flex", flexDirection: "column", alignItems: desktopCollapsed ? "center" : "stretch" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyItems: "center", justifyContent: desktopCollapsed ? "center" : "space-between" }}>
-            <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+        {/* ── Logo Area ── */}
+        <div style={{ padding: desktopCollapsed ? "24px 12px 20px" : "24px 20px 20px", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: desktopCollapsed ? "center" : "space-between" }}>
+            <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
               <div style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: "var(--cta-gradient)",
-                boxShadow: "0 4px 12px rgba(56,189,248,0.3)",
+                width: 32, height: 32, borderRadius: 8,
+                background: "var(--primary)",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                transition: "box-shadow 0.4s",
               }}>
                 <MapPin style={{ width: 16, height: 16, color: "white" }} />
               </div>
               {!desktopCollapsed && (
-                <span style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}>
                   YatraSecure
                 </span>
               )}
             </Link>
             <button
-                onClick={() => setMobileSidebar(false)}
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  color: "#94a3b8",
-                  padding: 8,
-                  transition: "all 0.2s",
-                }}
-                className="hover:bg-white/10 hover:text-white hover:rotate-90 transition-all duration-200 flex lg:hidden"
-              >
-                <X style={{ width: 18, height: 18 }} />
-              </button>
+              onClick={() => setMobileSidebar(false)}
+              style={{
+                background: "transparent", border: "none",
+                cursor: "pointer", color: "#9898B0", padding: 4,
+                display: "flex", borderRadius: 8,
+                transition: "color 0.2s ease-in-out",
+              }}
+              className="flex lg:hidden hover:text-brand-text"
+            >
+              <X style={{ width: 18, height: 18 }} />
+            </button>
           </div>
 
-          {/* Create New Trip Button */}
-          <Link href="/dashboard?create=true" style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
-            <button style={{
-              marginTop: 24, width: '100%', height: 40, borderRadius: 10,
-              background: 'rgba(56,189,248,0.08)',
-              border: '1px solid rgba(56,189,248,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.2s', fontFamily: "'Plus Jakarta Sans', sans-serif"
-            }}
-            className="hover:bg-[rgba(56,189,248,0.15)] group"
-            >
-              <Plus style={{ width: 16, height: 16 }} className="group-hover:scale-110 transition-transform" />
-              {!desktopCollapsed && "New Trip"}
-            </button>
-          </Link>
+          {/* New Trip Button */}
+          {!desktopCollapsed && (
+            <Link href="/create-trip" style={{ textDecoration: "none", display: "block", width: "100%", marginTop: 16 }}>
+              <button style={{
+                width: "100%", height: 38, borderRadius: 10,
+                background: "#EEEDFE",
+                border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                color: "#534AB7", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                transition: "background 0.2s ease-in-out",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#DDD9FC")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#EEEDFE")}
+              >
+                <Plus style={{ width: 15, height: 15 }} />
+                New Trip
+              </button>
+            </Link>
+          )}
+          {desktopCollapsed && (
+            <Link href="/create-trip" style={{ textDecoration: "none", display: "flex", justifyContent: "center", marginTop: 16 }}>
+              <button style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "#EEEDFE", border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#534AB7", cursor: "pointer",
+                transition: "background 0.2s ease-in-out",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#DDD9FC")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#EEEDFE")}
+              >
+                <Plus style={{ width: 16, height: 16 }} />
+              </button>
+            </Link>
+          )}
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: desktopCollapsed ? "0 8px" : "0 16px", overflowX: "hidden", overflowY: "auto" }}>
-          <div style={{ marginBottom: 24 }}>
-            {!desktopCollapsed && (
-              <p style={{ fontSize: 10, fontWeight: 800, color: "#475569", letterSpacing: "0.1em", padding: "0 12px", marginBottom: 12 }}>
-                MENU
-              </p>
-            )}
+        {/* ── Nav ── */}
+        <nav style={{ flex: 1, padding: desktopCollapsed ? "16px 8px" : "16px 12px", overflowY: "auto", overflowX: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {navItems.map(({ href, icon: Icon, label }) => {
               const active = isActive(href);
               return (
                 <Link key={href} href={href} onClick={() => setMobileSidebar(false)} style={{ textDecoration: "none" }}>
                   <div style={{
-                    display: "flex", alignItems: "center", gap: desktopCollapsed ? 0 : 12, justifyContent: desktopCollapsed ? "center" : "flex-start",
-                    padding: desktopCollapsed ? "10px 0" : "10px 12px", borderRadius: 10, marginBottom: 4,
-                    background: active ? "linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)" : "transparent",
-                    cursor: "pointer", transition: "all 0.2s",
+                    display: "flex", alignItems: "center",
+                    gap: desktopCollapsed ? 0 : 10,
+                    justifyContent: desktopCollapsed ? "center" : "flex-start",
+                    padding: desktopCollapsed ? "10px 0" : "10px 12px",
+                    borderRadius: desktopCollapsed ? 10 : "0 10px 10px 0",
+                    background: active ? "var(--primary-light)" : "transparent",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease-in-out",
                     position: "relative",
-                    border: "1px solid transparent",
-                    borderColor: active ? "rgba(255,255,255,0.05)" : "transparent"
+                    borderLeft: active ? "3px solid var(--primary)" : "3px solid transparent",
+                    marginLeft: active ? 0 : 0,
                   }}
-                    className={`group ${!active && "hover:bg-white/5"}`}
-                    title={desktopCollapsed ? label : undefined}
+                  onMouseEnter={e => {
+                    if (!active) e.currentTarget.style.background = "var(--bg2)";
+                  }}
+                  onMouseLeave={e => {
+                    if (!active) e.currentTarget.style.background = "transparent";
+                  }}
+                  title={desktopCollapsed ? label : undefined}
                   >
-                    {active && <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%", width: 3, borderRadius: "0 4px 4px 0", background: "var(--accent)", boxShadow: "0 0 10px var(--accent)", transition: "height 0.3s" }} />}
-                    <Icon style={{ 
-                      width: 18, height: 18, 
-                      color: active ? "white" : "#64748b", flexShrink: 0,
-                      transition: "color 0.2s" 
-                    }} 
-                      className={`group-hover:text-slate-300 ${active && "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"}`}
-                    />
+                    <Icon style={{
+                      width: 18, height: 18,
+                      color: active ? "var(--primary)" : "var(--text2)",
+                      flexShrink: 0,
+                      transition: "color 0.2s ease-in-out",
+                    }} />
                     {!desktopCollapsed && (
-                      <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: active ? "white" : "#94a3b8", transition: "color 0.2s" }} className="group-hover:text-slate-200">
+                      <span style={{ fontSize: 14, fontWeight: active ? 600 : 500, color: active ? "var(--primary)" : "var(--text2)", transition: "color 0.2s ease-in-out" }}>
                         {label}
                       </span>
                     )}
@@ -177,175 +216,200 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
           </div>
 
-          <div>
+          {/* Support section */}
+          <div style={{ marginTop: 24 }}>
             {!desktopCollapsed && (
-              <p style={{ fontSize: 10, fontWeight: 800, color: "#475569", letterSpacing: "0.1em", padding: "0 12px", marginBottom: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "#9898B0", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0 8px", marginBottom: 8 }}>
                 SUPPORT
               </p>
             )}
             <Link href="/settings" style={{ textDecoration: "none" }}>
               <div style={{
-                display: "flex", alignItems: "center", gap: desktopCollapsed ? 0 : 12, justifyContent: desktopCollapsed ? "center" : "flex-start",
-                padding: desktopCollapsed ? "10px 0" : "10px 12px", borderRadius: 10, marginBottom: 4,
-                cursor: "pointer", transition: "all 0.2s",
+                display: "flex", alignItems: "center",
+                gap: desktopCollapsed ? 0 : 10,
+                justifyContent: desktopCollapsed ? "center" : "flex-start",
+                padding: desktopCollapsed ? "10px 0" : "10px 12px",
+                borderRadius: 10, cursor: "pointer",
+                transition: "background 0.2s ease-in-out",
+                borderLeft: "3px solid transparent",
               }}
-              className="hover:bg-white/5 group"
+              onMouseEnter={e => (e.currentTarget.style.background = "#F8F7FD")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               title={desktopCollapsed ? "Settings" : undefined}
               >
-                <Settings style={{ width: 18, height: 18, color: "#64748b", flexShrink: 0 }} className="group-hover:text-slate-300" />
-                {!desktopCollapsed && <span style={{ fontSize: 13, fontWeight: 500, color: "#94a3b8" }} className="group-hover:text-slate-200">Settings</span>}
+                <Settings style={{ width: 18, height: 18, color: "#6B6B8A", flexShrink: 0 }} />
+                {!desktopCollapsed && <span style={{ fontSize: 14, fontWeight: 500, color: "#6B6B8A" }}>Settings</span>}
               </div>
             </Link>
           </div>
         </nav>
 
-        {/* User Profile Snippet (Bottom) */}
+        {/* ── User profile snippet (bottom) ── */}
         {user && (
-          <div style={{ padding: desktopCollapsed ? "16px 8px 32px" : "16px 16px 32px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px", borderRadius: 12, transition: "background 0.2s", justifyContent: desktopCollapsed ? "center" : "flex-start" }} className="hover:bg-white/5 cursor-pointer">
-              <div style={{
-                width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))",
-                border: "1px solid rgba(255,255,255,0.1)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "white",
-              }}>
-                {avatar}
-              </div>
-              {!desktopCollapsed && (
-                <div style={{ overflow: "hidden", flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "white", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {user.username}
-                  </p>
-                  <p style={{ fontSize: 11, color: "#64748b", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {user.email}
-                  </p>
+          <div style={{ padding: desktopCollapsed ? "12px 8px 24px" : "12px 12px 24px", borderTop: "1px solid var(--border)" }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 10px", borderRadius: 10,
+              transition: "background 0.2s ease-in-out", cursor: "pointer",
+              justifyContent: desktopCollapsed ? "center" : "flex-start",
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--bg2)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: "var(--primary)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 700, color: "white",
+                }}>
+                  {avatar}
                 </div>
-              )}
-            </div>
+                {!desktopCollapsed && (
+                  <div style={{ overflow: "hidden", flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {user.username}
+                    </p>
+                    <p style={{ fontSize: 11, color: "var(--text3)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {user.email}
+                    </p>
+                  </div>
+                )}
+              </div>
           </div>
         )}
       </aside>
 
       {/* ══ MAIN AREA ════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh",
-        marginLeft: 0, // Default for mobile
-        transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-      }} 
-      className="lg:!ml-0" // override for lg, we handle it via style below
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh" }}
+        className={desktopCollapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}
       >
-        <div style={{ marginLeft: "auto", display: "none" }} className="lg:!block" />
-
-        <div style={{ display: 'contents' }}>
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column",
-            transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            background: 'var(--dashboard-bg)', // new color system
-          }} className={desktopCollapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"}>
-            {/* ── TOP NAV BAR ── */}
-            <header style={{
-              position: "sticky", top: 0, zIndex: 30,
-              background: "linear-gradient(90deg, var(--dashboard-gradient-start), var(--dashboard-gradient-end))", // time-based gradient
-              backdropFilter: "blur(24px)",
-              borderBottom: "1px solid rgba(255,255,255,0.05)",
-              padding: "0 28px", height: 64,
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              gap: 16,
-              boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
-              animation: 'fade-slide-down 0.7s',
-            }}>
-              {/* Left — Breadcrumb & Collapse Toggle */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <button
-                  onClick={() => setMobileSidebar(true)}
-                  className="lg:hidden"
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 4 }}>
-                  <Menu style={{ width: 20, height: 20 }} />
-                </button>
-                <button
-                  onClick={() => setDesktopCollapsed(!desktopCollapsed)}
-                  className="hidden lg:flex"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, cursor: "pointer", color: "#94a3b8", padding: 6, transition: "background 0.2s" }}>
-                  {desktopCollapsed ? <PanelLeftOpen style={{ width: 16, height: 16 }} /> : <PanelLeftClose style={{ width: 16, height: 16 }} />}
-                </button>
-                <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>YatraSecure</span>
-                  <span style={{ color: "#334155" }}>/</span>
-                  <span style={{ fontSize: 13, color: "white", fontWeight: 600, textTransform: "capitalize", letterSpacing: "0.02em" }}>
-                    {pathname.split("/")[1] || "overview"}
-                  </span>
-                </div>
-              </div>
-              {/* Right — Actions */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <CurrentLocation />
-                <NotificationDropdown />
-
-                {/* Profile Dropdown */}
-                <div ref={dropRef} style={{ position: "relative" }}>
-                    <div
-                        onClick={() => setDrop(!dropOpen)}
-                        style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer",
-                        transition: "all 0.2s"
-                        }}
-                        className="hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:border-white/20"
-                    >
-                        {avatar}
-                    </div>
-
-                    {dropOpen && (
-                        <div style={{
-                        position: "absolute", top: "calc(100% + 12px)", right: 0,
-                        width: 220, borderRadius: 16,
-                        background: "rgba(15,23,42,0.95)", backdropFilter: "blur(20px)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-                        overflow: "hidden", zIndex: 100, padding: 8
-                        }}
-                        className="anim-in"
-                        >
-                        <div style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: "white", margin: 0 }}>{user?.username}</p>
-                            <p style={{ fontSize: 12, color: "#64748b", margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</p>
-                        </div>
-                        
-                        <Link href="/profile" onClick={() => setDrop(false)} style={{ textDecoration: "none" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#cbd5e1", cursor: "pointer", transition: "all 0.2s" }} className="hover:bg-white/10 hover:text-white">
-                            <User style={{ width: 14, height: 14 }} /> Profile
-                            </div>
-                        </Link>
-                        <Link href="/settings" onClick={() => setDrop(false)} style={{ textDecoration: "none" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#cbd5e1", cursor: "pointer", transition: "all 0.2s" }} className="hover:bg-white/10 hover:text-white">
-                            <Settings style={{ width: 14, height: 14 }} /> Settings
-                            </div>
-                        </Link>
-                        <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "8px 0" }} />
-                        <div onClick={() => { setDrop(false); logout(); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#ef4444", cursor: "pointer", transition: "all 0.2s" }} className="hover:bg-red-500/10">
-                            <LogOut style={{ width: 14, height: 14 }} /> Sign Out
-                        </div>
-                        </div>
-                    )}
-                    </div>
-                </div>
-                </header>
-
-                {/* ── MAIN CONTENT AREA ── */}
-                <main style={{ flex: 1, padding: "32px", overflowY: "auto", position: 'relative' }}>
-                <div style={{ 
-                    position: 'absolute', top: 0, left: '20%', width: '60%', height: '30vh',
-                    background: 'radial-gradient(ellipse at top, rgba(29,78,216,0.15) 0%, transparent 70%)',
-                    pointerEvents: 'none', zIndex: -1
-                }} />
-                {children}
-                </main>
+        {/* ── TOP NAV BAR ── */}
+        <header style={{
+          position: "sticky", top: 0, zIndex: 30,
+          background: "var(--card)",
+          borderBottom: "1px solid var(--border)",
+          padding: "0 24px", height: 68,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 16,
+          boxShadow: "0 1px 8px rgba(83,74,183,0.05)",
+        }}>
+          {/* Left — Breadcrumb & Collapse Toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={() => setMobileSidebar(true)}
+              className="lg:hidden"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#6B6B8A", display: "flex", padding: 4, borderRadius: 8 }}
+            >
+              <Menu style={{ width: 20, height: 20 }} />
+            </button>
+            <button
+              onClick={() => setDesktopCollapsed(!desktopCollapsed)}
+              className="hidden lg:flex"
+              style={{
+                background: "#F8F7FD", border: "1px solid #E4E2F4",
+                borderRadius: 8, cursor: "pointer", color: "#6B6B8A",
+                padding: 6, transition: "background 0.2s ease-in-out", display: "flex",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#EEEDFE")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#F8F7FD")}
+            >
+              {desktopCollapsed ? <PanelLeftOpen style={{ width: 16, height: 16 }} /> : <PanelLeftClose style={{ width: 16, height: 16 }} />}
+            </button>
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 13, color: "var(--text3)", fontWeight: 500 }}>YatraSecure</span>
+              <span style={{ color: "var(--border2)" }}>/</span>
+              <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600, textTransform: "capitalize" }}>
+                {pathname.split("/")[1] || "overview"}
+              </span>
             </div>
-        </div>
+          </div>
+
+          {/* Right — Actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: 36, height: 36, borderRadius: 8,
+                background: "var(--bg2)", border: "1px solid var(--border)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--text2)", cursor: "pointer", transition: "all 0.2s"
+              }}
+            >
+              {isDarkMode ? <Sun style={{ width: 16, height: 16 }} /> : <Moon style={{ width: 16, height: 16 }} />}
+            </button>
+            <CurrentLocation />
+            <NotificationDropdown />
+
+            {/* Profile Dropdown */}
+            <div ref={dropRef} style={{ position: "relative" }}>
+              <div
+                onClick={() => setDrop(!dropOpen)}
+                style={{
+                  width: 36, height: 36, borderRadius: 8,
+                  background: "#534AB7",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer",
+                  transition: "all 0.2s ease-in-out",
+                  userSelect: "none",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#3C3489")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#534AB7")}
+              >
+                {avatar}
+              </div>
+
+              {dropOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 10px)", right: 0,
+                  width: 220, borderRadius: 14,
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+                  overflow: "hidden", zIndex: 100, padding: 8,
+                }}
+                className="anim-in"
+                >
+                  <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", marginBottom: 6 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", margin: 0 }}>{user?.username}</p>
+                    <p style={{ fontSize: 12, color: "var(--text3)", margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</p>
+                  </div>
+
+                  <Link href="/profile" onClick={() => setDrop(false)} style={{ textDecoration: "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#6B6B8A", cursor: "pointer", transition: "all 0.2s ease-in-out" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#EEEDFE"; e.currentTarget.style.color = "#534AB7"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6B6B8A"; }}
+                    >
+                      <User style={{ width: 14, height: 14 }} /> Profile
+                    </div>
+                  </Link>
+                  <Link href="/settings" onClick={() => setDrop(false)} style={{ textDecoration: "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#6B6B8A", cursor: "pointer", transition: "all 0.2s ease-in-out" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#EEEDFE"; e.currentTarget.style.color = "#534AB7"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6B6B8A"; }}
+                    >
+                      <Settings style={{ width: 14, height: 14 }} /> Settings
+                    </div>
+                  </Link>
+                  <div style={{ height: 1, background: "#F0EFF8", margin: "6px 0" }} />
+                  <div
+                    onClick={() => { setDrop(false); logout(); }}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "#E24B4A", cursor: "pointer", transition: "background 0.2s ease-in-out" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#FCEBEB")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <LogOut style={{ width: 14, height: 14 }} /> Sign Out
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* ── MAIN CONTENT AREA ── */}
+        <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", position: "relative", background: "var(--dashboard-bg)" }}>
+          {children}
+        </main>
       </div>
     </div>
   );

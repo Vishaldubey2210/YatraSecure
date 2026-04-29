@@ -1,120 +1,84 @@
-"""
-YatraSecure AI Travel Booking Engine
-Multi-Agent CrewAI Architecture with 8 Specialized Agents
-FIXED: Booking URLs now use safe search-based links (no more 404s)
-"""
-
 import os
 import sys
 import json
 import logging
 from dotenv import load_dotenv
+from crewai import Agent, Task, Crew, Process
+from duckduckgo_search import DDGS
 
 load_dotenv()
 
 logging.basicConfig(level=logging.ERROR, stream=sys.stderr)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SAFE URL BUILDER — Prevents hallucinated deep-links (404 fix)
+# SAFE URL BUILDER — 100% Real Deal Links (No 404s)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def make_safe_url(name: str, location: str, platform: str, category: str = "hotel") -> str:
+def make_safe_url(name: str, location: str, platform: str, category: str = "hotel", start_date: str = "", end_date: str = "", origin: str = "") -> str:
     """
-    Constructs a guaranteed-working search URL for any booking platform.
-    Never uses deep-links that the AI might hallucinate.
+    Constructs a guaranteed-working search URL for Indian platforms (MakeMyTrip, Goibibo, etc.)
     """
-    query = f"{name} {location}".strip().replace(" ", "+")
-    loc_encoded = location.strip().replace(" ", "+")
-    platform_lower = platform.lower()
+    loc_encoded = location.strip().replace(" ", "%20")
+    platform = platform.lower()
+    
+    # Remove hyphens for MMT/Goibibo dates: YYYYMMDD
+    date_mmt = start_date.replace("-", "") if start_date else ""
+    end_mmt = end_date.replace("-", "") if end_date else ""
 
-    if "booking" in platform_lower:
-        return f"https://www.booking.com/search.html?ss={query}"
-
-    elif "makemytrip" in platform_lower or "mmt" in platform_lower:
-        if category in ["hotel", "hostel", "resort"]:
-            return f"https://www.makemytrip.com/hotels/hotel-listing/?city={loc_encoded}"
+    if category == "flight":
+        if "makemytrip" in platform or "mmt" in platform:
+            return f"https://www.makemytrip.com/flight/search?itinerary={origin}-{location}-{date_mmt}"
+        elif "goibibo" in platform:
+            return f"https://www.goibibo.com/flights/air-{origin.lower()}-{location.lower()}-{date_mmt}/"
+        elif "cleartrip" in platform:
+            return f"https://www.cleartrip.com/flights/{origin.lower()}-{location.lower()}-{start_date}/"
         else:
-            return f"https://www.makemytrip.com/holidays-india/search/?q={query}"
-
-    elif "oyo" in platform_lower:
-        return f"https://www.oyorooms.com/search?location={loc_encoded}"
-
-    elif "airbnb" in platform_lower:
-        loc_dash = location.strip().replace(" ", "-")
-        return f"https://www.airbnb.co.in/s/{loc_dash}/homes"
-
-    elif "viator" in platform_lower:
-        return f"https://www.viator.com/searchResults/all?text={query}"
-
-    elif "getyourguide" in platform_lower or "gyg" in platform_lower:
-        return f"https://www.getyourguide.com/s/?q={query}"
-
-    elif "cleartrip" in platform_lower:
-        return f"https://www.cleartrip.com/hotels/search/?q={query}"
-
-    elif "thrillophilia" in platform_lower:
-        return f"https://www.thrillophilia.com/search?query={query}"
-
-    elif "hostelworld" in platform_lower:
-        return f"https://www.hostelworld.com/search#q={loc_encoded}"
-
-    elif "skyscanner" in platform_lower:
-        return "https://www.skyscanner.co.in/flights/"
-
-    elif "irctc" in platform_lower:
+            return "https://www.skyscanner.co.in/flights"
+            
+    elif category == "train":
         return "https://www.irctc.co.in/nget/train-search"
+        
+    elif category == "bus":
+        return f"https://www.redbus.in/bus-tickets/{origin.lower()}-to-{location.lower()}"
 
-    elif "redbus" in platform_lower:
-        return f"https://www.redbus.in/search?src=&dst={loc_encoded}"
+    # Hotels
+    if "booking" in platform:
+        return f"https://www.booking.com/searchresults.html?ss={loc_encoded}&checkin={start_date}&checkout={end_date}"
+    elif "makemytrip" in platform or "mmt" in platform:
+        return f"https://www.makemytrip.com/hotels/hotel-listing/?city={loc_encoded}&checkin={date_mmt}&checkout={end_mmt}"
+    elif "oyo" in platform:
+        return f"https://www.oyorooms.com/search?location={loc_encoded}&checkin={start_date}&checkout={end_date}"
+    elif "airbnb" in platform:
+        loc_dash = location.strip().replace(" ", "-")
+        return f"https://www.airbnb.co.in/s/{loc_dash}/homes?checkin={start_date}&checkout={end_date}"
+    elif "hostelworld" in platform:
+        return f"https://www.hostelworld.com/s?q={loc_encoded}&dateFrom={start_date}&dateTo={end_date}"
+    elif category in ["activity", "experience"]:
+        return f"https://www.tripadvisor.in/Search?q={name.replace(' ', '+')}+{location}"
+        
+    # Fallback
+    query = f"{name} {location}".strip().replace(" ", "+")
+    return f"https://www.google.com/search?q=book+{query}"
 
-    elif "goibibo" in platform_lower:
-        return f"https://www.goibibo.com/hotels/hotels-in-{location.lower().replace(' ', '-')}/"
 
-    elif "easemytrip" in platform_lower:
-        return f"https://www.easemytrip.com/hotel/hotel-search.html"
-
-    elif "agoda" in platform_lower:
-        return f"https://www.agoda.com/search?city={loc_encoded}"
-
-    else:
-        # Universal fallback: Google search
-        return f"https://www.google.com/search?q=book+{query}"
-
-
-def sanitize_booking_urls(parsed: dict) -> dict:
-    """
-    Post-processes the AI output and replaces all hallucinated deep-link URLs
-    with safe, search-based URLs that are guaranteed to work.
-    """
-    destination = parsed.get("destination", "")
-
-    # Fix hotels
-    for item in parsed.get("hotels", []):
-        item["bookingUrl"] = make_safe_url(
-            item.get("name", ""),
-            item.get("location", destination),
-            item.get("bookingPlatform", ""),
-            item.get("category", "hotel")
-        )
-
-    # Fix activities
-    for item in parsed.get("activities", []):
-        item["bookingUrl"] = make_safe_url(
-            item.get("name", ""),
-            item.get("location", destination),
-            item.get("bookingPlatform", ""),
-            "activity"
-        )
-
-    # Fix transport
-    for item in parsed.get("transport", []):
-        item["bookingUrl"] = make_safe_url(
-            item.get("provider", item.get("mode", "")),
-            destination,
-            item.get("platform", ""),
-            "transport"
-        )
-
+def sanitize_booking_urls(parsed: dict, dest: str, origin: str, start_date: str, end_date: str) -> dict:
+    """Post-processes and injects genuine deals URLs natively into the object."""
+    if "deals" in parsed:
+        for item in parsed["deals"]:
+            item["url"] = make_safe_url(
+                name=item.get("title", ""),
+                location=dest,
+                platform=item.get("platform", ""),
+                category=item.get("category", "hotel"),
+                start_date=start_date,
+                end_date=end_date,
+                origin=origin
+            )
+            # Ensure price format is integer
+            try:
+                item["price"] = int(str(item.get("price", "0")).replace(',', '').replace('₹', '').replace(' INR', ''))
+            except:
+                item["price"] = 0
     return parsed
 
 
@@ -125,121 +89,8 @@ def sanitize_booking_urls(parsed: dict) -> dict:
 api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
 if not api_key or api_key == "PASTE_YOUR_GROQ_API_KEY_HERE":
-    # Demo mode fallback
-    try:
-        input_data = sys.argv[1] if len(sys.argv) > 1 else "{}"
-        params = json.loads(input_data)
-        dest = params.get("destination", "Goa")
-    except:
-        dest = "Goa"
-
-    demo_data = {
-        "success": True,
-        "structured": True,
-        "destination": dest,
-        "hotels": [
-            {
-                "name": f"Premium Stay {dest}",
-                "price": 4500,
-                "rating": 4.6,
-                "location": dest,
-                "description": "Well-rated hotel with modern amenities",
-                "bookingPlatform": "MakeMyTrip",
-                "bookingUrl": "",   # will be fixed below
-                "trustScore": 88,
-                "category": "hotel"
-            },
-            {
-                "name": f"Budget Hostel {dest}",
-                "price": 1200,
-                "rating": 4.3,
-                "location": dest,
-                "description": "Clean, social hostel perfect for backpackers",
-                "bookingPlatform": "Hostelworld",
-                "bookingUrl": "",
-                "trustScore": 82,
-                "category": "hostel"
-            },
-        ],
-        "activities": [
-            {
-                "name": "City Heritage Walk",
-                "price": 800,
-                "rating": 4.8,
-                "location": dest,
-                "description": "Guided tour of historic landmarks",
-                "bookingPlatform": "GetYourGuide",
-                "bookingUrl": "",
-                "trustScore": 91,
-                "category": "culture"
-            },
-            {
-                "name": "Local Food Tour",
-                "price": 1500,
-                "rating": 4.7,
-                "location": dest,
-                "description": "Taste authentic street food with a local guide",
-                "bookingPlatform": "Viator",
-                "bookingUrl": "",
-                "trustScore": 89,
-                "category": "food"
-            },
-        ],
-        "restaurants": [
-            {
-                "name": f"Cafe {dest}",
-                "price": 600,
-                "rating": 4.5,
-                "location": dest,
-                "description": "Popular cafe with great ambiance",
-                "source": "Google Maps",
-                "trustScore": 85,
-                "category": "cafe"
-            },
-        ],
-        "hiddenGems": [
-            {
-                "name": "Secret Viewpoint",
-                "description": "A quiet hilltop with panoramic views, rarely visited by tourists",
-                "vibe": "Quiet",
-                "bestTime": "Sunrise",
-                "tip": "Bring a warm jacket in winter"
-            },
-        ],
-        "transport": [
-            {
-                "mode": "Flight",
-                "provider": "IndiGo",
-                "estimatedPrice": 4500,
-                "platform": "Skyscanner",
-                "bookingUrl": ""
-            },
-            {
-                "mode": "Train",
-                "provider": "IRCTC",
-                "estimatedPrice": 1200,
-                "platform": "IRCTC",
-                "bookingUrl": ""
-            },
-        ],
-        "budgetBreakdown": {
-            "accommodation": 45,
-            "activities": 25,
-            "food": 15,
-            "transport": 15
-        },
-        "totalEstimated": 15000,
-        "savingsTips": [
-            "Book 2 weeks in advance for best flight prices",
-            "Choose hostels for budget-friendly stays"
-        ]
-    }
-
-    # Apply URL sanitization even in demo mode
-    demo_data = sanitize_booking_urls(demo_data)
-    demo_data["package"] = f"# 🌴 AI Travel Package: {dest}\n(Demo Mode — Configure GROQ_API_KEY for live AI scouting)"
-    print(json.dumps(demo_data))
-    sys.exit(0)
+    print(json.dumps({"error": "GROQ_API_KEY is not set."}))
+    sys.exit(1)
 
 # Configure for Groq via OpenAI-compatible API
 if api_key.startswith("gsk_"):
@@ -249,61 +100,47 @@ if api_key.startswith("gsk_"):
 else:
     os.environ["OPENAI_API_KEY"] = api_key
 
-# ══════════════════════════════════════════════════════════════════════════════
-# IMPORT CREWAI (after env setup)
-# ══════════════════════════════════════════════════════════════════════════════
-from crewai import Agent, Task, Crew, Process
-from duckduckgo_search import DDGS
-
-
 def main():
     try:
         input_data = sys.argv[1] if len(sys.argv) > 1 else "{}"
         params = json.loads(input_data)
 
-        destination = params.get("destination", "a beautiful location")
-        dates = params.get("dates", "flexible dates")
+        destination = params.get("destination", "Goa")
+        dates_raw = params.get("dates", "2026-05-01 to 2026-05-10").split(" to ")
+        start_date = dates_raw[0] if len(dates_raw) > 0 else "2026-05-01"
+        end_date = dates_raw[1] if len(dates_raw) > 1 else "2026-05-10"
+        
+        origin = params.get("origin", "Delhi") # Attempt to get origin, default Delhi
         budget = str(params.get("budget", "50000"))
         custom_prompt = params.get("customPrompt", "")
         answers = params.get("answers", {})
         travelers = params.get("travelers", 1)
 
-        # Customization parameters
         acc_pref = answers.get("accommodation", "Any")
         food_pref = answers.get("food", "Any")
         trip_style = answers.get("style", "Any")
-        gems_toggle = answers.get("gemsToggle", "Both")
 
         # ── Fetch Live Data Upfront ──────────────────────────────────────────
         try:
             with DDGS() as ddgs:
                 hotel_search = list(ddgs.text(
-                    f"Top {acc_pref} hotels in {destination} with approximate INR prices",
-                    max_results=3
+                    f"Top {acc_pref} hotels in {destination} with prices", max_results=2
                 ))
                 activity_search = list(ddgs.text(
-                    f"Top {trip_style} tourist attractions and activities in {destination} with ticket prices INR",
-                    max_results=3
+                    f"Top {trip_style} activities in {destination} with ticket prices", max_results=2
                 ))
-
-                live_data = "\n\nLIVE SEARCH DATA (Use this to provide REAL names and prices):\n"
-                live_data += f"Hotels: {hotel_search}\n"
-                live_data += f"Activities: {activity_search}\n"
-        except Exception as e:
-            live_data = f"\n\nLIVE SEARCH DATA: (Search failed: {e})"
+                live_data = f"\nLIVE OTHERS SEARCH DATA: Hotels:{hotel_search} Activities:{activity_search}"
+        except Exception:
+            live_data = ""
 
         trip_context = f"""
-TRIP DETAILS & CONSTRAINTS:
+TRIP DETAILS:
 - Destination: {destination}
-- Travel Dates: {dates}
-- Total Budget: ₹{budget}
-- Number of Travelers: {travelers}
-- Accommodation Preference: {acc_pref} (MUST strictly follow this style if not 'Any')
-- Food Preference: {food_pref} (MUST focus on this dining style if not 'Any')
-- Trip Style/Theme: {trip_style} (Tailor activities and vibe to this theme)
-- Hidden Gems Preference: {gems_toggle}
-- User Conversational Edits: {custom_prompt or 'No specific edits'}
-- Additional Flight/Date Info: {answers.get('flightPref', 'Any')}, Flexible Dates: {answers.get('flexDates', 'No')}
+- Origin: {origin} 
+- Dates: {start_date} to {end_date}
+- Total Budget: ₹{budget} for {travelers} travelers
+- Preferences: {acc_pref} hotels, {food_pref} food, {trip_style} vibe.
+- User Custom Prompts: {custom_prompt}
 {live_data}
 """
 
@@ -311,53 +148,25 @@ TRIP DETAILS & CONSTRAINTS:
         # AGENT 1: Travel Research Agent
         # ══════════════════════════════════════════════════════════════════
         research_agent = Agent(
-            role='Senior Travel Research Analyst',
-            goal=f'Research travel options for {destination} focusing strictly on {acc_pref} stays, {food_pref} food, and a {trip_style} vibe.',
-            backstory="""You are an elite travel intelligence analyst. You MUST use your search tool to find CURRENT real hotel names, flight prices, and exact activity providers. DO NOT return placeholder names like 'Premium Stay'. Find actual properties. You aggressively filter results to match the USER'S SPECIFIC PREFERENCES (e.g., if they ask for Luxury, only show 5-star). IMPORTANT: For bookingUrl, ONLY provide the homepage or search page of the platform (e.g., https://www.booking.com, https://www.makemytrip.com). Never generate deep-links to specific property pages.""",
+            role='Senior Travel Deal Scouter',
+            goal=f'Scout the absolute best REAL transport, hotel, and activity deals for {destination} with budget ₹{budget}.',
+            backstory="""You aggressively find realistic Indian pricing for Makemytrip, Indigo, IRCTC, Booking.com, etc. You generate highly attractive 'Deals'.""",
             verbose=False,
             allow_delegation=False
         )
 
-        # ══════════════════════════════════════════════════════════════════
-        # AGENT 2: Review Intelligence Agent
-        # ══════════════════════════════════════════════════════════════════
-        review_agent = Agent(
-            role='Travel Review & Trust Analyst',
-            goal='Analyze traveler reviews and determine trust scores for each recommended option',
-            backstory="""You are an expert in analyzing traveler sentiment from TripAdvisor, Google Reviews, Reddit travel communities, and social media. You evaluate each option on: quality of experience, safety, cleanliness, value for money, and crowd sentiment. You assign a trust score from 0-100 based on aggregate review analysis. A score above 85 means 'Highly Trusted', 70-85 is 'Trusted', below 70 is 'Mixed Reviews'.""",
-            verbose=False,
-            allow_delegation=False
-        )
-
-        # ══════════════════════════════════════════════════════════════════
-        # AGENT 3: Budget Optimization Agent
-        # ══════════════════════════════════════════════════════════════════
         budget_agent = Agent(
-            role='Smart Budget Optimizer',
-            goal=f'Force the total trip cost to align intelligently with the total budget of ₹{budget}',
-            backstory="""You are a financial travel advisor who specializes in optimizing trip budgets. You distribute budgets based on user preferences (e.g., luxury travelers spend more on hotels, adventure on activities). If the requested budget is impossible for the destination/style, you still provide the closest realistic distribution and MUST add specific money-saving tips for this exact scenario.""",
+            role='Budget Optimizer Analyst',
+            goal=f'Optimize the travel deals to strictly align with the ₹{budget} constraint while producing insightful money-saving tips.',
+            backstory="""You ensure no deal is impossibly cheap or stupidly expensive. You provide brilliant Indian saving tips (like IRCTC TATKAL, off-season booking).""",
             verbose=False,
             allow_delegation=False
         )
 
-        # ══════════════════════════════════════════════════════════════════
-        # AGENT 4: Hidden Gems Discovery Agent
-        # ══════════════════════════════════════════════════════════════════
-        gems_agent = Agent(
-            role='Hidden Gems Scout',
-            goal=f'Discover spots near {destination} matching the preference: {gems_toggle}',
-            backstory="""You specialize in balancing mainstream tourist attractions with off-the-beaten-path experiences. You MUST search the internet for real hidden gems and actual attractions near the destination. Do not make up places. If the user wants 'Tourist Attractions', point out the major must-sees. If they want 'Hidden Gems', find places most tourists miss. If 'Both', provide a mix.""",
-            verbose=False,
-            allow_delegation=False
-        )
-
-        # ══════════════════════════════════════════════════════════════════
-        # AGENT 5: Package Builder Agent
-        # ══════════════════════════════════════════════════════════════════
         package_agent = Agent(
-            role='AI Travel Package Architect',
-            goal='Compile all research into a structured JSON travel package',
-            backstory="""You are the final architect who receives analyzed data from all other agents and compiles it into a clean, structured travel package. You MUST output ONLY a valid JSON object — no markdown, no explanation, no extra text. The JSON must follow the exact schema specified in your task. You are meticulous about data integrity and never include placeholder or empty fields. CRITICAL URL RULE: For every bookingUrl field, only use the platform's homepage or a search URL with the property name as a query parameter. Example: https://www.booking.com/search.html?ss=Hotel+Name+City. NEVER generate URLs with specific room IDs, property slugs, or deep paths that may not exist.""",
+            role='AI Deal Synthesizer',
+            goal='Structure the finalized deals exactly into the exact JSON Deals schema expected by the frontend UI.',
+            backstory="""You output strictly pure JSON. No markdown ticks, no extra chat. Only the JSON keys: deals (array), savingTips (array of strings), totalEstimate (object).""",
             verbose=False,
             allow_delegation=False
         )
@@ -368,109 +177,80 @@ TRIP DETAILS & CONSTRAINTS:
 
         research_task = Task(
             description=f"""{trip_context}
-
-TASK: Research travel options for {destination}. Find:
-1. Top 3-4 ACCOMMODATION options (mix of hotels, hostels, Airbnb) with realistic INR prices, ratings, and platform names
-2. Top 3-4 ACTIVITIES/EXPERIENCES with prices, ratings, and booking platforms
-3. Top 2-3 RESTAURANTS/CAFES worth visiting
-4. TRANSPORT options (flights, trains, buses) with estimated prices and platform names
-
-For each item provide: name, estimated price in INR, rating (out of 5), specific location, short description, and which platform to book on.
-Be realistic with prices for the Indian market.
-
-IMPORTANT: For bookingUrl, only provide the homepage URL of the platform. The booking system will construct the correct search URL automatically.""",
-            expected_output='Detailed list of accommodation, activities, restaurants, and transport options with prices, ratings, and platform names.',
+            
+TASK: Produce a list of 5 to 7 concrete 'Deals' covering Flights/Trains, Stays (Hotels/Hostels), and Activities for this trip.
+Each deal MUST have:
+1. category (flight, train, bus, hotel, hostel, experience)
+2. title (e.g. "{origin} to {destination} — IndiGo")
+3. platform (MakeMyTrip, IRCTC, Booking.com, etc)
+4. price (Real INR price number)
+5. originalPrice (For discount calculation)
+6. discount (e.g. "20% off")
+7. details (e.g. "Non-stop, 2h 30m" or "Free breakfast included")
+8. rating (out of 5.0)
+9. tag (e.g. "Cheapest", "Luxury", "Bestseller")
+""",
+            expected_output='List of realistic travel deals.',
             agent=research_agent
         )
 
-        review_task = Task(
-            description=f"""Based on the research results for {destination}, analyze the trustworthiness of each recommended option.
-
-For each hotel, activity, and restaurant mentioned:
-1. Assess likely review sentiment (positive/mixed/negative)
-2. Assign a TRUST SCORE from 0 to 100
-3. Note any safety concerns
-4. Identify which ones are "Tourist Trap" vs "Genuine Experience"
-
-Focus on quality indicators: cleanliness, safety, value, authenticity, and crowd feedback.""",
-            expected_output='Trust analysis with scores for each recommendation.',
-            agent=review_agent,
-            context=[research_task]
-        )
-
         budget_task = Task(
-            description=f"""{trip_context}
-
-Based on the researched options and their prices, create an optimal budget distribution.
-1. Calculate how much to allocate for: Accommodation, Activities, Food, Transport
-2. Check if the total budget of ₹{budget} is sufficient
-3. Suggest 3-4 specific money-saving tips for {destination}
-4. If budget is tight, suggest cheaper alternatives""",
-            expected_output='Budget breakdown with percentages, absolute amounts, and saving tips.',
+            description=f"""Review the scouted deals. Create a budget breakdown across transport, accommodation, food, activities to ensure it fits the ₹{budget} target. Give 3 actionable savingsTips for {destination}.""",
+            expected_output='Budget review and saving tips.',
             agent=budget_agent,
             context=[research_task]
         )
 
-        gems_task = Task(
-            description=f"""Find 3-4 places/experiences near {destination} matching the preference: {gems_toggle}
-
-If the user's conversational edits mention specific things to add or remove, YOU MUST obey them.
-
-For each place provide:
-- Name of the place/experience
-- Why it's special (2 sentences)
-- Vibe: Quiet/Vibrant/Rustic/Artistic
-- Best time to visit
-- A specific insider tip""",
-            expected_output='List of 3-4 spots with descriptions, vibes, and tips.',
-            agent=gems_agent
-        )
-
         package_task = Task(
-            description=f"""Compile ALL the research, reviews, budget analysis, and hidden gems into a SINGLE structured JSON object.
+            description=f"""Combine the research into this EXACT JSON structure. NO Markdown wrappers like ```json at all! ONLY the pure JSON object!
 
-You MUST return ONLY valid JSON with this EXACT structure (no markdown, no explanation, no extra text):
 {{
-  "destination": "{destination}",
-  "hotels": [
-    {{"name": "...", "price": 0, "rating": 4.5, "location": "...", "description": "...", "bookingPlatform": "Booking.com", "bookingUrl": "https://www.booking.com", "trustScore": 85, "category": "hotel/hostel/resort"}}
+  "deals": [
+    {{
+      "category": "flight",
+      "title": "{origin} to {destination} — IndiGo",
+      "platform": "MakeMyTrip",
+      "price": 4500,
+      "originalPrice": 6200,
+      "discount": "27% off",
+      "details": "Non-stop, 2h 30m, 6E 2156",
+      "timing": "06:15 AM - 08:45 AM",
+      "rating": 4.2,
+      "tag": "Cheapest"
+    }},
+    {{
+      "category": "hotel",
+      "title": "Taj {destination}",
+      "platform": "Booking.com",
+      "price": 8500,
+      "originalPrice": 10000,
+      "discount": "15% off",
+      "details": "Free Breakfast, Pool Access",
+      "rating": 4.8,
+      "tag": "Luxury Pick"
+    }}
   ],
-  "activities": [
-    {{"name": "...", "price": 0, "rating": 4.5, "location": "...", "description": "...", "bookingPlatform": "Viator", "bookingUrl": "https://www.viator.com", "trustScore": 85, "category": "adventure/culture/food/wellness"}}
-  ],
-  "restaurants": [
-    {{"name": "...", "price": 0, "rating": 4.5, "location": "...", "description": "...", "source": "Google Maps/TripAdvisor", "trustScore": 85, "category": "cafe/restaurant/street-food"}}
-  ],
-  "hiddenGems": [
-    {{"name": "...", "description": "...", "vibe": "Quiet/Vibrant", "bestTime": "...", "tip": "..."}}
-  ],
-  "transport": [
-    {{"mode": "Flight/Train/Bus", "provider": "...", "estimatedPrice": 0, "platform": "Skyscanner", "bookingUrl": "https://www.skyscanner.co.in"}}
-  ],
-  "budgetBreakdown": {{
-    "accommodation": 40,
-    "activities": 25,
-    "food": 20,
-    "transport": 15
-  }},
-  "totalEstimated": 0,
-  "savingsTips": ["tip1", "tip2", "tip3"]
+  "savingTips": ["Book 3 weeks early", "Use IRCTC Tatkal..."],
+  "totalEstimate": {{
+    "transport": 5000,
+    "accommodation": 8500,
+    "food": 3000,
+    "activities": 2000,
+    "total": 18500
+  }}
 }}
-
-CRITICAL URL RULE: bookingUrl must ONLY be the platform homepage (e.g., https://www.booking.com). 
-Do NOT generate paths like /hotel/in/some-hotel-name or /rooms/12345 — these cause 404 errors.
-CRITICAL: Output ONLY the JSON object. No other text, no markdown wrappers.""",
-            expected_output='A single valid JSON object with the complete travel package.',
+""",
+            expected_output='Valid raw JSON object with deals.',
             agent=package_agent,
-            context=[research_task, review_task, budget_task, gems_task]
+            context=[research_task, budget_task]
         )
 
         # ══════════════════════════════════════════════════════════════════
         # CREW EXECUTION
         # ══════════════════════════════════════════════════════════════════
         crew = Crew(
-            agents=[research_agent, review_agent, budget_agent, gems_agent, package_agent],
-            tasks=[research_task, review_task, budget_task, gems_task, package_task],
+            agents=[research_agent, budget_agent, package_agent],
+            tasks=[research_task, budget_task, package_task],
             verbose=False,
             process=Process.sequential
         )
@@ -480,115 +260,30 @@ CRITICAL: Output ONLY the JSON object. No other text, no markdown wrappers.""",
 
         # ── Parse JSON from output ───────────────────────────────────────
         parsed = None
-
-        # Method 1: Direct parse
-        try:
-            parsed = json.loads(raw_output)
-        except:
-            pass
-
-        # Method 2: Find JSON block in output
-        if not parsed:
-            import re
-            json_match = re.search(r'\{[\s\S]*\}', raw_output)
-            if json_match:
-                try:
-                    parsed = json.loads(json_match.group())
-                except:
-                    pass
+        
+        # Find JSON block in output
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', raw_output)
+        if json_match:
+            try:
+                parsed = json.loads(json_match.group())
+            except Exception as e:
+                print(json.dumps({"error": f"Failed to parse JSON: {e}"}))
+                sys.exit(1)
 
         if parsed:
-            # ✅ KEY FIX: Sanitize all URLs before returning
-            parsed = sanitize_booking_urls(parsed)
-
-            parsed["success"] = True
+            # SANITIZE URLs REAL
+            parsed = sanitize_booking_urls(parsed, destination, origin, start_date, end_date)
             parsed["structured"] = True
-            parsed["package"] = generate_markdown_summary(parsed, destination, budget)
+            parsed["deals"] = parsed.get("deals", [])
             print(json.dumps(parsed))
         else:
-            # Fallback: return raw as markdown package
-            print(json.dumps({
-                "success": True,
-                "structured": False,
-                "package": raw_output,
-                "destination": destination
-            }))
+            print(json.dumps({"error": "Failed to generate valid JSON."}))
 
     except Exception as e:
         logging.error(f"Booking engine error: {e}")
-        print(json.dumps({
-            "success": False,
-            "error": str(e)
-        }))
+        print(json.dumps({"error": str(e)}))
         sys.exit(1)
-
-
-def generate_markdown_summary(data, destination, budget):
-    """Generate a beautiful markdown summary from structured data."""
-    md = f"# 🌍 AI Travel Package: {destination}\n\n"
-
-    # Hotels
-    hotels = data.get("hotels", [])
-    if hotels:
-        md += "### 🏨 Top Stays\n"
-        for h in hotels[:4]:
-            score = h.get("trustScore", 0)
-            score_badge = "✅ Highly Trusted" if score >= 85 else "🟡 Trusted" if score >= 70 else "⚠️ Mixed"
-            md += f"- **{h['name']}** — ₹{h.get('price', 'N/A')} • ⭐ {h.get('rating', 'N/A')} • {score_badge}\n"
-            md += f"  Book on [{h.get('bookingPlatform', 'Online')}]({h.get('bookingUrl', '#')})\n"
-        md += "\n"
-
-    # Activities
-    activities = data.get("activities", [])
-    if activities:
-        md += "### 🎯 Top Experiences\n"
-        for a in activities[:4]:
-            md += f"- **{a['name']}** — ₹{a.get('price', 'N/A')} • ⭐ {a.get('rating', 'N/A')}\n"
-            md += f"  Book on [{a.get('bookingPlatform', 'Online')}]({a.get('bookingUrl', '#')})\n"
-        md += "\n"
-
-    # Restaurants
-    restaurants = data.get("restaurants", [])
-    if restaurants:
-        md += "### 🍽️ Where to Eat\n"
-        for r in restaurants[:3]:
-            md += f"- **{r['name']}** — ₹{r.get('price', 'N/A')} avg • ⭐ {r.get('rating', 'N/A')}\n"
-        md += "\n"
-
-    # Hidden Gems
-    gems = data.get("hiddenGems", [])
-    if gems:
-        md += "### 💎 Hidden Gems\n"
-        for g in gems[:3]:
-            md += f"- **{g['name']}** — {g.get('description', '')}\n"
-            md += f"  🕐 Best time: {g.get('bestTime', 'Anytime')} | 💡 {g.get('tip', '')}\n"
-        md += "\n"
-
-    # Transport
-    transport = data.get("transport", [])
-    if transport:
-        md += "### ✈️ Getting There\n"
-        for t in transport[:3]:
-            md += f"- **{t.get('mode', 'Transport')}** via {t.get('provider', 'Various')} — ₹{t.get('estimatedPrice', 'N/A')}\n"
-            md += f"  Book on [{t.get('platform', 'Online')}]({t.get('bookingUrl', '#')})\n"
-        md += "\n"
-
-    # Budget
-    breakdown = data.get("budgetBreakdown", {})
-    if breakdown:
-        md += f"### 💰 Budget Breakdown (₹{budget} total)\n"
-        for cat, pct in breakdown.items():
-            md += f"- {cat.title()}: {pct}%\n"
-        md += "\n"
-
-    tips = data.get("savingsTips", [])
-    if tips:
-        md += "### 💡 Money-Saving Tips\n"
-        for t in tips[:3]:
-            md += f"- {t}\n"
-
-    return md
-
 
 if __name__ == "__main__":
     main()

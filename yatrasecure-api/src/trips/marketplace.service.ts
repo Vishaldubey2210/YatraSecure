@@ -32,34 +32,64 @@ export class MarketplaceService {
       return cached.data;
     }
 
-    const prompt = `
-      Act as a premium travel experiences curator. Generate 6 verified local experience offerings for travelers.
-      ${city ? `Focus on the city of ${city}.` : 'Focus on popular global travel destinations.'}
-      ${category ? `Category filter: ${category}.` : ''}
-      
-      Return the response in JSON:
-      {
-        "offerings": [
-          {
-            "id": "unique-id-string",
-            "title": "Experience Name",
-            "description": "2-3 sentence description",
-            "location": "City, Country",
-            "price": 2500,
-            "currency": "INR",
-            "category": "Adventure / Food / Culture / Wellness / Hidden Gems",
-            "groupDiscount": 15,
-            "rating": 4.9,
-            "verified": true,
-            "provider": "Provider Name",
-            "vibe": "Thrilling / Relaxing / Cultural / Spiritual",
-            "duration": "2-3 hours",
-            "maxGroupSize": 10
-          }
-        ]
-      }
-      Return ONLY valid JSON.
-    `;
+    const prompt = `You are an elite AI booking assistant working with real-world constraints.
+
+Before returning any travel deal or booking link, THINK deeply and validate everything.
+
+## Step 1: Link Validation
+* Ensure every URL is real, accessible, and not broken
+* Reject any link that returns 404, 403, or requires session-based access
+* Prefer official booking pages over redirects
+
+## Step 2: Price Realism Check
+* Reject impossible deals (e.g. ₹1 flights, ₹100 luxury hotels)
+* Compare against normal market range
+* If unrealistic, correct it or discard it
+
+## Step 3: Source Trust
+* Prefer: Official booking sites, Verified aggregators
+* Avoid: Unknown or spammy domains
+
+## Step 4: Deduplication
+* Remove duplicate deals
+* Keep only the best version
+
+## Step 5: Personalization
+Match deals based on the location.
+${city ? `Focus strictly on deals for the city of ${city}.` : 'Focus on popular global travel destinations.'}
+${category ? `Category filter: ${category}.` : ''}
+
+## Step 6: Smart Ranking
+Rank deals by:
+1. Value for money
+2. Location convenience
+3. Ratings (if available)
+4. Reliability of source
+
+## Step 7: Output Rules
+Return ONLY high-quality, working deals:
+{
+  "deals": [
+    {
+      "id": "unique-id-string",
+      "title": "Title of the deal",
+      "price_range": "e.g., ₹2500 - ₹3500",
+      "provider": "Provider Name",
+      "link": "https://www.makemytrip.com/...",
+      "why_this": "Why this deal is optimal",
+      "trust_score": "High/Medium/Low",
+      "category": "Adventure / Food / Culture / Stays / Flights"
+    }
+  ]
+}
+
+## Critical Rule:
+If no valid deals are found:
+* DO NOT hallucinate
+* Return "No reliable deals found right now" (but inside valid JSON like {"deals": []})
+
+Think like a human travel expert who cares about trust and realism. Never prioritize quantity over quality.
+Return ONLY valid JSON.`;
 
     for (const model of MODELS) {
       try {
@@ -92,11 +122,10 @@ export class MarketplaceService {
   private getDemoOfferings(city?: string, category?: string) {
     const loc = city || 'Various Locations';
     return {
-      offerings: [
-        { id: 'demo-1', title: `${loc} Heritage Walk`, description: 'Explore historic lanes with an expert guide', location: loc, price: 1500, currency: 'INR', category: 'Culture', groupDiscount: 20, rating: 4.8, verified: true, provider: 'Local Heritage Tours', vibe: 'Cultural', duration: '3 hours', maxGroupSize: 12 },
-        { id: 'demo-2', title: `${loc} Food Trail`, description: 'Taste authentic local flavors across 6 stops', location: loc, price: 2000, currency: 'INR', category: 'Food', groupDiscount: 15, rating: 4.9, verified: true, provider: 'Foodie Adventures', vibe: 'Cultural', duration: '2.5 hours', maxGroupSize: 8 },
-        { id: 'demo-3', title: 'Sunrise Trekking Experience', description: 'A scenic morning trek to a hidden viewpoint', location: loc, price: 3000, currency: 'INR', category: 'Adventure', groupDiscount: 25, rating: 4.7, verified: true, provider: 'Peak Adventures', vibe: 'Thrilling', duration: '4 hours', maxGroupSize: 15 },
-        { id: 'demo-4', title: 'Yoga & Meditation Retreat', description: 'A peaceful morning session with certified instructors', location: loc, price: 1200, currency: 'INR', category: 'Wellness', groupDiscount: 10, rating: 4.9, verified: true, provider: 'Inner Peace Studio', vibe: 'Spiritual', duration: '2 hours', maxGroupSize: 20 },
+      deals: [
+        { id: 'deal-1', title: `Premium Stay at ${loc} Heights`, price_range: '₹4,500 - ₹6,000', provider: 'MakeMyTrip', link: 'https://www.makemytrip.com/', why_this: 'Top-rated hotel with excellent location and verified reviews.', trust_score: 'High', category: 'Stays' },
+        { id: 'deal-2', title: `Guided Heritage Walk in ${loc}`, price_range: '₹1,200 - ₹1,500', provider: 'Viator', link: 'https://www.viator.com/', why_this: 'Highly rated by solo travelers, covers all major historical sites.', trust_score: 'High', category: 'Culture' },
+        { id: 'deal-3', title: `Flight to ${loc}`, price_range: '₹5,500 - ₹8,000', provider: 'Skyscanner', link: 'https://www.skyscanner.co.in/', why_this: 'Best value for money based on historical pricing.', trust_score: 'High', category: 'Flights' },
       ],
       _mode: 'demo'
     };

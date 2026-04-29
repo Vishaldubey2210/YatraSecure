@@ -1,536 +1,490 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import {
-  User, Mail, MapPin, Phone, Camera, Save, Loader2, AlertCircle, Check,
-  ShieldCheck, Sparkles, Briefcase, Heart, Globe, Home, Calendar,
-  Shield, AlertTriangle, ChevronDown, GraduationCap, Compass, Mountain,
-} from "lucide-react";
-import { fetchWithAuth } from "@/app/lib/api";
-import toast from "react-hot-toast";
-import ChipsInput from "@/components/ChipsInput";
 
-/* ─── Preset options ─── */
-const GENDER_OPTIONS   = ["Male", "Female", "Non-binary", "Prefer not to say"];
-const PROF_OPTIONS     = ["Student", "Working Professional", "Freelancer", "Entrepreneur", "Other"];
-const TRAVEL_STYLES    = ["Budget", "Mid-range", "Luxury", "Backpacking", "Solo", "Group", "Adventure", "Leisure", "Cultural"];
-const BUDGET_OPTIONS   = ["₹0-5K", "₹5K-15K", "₹15K-50K", "₹50K-1L", "₹1L+"];
-const PERSONALITY_OPTS = ["Introvert", "Extrovert", "Ambivert"];
-const INTEREST_PRESETS = [
-  "Photography", "Trekking", "Food", "History", "Music", "Art",
-  "Beach", "Mountains", "Wildlife", "Temples", "Nightlife", "Shopping",
-  "Yoga", "Camping", "Road Trips", "Volunteering", "Scuba Diving", "Skiing",
+import React, { useState, useEffect, useMemo } from "react";
+import { 
+  User, ShieldCheck, MapPin, Settings, Camera, AlertTriangle, 
+  Trash2, Plus, Info, Save, RotateCcw, Heart, Briefcase, Smile
+} from "lucide-react";
+import toast from "react-hot-toast";
+
+// --- Types & Defaults ---
+interface Contact { id: string; name: string; phone: string; relation: string; }
+
+interface ProfileData {
+  username: string; age: string; gender: string; bio: string; email: string;
+  quickPicks: string[]; customInterests: string[]; personality: string;
+  travelStyles: string[]; groupPrefs: string[]; minBudget: string; maxBudget: string; destinations: string[];
+  isVerified: boolean; contacts: Contact[];
+  city: string; state: string; phone: string; languages: string[];
+}
+
+const DEFAULT_DATA: ProfileData = {
+  username: "TestTest", age: "", gender: "", bio: "", email: "test123@gmail.com",
+  quickPicks: [], customInterests: [], personality: "",
+  travelStyles: [], groupPrefs: [], minBudget: "0", maxBudget: "50000", destinations: [],
+  isVerified: false, contacts: [],
+  city: "", state: "", phone: "", languages: []
+};
+
+const QUICK_PICKS = [
+  "Photography", "Trekking", "Food", "History", "Music", "Art", 
+  "Beach", "Mountains", "Wildlife", "Temples", "Nightlife", 
+  "Shopping", "Yoga", "Camping", "Road Trips", "Volunteering"
 ];
 
-/* ─── Section wrapper ─── */
-function Section({ icon: Icon, title, subtitle, children, accentColor = "rgba(56,189,248,0.15)" }: any) {
-  return (
-    <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: accentColor,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          <Icon style={{ width: 16, height: 16, color: "white" }} />
-        </div>
-        <div>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "white", margin: 0 }}>{title}</h3>
-          {subtitle && <p style={{ fontSize: 12, color: "#64748b", margin: 0, marginTop: 2 }}>{subtitle}</p>}
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
+const TABS = [
+  { id: 'basic', label: 'Basic Info', icon: User },
+  { id: 'interests', label: 'Interests', icon: Heart },
+  { id: 'travel', label: 'Travel Prefs', icon: Briefcase },
+  { id: 'safety', label: 'Safety', icon: ShieldCheck },
+  { id: 'location', label: 'Location', icon: MapPin },
+];
 
-/* ─── Small reusable input field ─── */
-function Field({ label, icon: Icon, type = "text", value, onChange, placeholder, disabled, readOnly }: any) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 7 }}>{label}</label>
-      <div style={{ position: "relative" }}>
-        {Icon && <Icon style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#475569", pointerEvents: "none" }} />}
-        <input
-          type={type}
-          className="input-field"
-          style={{ paddingLeft: Icon ? 42 : 14, ...(disabled ? { opacity: 0.5, cursor: "not-allowed" } : {}) }}
-          placeholder={placeholder}
-          value={value || ""}
-          onChange={onChange}
-          readOnly={readOnly}
-          disabled={disabled}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Select dropdown ─── */
-function SelectField({ label, icon: Icon, value, onChange, options, placeholder }: any) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 7 }}>{label}</label>
-      <div style={{ position: "relative" }}>
-        {Icon && <Icon style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#475569", pointerEvents: "none" }} />}
-        <select
-          className="input-field"
-          style={{ paddingLeft: Icon ? 42 : 14, appearance: "none", cursor: "pointer", color: value ? "white" : "#64748b" }}
-          value={value || ""}
-          onChange={onChange}
-        >
-          <option value="">{placeholder || "Select..."}</option>
-          {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-        </select>
-        <ChevronDown style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#475569", pointerEvents: "none" }} />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Chip toggle grid ─── */
-function ChipGrid({ options, selected, onToggle }: { options: string[]; selected: string[]; onToggle: (v: string) => void }) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-      {options.map(opt => {
-        const active = selected.includes(opt);
-        return (
-          <button
-            key={opt}
-            onClick={() => onToggle(opt)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 99,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              border: active ? "1px solid rgba(56,189,248,0.4)" : "1px solid rgba(255,255,255,0.08)",
-              background: active ? "rgba(56,189,248,0.12)" : "rgba(15,23,42,0.4)",
-              color: active ? "#38bdf8" : "#94a3b8",
-              transition: "all 0.2s",
-            }}
-          >
-            {active && <Check style={{ width: 12, height: 12, display: "inline", marginRight: 4, verticalAlign: "middle" }} />}
-            {opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-
-/* ════════════════════════════════════
-   MAIN PROFILE PAGE
-   ═══════════════════════════════════ */
 export default function ProfilePage() {
-  const router  = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [data, setData] = useState<ProfileData>(DEFAULT_DATA);
+  const [savedData, setSavedData] = useState<ProfileData>(DEFAULT_DATA);
+  const [activeTab, setActiveTab] = useState('basic');
+  const [isClient, setIsClient] = useState(false);
+  
+  // Modals / Inputs
+  const [customTagInput, setCustomTagInput] = useState("");
+  const [isVerificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [isContactModalOpen, setContactModalOpen] = useState(false);
+  const [newContact, setNewContact] = useState({ name: "", phone: "", relation: "" });
 
-  const [user, setUser]           = useState<any>(null);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError]         = useState("");
-  const [success, setSuccess]     = useState(false);
-
-  /* Form state */
-  const [form, setForm] = useState({
-    username: "", bio: "", age: "",
-    gender: "", city: "", hometown: "", state: "", phone: "",
-    professionalStatus: "",
-    travelStyle: [] as string[],
-    interests: [] as string[],
-    budgetRange: "",
-    travelPersonality: "",
-    emergencyContacts: [] as any[],
-  });
-
-  /* ── Load user ── */
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) { router.push("/login"); return; }
-    fetchProfile();
+    setIsClient(true);
+    const stored = localStorage.getItem("ys_profile_data");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setData(parsed);
+      setSavedData(parsed);
+    }
   }, []);
 
-  async function fetchProfile() {
-    try {
-      const res  = await fetchWithAuth("/users/me");
-      const data = await res.json();
-      setUser(data);
-      setForm({
-        username:           data.username           || "",
-        bio:                data.bio                || "",
-        age:                data.age                || "",
-        gender:             data.gender             || "",
-        city:               data.city               || "",
-        hometown:           data.hometown           || "",
-        state:              data.state              || "",
-        phone:              data.phone              || "",
-        professionalStatus: data.professionalStatus || "",
-        travelStyle:        data.travelStyle        || [],
-        interests:          data.interests          || [],
-        budgetRange:        data.budgetRange        || "",
-        travelPersonality:  data.travelPersonality  || "",
-        emergencyContacts:  Array.isArray(data.emergencyContacts) ? data.emergencyContacts : [],
-      });
-    } catch { toast.error("Failed to load profile"); }
-    finally  { setLoading(false); }
-  }
+  // --- Calculations ---
+  const { completionPercent, missingCount } = useMemo(() => {
+    let filled = 0;
+    const totalFields = 12; // Key fields to check
+    if (data.username) filled++;
+    if (data.age) filled++;
+    if (data.gender) filled++;
+    if (data.bio) filled++;
+    if (data.quickPicks.length > 0 || data.customInterests.length > 0) filled++;
+    if (data.personality) filled++;
+    if (data.travelStyles.length > 0) filled++;
+    if (data.groupPrefs.length > 0) filled++;
+    if (data.isVerified) filled++;
+    if (data.contacts.length > 0) filled++;
+    if (data.city) filled++;
+    if (data.phone) filled++;
 
-  /* ── Save ── */
-  async function onSave() {
-    setSaving(true); setError(""); setSuccess(false);
-    try {
-      const payload: any = { ...form };
-      if (payload.age) payload.age = parseInt(payload.age, 10);
-      else delete payload.age;
+    return { 
+      completionPercent: Math.round((filled / totalFields) * 100),
+      missingCount: totalFields - filled
+    };
+  }, [data]);
 
-      const res  = await fetchWithAuth("/users/me", { method: "PATCH", body: JSON.stringify(payload) });
-      const data = await res.json();
-      const updated = { ...JSON.parse(localStorage.getItem("user") || "{}"), ...data };
-      localStorage.setItem("user", JSON.stringify(updated));
-      setUser(updated);
-      setSuccess(true);
-      toast.success("Profile updated!");
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to update");
-      toast.error("Save failed");
-    } finally { setSaving(false); }
-  }
+  const reputationScore = useMemo(() => {
+    let base = 50;
+    base += Math.floor((completionPercent / 100) * 300); // Up to 300 from completion
+    if (data.isVerified) base += 200; // 200 from verification
+    return base;
+  }, [completionPercent, data.isVerified]);
 
-  /* ── Avatar upload ── */
-  async function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5 MB allowed"); return; }
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const token = localStorage.getItem("accessToken");
-      const res   = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/profile-picture`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      const updated = { ...user, profileImage: data.url };
-      localStorage.setItem("user", JSON.stringify(updated));
-      setUser(updated);
-      toast.success("Profile picture updated!");
-    } catch (err: any) { toast.error(err.message || "Upload failed"); }
-    finally { setUploading(false); }
-  }
+  const badgeLevel = reputationScore >= 400 ? "Gold" : reputationScore >= 200 ? "Silver" : "Bronze";
 
-  /* ── Helpers ── */
-  const set = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }));
-  const toggleArray = (key: string, val: string) => {
-    setForm(p => {
-      const arr = (p as any)[key] as string[];
-      return { ...p, [key]: arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val] };
-    });
+  // --- Actions ---
+  const updateData = (key: keyof ProfileData, value: any) => setData(prev => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    const p = toast.loading("Saving profile...");
+    setTimeout(() => {
+      localStorage.setItem("ys_profile_data", JSON.stringify(data));
+      setSavedData(data);
+      toast.success("Profile updated successfully", { id: p });
+    }, 600);
   };
 
-  /* Emergency contacts helpers */
-  const addEmergencyContact = () => {
-    if (form.emergencyContacts.length >= 3) return;
-    set("emergencyContacts", [...form.emergencyContacts, { name: "", phone: "", relation: "" }]);
-  };
-  const updateContact = (idx: number, field: string, val: string) => {
-    const updated = [...form.emergencyContacts];
-    updated[idx] = { ...updated[idx], [field]: val };
-    set("emergencyContacts", updated);
-  };
-  const removeContact = (idx: number) => {
-    set("emergencyContacts", form.emergencyContacts.filter((_: any, i: number) => i !== idx));
+  const handleReset = () => {
+    setData(savedData);
+    toast("Changes discarded", { icon: "🔄" });
   };
 
-  const avatar = user?.username?.slice(0, 2).toUpperCase() || "YS";
+  const handleAddTag = (e: React.KeyboardEvent | React.MouseEvent) => {
+    if ('key' in e && e.key !== 'Enter') return;
+    e.preventDefault();
+    const tag = customTagInput.trim();
+    if (!tag) return;
+    if (data.customInterests.includes(tag)) { toast.error("Tag already exists"); return; }
+    if (data.customInterests.length >= 20) { toast.error("Max 20 custom tags allowed"); return; }
+    
+    updateData("customInterests", [...data.customInterests, tag]);
+    setCustomTagInput("");
+  };
 
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
-      <Loader2 style={{ width: 28, height: 28, color: "var(--accent)", animation: "spin 1s linear infinite" }} />
-    </div>
-  );
+  const removeTag = (tag: string) => {
+    updateData("customInterests", data.customInterests.filter(t => t !== tag));
+  };
+
+  const toggleArrayItem = (key: 'quickPicks' | 'travelStyles' | 'groupPrefs', item: string) => {
+    const arr = data[key];
+    if (arr.includes(item)) updateData(key, arr.filter(i => i !== item));
+    else {
+      // Logic: Warning if selecting Budget and Luxury
+      if (key === 'travelStyles' && ((item === 'Budget' && arr.includes('Luxury')) || (item === 'Luxury' && arr.includes('Budget')))) {
+        toast("Warning: Budget and Luxury selected together", { icon: "⚠️" });
+      }
+      updateData(key, [...arr, item]);
+    }
+  };
+
+  const verifyProfileMock = () => {
+    const p = toast.loading("Verifying documents...");
+    setTimeout(() => {
+      updateData("isVerified", true);
+      setVerificationModalOpen(false);
+      toast.success("Profile verified successfully!", { id: p });
+    }, 1500);
+  };
+
+  const addContact = () => {
+    if (!newContact.name || !newContact.phone) { toast.error("Name and phone required"); return; }
+    if (data.contacts.length >= 3) { toast.error("Max 3 contacts allowed"); return; }
+    
+    updateData("contacts", [...data.contacts, { ...newContact, id: Date.now().toString() }]);
+    setNewContact({ name: "", phone: "", relation: "" });
+    setContactModalOpen(false);
+    toast.success("Contact added");
+  };
+
+  if (!isClient) return null;
 
   return (
-    <div className="anim-in" style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 40 }}>
-
-      {/* ══ Page header ══ */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 className="page-title">My Profile</h1>
-        <p className="page-subtitle">Build your travel identity — the more you share, the better your matches</p>
-      </div>
-
-      {/* ══ 0 · AVATAR CARD ══ */}
-      <div className="card" style={{ padding: 28, marginBottom: 16, display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+    <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 100, color: "var(--text)" }}>
+      
+      {/* ── Global Header ── */}
+      <div className="anim-in" style={{ background: "var(--card)", borderRadius: 24, border: "1px solid var(--border)", padding: 32, marginBottom: 32, display: "flex", gap: 32, alignItems: "center", flexWrap: "wrap" }}>
+        {/* Avatar */}
         <div style={{ position: "relative" }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: "50%",
-            background: user?.profileImage ? "transparent" : "var(--cta-gradient)",
-            border: "3px solid rgba(56,189,248,0.3)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 900, color: "white", overflow: "hidden", flexShrink: 0,
-          }}>
-            {user?.profileImage
-              ? <img src={user.profileImage} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : avatar}
+          <div style={{ width: 120, height: 120, borderRadius: "50%", background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, fontWeight: 800, color: "var(--primary)" }}>
+            {data.username.charAt(0).toUpperCase()}
           </div>
-          <button
-            onClick={() => fileRef.current?.click()} disabled={uploading}
-            style={{
-              position: "absolute", bottom: 0, right: 0,
-              width: 26, height: 26, borderRadius: "50%",
-              background: "var(--cta-gradient)", border: "2px solid var(--bg)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", boxShadow: "0 2px 8px rgba(56,189,248,0.4)",
-            }}
-          >
-            {uploading
-              ? <Loader2 style={{ width: 12, height: 12, color: "white", animation: "spin 1s linear infinite" }} />
-              : <Camera  style={{ width: 12, height: 12, color: "white" }} />}
+          <button onClick={() => toast("File picker opened", {icon:"📸"})} style={{ position: "absolute", bottom: 0, right: 0, background: "var(--primary)", border: "4px solid var(--card)", color: "white", width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Camera style={{ width: 18, height: 18 }} />
           </button>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onAvatarChange} />
         </div>
-        <div>
-          <p style={{ fontSize: 18, fontWeight: 800, color: "white", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
-            {user?.username}
-            {user?.isVerified && <ShieldCheck style={{ width: 18, height: 18, color: "#22c55e" }} />}
-          </p>
-          <p style={{ fontSize: 13, color: "#475569", marginBottom: 12 }}>{user?.email}</p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {user?.travelPersonality && (
-              <span className="badge" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", color: "#a855f7", fontWeight: 700 }}>
-                {user.travelPersonality}
-              </span>
-            )}
-            <span className="badge" style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316", fontWeight: 700 }}>
-              {user?.reputationScore > 600 ? "Platinum Legend" : user?.reputationScore > 300 ? "Gold Explorer" : user?.reputationScore > 100 ? "Silver Adventurer" : "Bronze Traveler"}
+
+        <div style={{ flex: 1, minWidth: 300 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, color: "var(--text)", letterSpacing: "-0.02em" }}>{data.username}</h1>
+            <span style={{ background: badgeLevel === 'Gold' ? "rgba(234, 179, 8, 0.1)" : badgeLevel === 'Silver' ? "rgba(148, 163, 184, 0.2)" : "rgba(180, 83, 9, 0.1)", color: badgeLevel === 'Gold' ? "#CA8A04" : badgeLevel === 'Silver' ? "#64748B" : "#B45309", padding: "4px 12px", borderRadius: 16, fontSize: 13, fontWeight: 800 }}>
+              {badgeLevel} Traveler
             </span>
+            {data.isVerified && <ShieldCheck style={{ color: "var(--success)", width: 24, height: 24 }} />}
           </div>
+          
+          <div style={{ display: "flex", gap: 24, marginBottom: 20 }}>
+            <div>
+              <p style={{ fontSize: 13, color: "var(--text3)", margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>AI Reputation</p>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "var(--primary)" }}>{reputationScore} <span style={{ fontSize: 14, color: "var(--text3)" }}>/ 1000</span></p>
+            </div>
+            <div>
+              <p style={{ fontSize: 13, color: "var(--text3)", margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>Completion</p>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: completionPercent === 100 ? "var(--success)" : "var(--text)" }}>{completionPercent}%</p>
+            </div>
+          </div>
+
+          <div style={{ width: "100%", height: 8, background: "var(--bg2)", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${completionPercent}%`, background: completionPercent === 100 ? "var(--success)" : "var(--primary)", transition: "width 0.5s ease" }} />
+          </div>
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text2)" }}>
+            {completionPercent === 100 ? "Your profile is fully complete! You get maximum visibility." : `Complete your profile to unlock better matches. ${missingCount} fields remaining.`}
+          </p>
         </div>
       </div>
 
-      {/* Reputation bar */}
-      <div className="card" style={{ padding: 24, marginBottom: 16, background: "linear-gradient(135deg, rgba(56,189,248,0.05), rgba(15,23,42,0.5))" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "white", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <Sparkles style={{ width: 16, height: 16, color: "var(--accent)" }} /> AI Reputation Score
-          </h3>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "white" }}>
-            {user?.reputationScore || 0} <span style={{ fontSize: 14, color: "#475569", fontWeight: 500 }}>/ 1000</span>
-          </span>
+      {/* ── Main Content Area ── */}
+      <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
+        
+        {/* Sidebar Tabs */}
+        <div className="profile-tabs" style={{ width: 240, flexShrink: 0, background: "var(--card)", padding: 12, borderRadius: 20, border: "1px solid var(--border)", position: "sticky", top: 100 }}>
+          {TABS.map(tab => (
+            <button 
+              key={tab.id} onClick={() => setActiveTab(tab.id)}
+              style={{ width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontSize: 15, fontWeight: 600, transition: "all 0.2s", background: activeTab === tab.id ? "var(--primary)" : "transparent", color: activeTab === tab.id ? "white" : "var(--text2)" }}
+            >
+              <tab.icon style={{ width: 18, height: 18, opacity: activeTab === tab.id ? 1 : 0.7 }} /> {tab.label}
+            </button>
+          ))}
         </div>
-        <div style={{ width: "100%", height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 10, overflow: "hidden", marginBottom: 12 }}>
-          <div style={{ width: `${(user?.reputationScore || 0) / 10}%`, height: "100%", background: "var(--cta-gradient)", borderRadius: 10, transition: "width 1s ease" }} />
+
+        {/* Form Content */}
+        <div style={{ flex: "1 1 500px", background: "var(--card)", padding: 32, borderRadius: 24, border: "1px solid var(--border)", minHeight: 500 }}>
+          
+          {/* TAB 1: BASIC INFO */}
+          {activeTab === 'basic' && (
+            <div className="anim-in form-section">
+              <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Basic Information</h2>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  Username
+                  <input type="text" value={data.username} onChange={e => updateData('username', e.target.value)} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  Email Address
+                  <input type="email" value={data.email} disabled style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text3)", cursor: "not-allowed" }} />
+                </label>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  Age
+                  <input type="number" min="18" max="100" value={data.age} onChange={e => updateData('age', e.target.value)} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  Gender
+                  <select value={data.gender} onChange={e => updateData('gender', e.target.value)} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }}>
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </label>
+              </div>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                Bio <span style={{ color: "var(--text3)", fontWeight: 400 }}>({data.bio.length}/500)</span>
+                <textarea rows={4} maxLength={500} value={data.bio} onChange={e => updateData('bio', e.target.value)} placeholder="Tell other travelers about yourself..." style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)", resize: "none" }} />
+              </label>
+            </div>
+          )}
+
+          {/* TAB 2: INTERESTS */}
+          {activeTab === 'interests' && (
+            <div className="anim-in form-section">
+              <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Interests & Personality</h2>
+
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Personality Type</h3>
+                <div style={{ display: "flex", gap: 16 }}>
+                  {["Introvert", "Extrovert", "Ambivert"].map(p => (
+                    <label key={p} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "16px", borderRadius: 12, border: data.personality === p ? "2px solid var(--primary)" : "1px solid var(--border)", background: data.personality === p ? "var(--primary-light)" : "var(--bg)", cursor: "pointer", fontWeight: 600 }}>
+                      <input type="radio" name="personality" value={p} checked={data.personality === p} onChange={e => updateData('personality', e.target.value)} style={{ display: "none" }} />
+                      {p}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Quick Picks</h3>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {QUICK_PICKS.map(p => {
+                    const isSel = data.quickPicks.includes(p);
+                    return (
+                      <button key={p} onClick={() => toggleArrayItem('quickPicks', p)} style={{ background: isSel ? "var(--primary)" : "var(--bg)", color: isSel ? "white" : "var(--text2)", border: isSel ? "1px solid var(--primary)" : "1px solid var(--border)", padding: "8px 16px", borderRadius: 20, fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                        {p}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Custom Interests <span style={{ fontSize: 12, color: "var(--text3)", fontWeight: 400 }}>({data.customInterests.length}/20)</span></h3>
+                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  <input type="text" value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} onKeyDown={handleAddTag} placeholder="Type a custom interest and press Enter..." style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                  <button onClick={handleAddTag} style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text)", padding: "0 24px", borderRadius: 12, fontWeight: 700, cursor: "pointer" }}>Add</button>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {data.customInterests.map(tag => (
+                    <span key={tag} style={{ background: "var(--bg2)", padding: "6px 12px", borderRadius: 16, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      {tag} <Trash2 style={{ width: 14, height: 14, cursor: "pointer", color: "var(--danger)" }} onClick={() => removeTag(tag)} />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: TRAVEL PREFERENCES */}
+          {activeTab === 'travel' && (
+            <div className="anim-in form-section">
+              <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Travel Preferences</h2>
+
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Travel Style</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  {["Budget", "Mid-range", "Luxury", "Backpacking"].map(style => {
+                    const isSel = data.travelStyles.includes(style);
+                    return (
+                      <label key={style} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: "1px solid var(--border)", background: isSel ? "var(--primary-light)" : "var(--bg)", cursor: "pointer" }}>
+                        <input type="checkbox" checked={isSel} onChange={() => toggleArrayItem('travelStyles', style)} style={{ width: 18, height: 18 }} />
+                        <span style={{ fontWeight: 600, color: isSel ? "var(--primary)" : "var(--text)" }}>{style}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Group Size Preference</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  {["Solo", "Small Group", "Large Adventure"].map(g => {
+                    const isSel = data.groupPrefs.includes(g);
+                    return (
+                      <label key={g} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 12, border: "1px solid var(--border)", background: isSel ? "var(--primary)" : "var(--bg)", color: isSel ? "white" : "var(--text)", cursor: "pointer", fontWeight: 600 }}>
+                        <input type="checkbox" checked={isSel} onChange={() => toggleArrayItem('groupPrefs', g)} style={{ display: "none" }} />
+                        {g}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>Ideal Trip Budget Range (₹)</h3>
+                <div style={{ display: "flex", gap: 16 }}>
+                  <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, fontSize: 14 }}>
+                    Min Budget
+                    <input type="number" value={data.minBudget} onChange={e => updateData('minBudget', e.target.value)} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                  </label>
+                  <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, fontSize: 14 }}>
+                    Max Budget
+                    <input type="number" value={data.maxBudget} onChange={e => updateData('maxBudget', e.target.value)} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SAFETY */}
+          {activeTab === 'safety' && (
+            <div className="anim-in form-section">
+              <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Safety & Verification</h2>
+
+              <div style={{ padding: 24, borderRadius: 16, border: "1px solid var(--border)", background: "var(--bg)", marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <h3 style={{ margin: "0 0 4px", fontSize: 18, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
+                    ID Verification {data.isVerified ? <ShieldCheck style={{ color: "var(--success)", width: 20, height: 20 }} /> : <AlertTriangle style={{ color: "var(--warning)", width: 20, height: 20 }} />}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: 14, color: "var(--text2)" }}>
+                    {data.isVerified ? "Your identity is verified. You have higher trust scores." : "Verify your identity to increase your Reputation Score by 200 points."}
+                  </p>
+                </div>
+                {!data.isVerified && (
+                  <button onClick={() => setVerificationModalOpen(true)} style={{ background: "var(--primary)", color: "white", border: "none", padding: "10px 20px", borderRadius: 10, fontWeight: 600, cursor: "pointer" }}>Verify Now</button>
+                )}
+              </div>
+
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 18, margin: 0 }}>Emergency Contacts</h3>
+                  <button onClick={() => setContactModalOpen(true)} style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Plus style={{ width: 16, height: 16 }} /> Add Contact
+                  </button>
+                </div>
+                
+                {data.contacts.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: 40, border: "1px dashed var(--border)", borderRadius: 16 }}>
+                    <p style={{ color: "var(--text3)", margin: 0 }}>No emergency contacts added yet.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {data.contacts.map(c => (
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)" }}>
+                        <div>
+                          <p style={{ margin: "0 0 4px", fontWeight: 700 }}>{c.name} <span style={{ fontSize: 12, color: "var(--text3)", fontWeight: 500 }}>• {c.relation}</span></p>
+                          <p style={{ margin: 0, fontSize: 14, color: "var(--text2)" }}>{c.phone}</p>
+                        </div>
+                        <button onClick={() => updateData('contacts', data.contacts.filter(x => x.id !== c.id))} style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer" }}>
+                          <Trash2 style={{ width: 18, height: 18 }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: LOCATION */}
+          {activeTab === 'location' && (
+            <div className="anim-in form-section">
+              <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Location & Contact</h2>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  City
+                  <input type="text" value={data.city} onChange={e => updateData('city', e.target.value)} placeholder="e.g. Mumbai" style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600 }}>
+                  State
+                  <input type="text" value={data.state} onChange={e => updateData('state', e.target.value)} placeholder="e.g. Maharashtra" style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+                </label>
+              </div>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, fontWeight: 600, marginBottom: 20 }}>
+                Phone Number
+                <input type="tel" value={data.phone} onChange={e => updateData('phone', e.target.value)} placeholder="+91 9876543210" style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+              </label>
+            </div>
+          )}
         </div>
-        <p style={{ fontSize: 12, color: "#94a3b8", margin: 0, lineHeight: 1.5 }}>
-          Reputation calculated from community contributions, verified trips, and connections.
-        </p>
       </div>
 
-      {/* Error / Success banners */}
-      {error && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
-          <AlertCircle style={{ width: 15, height: 15, color: "#ef4444", flexShrink: 0 }} />
-          <p style={{ color: "#ef4444", fontSize: 13, margin: 0 }}>{error}</p>
+      {/* ── Sticky Action Bar ── */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--card)", borderTop: "1px solid var(--border)", padding: "16px 32px", display: "flex", justifyContent: "center", gap: 16, zIndex: 50, boxShadow: "0 -10px 40px rgba(0,0,0,0.05)" }}>
+        <button onClick={handleReset} style={{ background: "transparent", color: "var(--text2)", border: "1px solid var(--border)", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+          <RotateCcw style={{ width: 18, height: 18 }} /> Cancel
+        </button>
+        <button onClick={handleSave} style={{ background: "var(--primary)", color: "white", border: "none", padding: "12px 48px", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 14px rgba(29, 158, 117, 0.4)" }}>
+          <Save style={{ width: 18, height: 18 }} /> Save All Changes
+        </button>
+      </div>
+
+      {/* ── Modals ── */}
+      {isVerificationModalOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }} onClick={() => setVerificationModalOpen(false)}>
+          <div style={{ background: "var(--card)", borderRadius: 20, width: "100%", maxWidth: 400, padding: 32, border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 24, margin: "0 0 16px" }}>Verify Identity</h2>
+            <p style={{ color: "var(--text2)", fontSize: 14, marginBottom: 24 }}>Upload your Aadhar or PAN card to get the verified badge and unlock high-trust trips.</p>
+            <div style={{ border: "2px dashed var(--border)", borderRadius: 16, padding: 40, textAlign: "center", cursor: "pointer", marginBottom: 24, background: "var(--bg)" }}>
+               <ShieldCheck style={{ width: 32, height: 32, color: "var(--text3)", margin: "0 auto 12px" }} />
+               <p style={{ margin: 0, fontWeight: 600, color: "var(--text2)" }}>Click to upload document</p>
+            </div>
+            <button onClick={verifyProfileMock} style={{ width: "100%", background: "var(--primary)", color: "white", padding: 14, borderRadius: 12, border: "none", fontWeight: 700, cursor: "pointer" }}>Submit for Verification</button>
+          </div>
         </div>
       )}
-      {success && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, marginBottom: 16, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)" }}>
-          <Check style={{ width: 15, height: 15, color: "#22c55e", flexShrink: 0 }} />
-          <p style={{ color: "#22c55e", fontSize: 13, margin: 0 }}>Profile updated successfully!</p>
+
+      {isContactModalOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }} onClick={() => setContactModalOpen(false)}>
+          <div style={{ background: "var(--card)", borderRadius: 20, width: "100%", maxWidth: 400, padding: 32, border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 24, margin: "0 0 24px" }}>Add Emergency Contact</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24 }}>
+              <input type="text" placeholder="Full Name" value={newContact.name} onChange={e => setNewContact(prev => ({...prev, name: e.target.value}))} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+              <input type="tel" placeholder="Phone Number" value={newContact.phone} onChange={e => setNewContact(prev => ({...prev, phone: e.target.value}))} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+              <input type="text" placeholder="Relationship (e.g. Mother)" value={newContact.relation} onChange={e => setNewContact(prev => ({...prev, relation: e.target.value}))} style={{ padding: 14, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", outline: "none", color: "var(--text)" }} />
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={() => setContactModalOpen(false)} style={{ flex: 1, background: "transparent", color: "var(--text2)", border: "1px solid var(--border)", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+              <button onClick={addContact} style={{ flex: 1, background: "var(--primary)", color: "white", border: "none", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer" }}>Save</button>
+            </div>
+          </div>
         </div>
       )}
 
-
-      {/* ══ 1 · BASIC INFO ══ */}
-      <Section icon={User} title="Basic Info" subtitle="Name, age, gender, and bio" accentColor="rgba(56,189,248,0.15)">
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Field label="Username" icon={User} value={form.username} onChange={(e: any) => set("username", e.target.value)} placeholder="your_username" />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Age" icon={Calendar} type="number" value={form.age} onChange={(e: any) => set("age", e.target.value)} placeholder="e.g. 25" />
-            <SelectField label="Gender" icon={User} value={form.gender} onChange={(e: any) => set("gender", e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 7 }}>Bio</label>
-            <textarea
-              className="input-field"
-              rows={3}
-              placeholder="Tell fellow travelers about yourself..."
-              value={form.bio}
-              onChange={(e) => set("bio", e.target.value)}
-              style={{ resize: "vertical", minHeight: 80 }}
-            />
-            <p style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{(form.bio || "").length}/500 characters</p>
-          </div>
-          {/* Email — read only */}
-          <Field label="Email (cannot change)" icon={Mail} value={user?.email} disabled readOnly />
-        </div>
-      </Section>
-
-
-      {/* ══ 2 · LOCATION & TRAVEL ══ */}
-      <Section icon={MapPin} title="Location & Travel" subtitle="Where you live and where you're headed" accentColor="rgba(34,197,94,0.15)">
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="City" icon={MapPin} value={form.city} onChange={(e: any) => set("city", e.target.value)} placeholder="e.g. Delhi" />
-            <Field label="Hometown" icon={Home} value={form.hometown} onChange={(e: any) => set("hometown", e.target.value)} placeholder="e.g. Jaipur" />
-          </div>
-          <Field label="State" icon={Globe} value={form.state} onChange={(e: any) => set("state", e.target.value)} placeholder="e.g. Rajasthan" />
-          <Field label="Phone" icon={Phone} type="tel" value={form.phone} onChange={(e: any) => set("phone", e.target.value)} placeholder="+91 XXXXXXXXXX" />
-        </div>
-      </Section>
-
-
-      {/* ══ 3 · INTERESTS ══ */}
-      <Section icon={Heart} title="Interests" subtitle="What excites you — pick as many as you like" accentColor="rgba(239,68,68,0.15)">
-        <p style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>Quick picks:</p>
-        <ChipGrid options={INTEREST_PRESETS} selected={form.interests} onToggle={(v) => toggleArray("interests", v)} />
-        <div style={{ marginTop: 16 }}>
-          <ChipsInput
-            label="Custom Interests"
-            placeholder="Type a custom interest..."
-            tags={form.interests.filter(t => !INTEREST_PRESETS.includes(t))}
-            onChange={(customTags) => {
-              const presetSelected = form.interests.filter(t => INTEREST_PRESETS.includes(t));
-              set("interests", [...presetSelected, ...customTags]);
-            }}
-            maxTags={20}
-          />
-        </div>
-      </Section>
-
-
-      {/* ══ 4 · PROFESSIONAL ══ */}
-      <Section icon={Briefcase} title="Professional" subtitle="What do you do for a living?" accentColor="rgba(168,85,247,0.15)">
-        <SelectField label="Status" icon={GraduationCap} value={form.professionalStatus} onChange={(e: any) => set("professionalStatus", e.target.value)} options={PROF_OPTIONS} placeholder="Select your status" />
-      </Section>
-
-
-      {/* ══ 5 · TRAVEL PREFERENCES ══ */}
-      <Section icon={Compass} title="Travel Preferences" subtitle="Your ideal travel setup" accentColor="rgba(249,115,22,0.15)">
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 10 }}>Travel Style</label>
-            <ChipGrid options={TRAVEL_STYLES} selected={form.travelStyle} onToggle={(v) => toggleArray("travelStyle", v)} />
-          </div>
-          <SelectField label="Budget Range" icon={Mountain} value={form.budgetRange} onChange={(e: any) => set("budgetRange", e.target.value)} options={BUDGET_OPTIONS} placeholder="Select budget" />
-        </div>
-      </Section>
-
-
-      {/* ══ 6 · PERSONALITY ══ */}
-      <Section icon={Sparkles} title="Personality" subtitle="How would you describe yourself?" accentColor="rgba(234,179,8,0.15)">
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {PERSONALITY_OPTS.map(opt => {
-            const active = form.travelPersonality === opt;
-            return (
-              <button
-                key={opt}
-                onClick={() => set("travelPersonality", opt)}
-                style={{
-                  flex: 1, minWidth: 100, padding: "14px 10px",
-                  borderRadius: 14, fontSize: 13, fontWeight: 700,
-                  cursor: "pointer", textAlign: "center",
-                  border: active ? "1.5px solid rgba(234,179,8,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                  background: active ? "rgba(234,179,8,0.1)" : "rgba(15,23,42,0.4)",
-                  color: active ? "#eab308" : "#94a3b8",
-                  transition: "all 0.25s",
-                }}
-              >
-                {opt === "Introvert" && "🧘 "}{opt === "Extrovert" && "🎉 "}{opt === "Ambivert" && "⚖️ "}
-                {opt}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-
-
-      {/* ══ 7 · SAFETY ══ */}
-      <Section icon={Shield} title="Safety" subtitle="Verification & emergency contacts" accentColor="rgba(239,68,68,0.15)">
-        {/* Verification status */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, marginBottom: 20,
-          background: user?.isVerified ? "rgba(34,197,94,0.08)" : "rgba(249,115,22,0.08)",
-          border: `1px solid ${user?.isVerified ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
-        }}>
-          {user?.isVerified
-            ? <ShieldCheck style={{ width: 20, height: 20, color: "#22c55e" }} />
-            : <AlertTriangle style={{ width: 20, height: 20, color: "#f97316" }} />}
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "white", margin: 0 }}>
-              {user?.isVerified ? "Identity Verified ✓" : "Not Verified Yet"}
-            </p>
-            <p style={{ fontSize: 12, color: "#64748b", margin: 0, marginTop: 2 }}>
-              {user?.isVerified ? "Your profile is verified and trusted." : "Complete verification to boost your reputation score."}
-            </p>
-          </div>
-        </div>
-
-        {/* Emergency contacts */}
-        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 10 }}>
-          Emergency Contacts <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b" }}>({form.emergencyContacts.length}/3)</span>
-        </label>
-
-        {form.emergencyContacts.map((contact: any, i: number) => (
-          <div key={i} style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8, marginBottom: 10,
-            padding: 12, borderRadius: 12,
-            background: "rgba(15,23,42,0.3)", border: "1px solid rgba(255,255,255,0.05)",
-          }}>
-            <input
-              className="input-field" placeholder="Name" value={contact.name || ""}
-              onChange={(e) => updateContact(i, "name", e.target.value)}
-              style={{ fontSize: 12 }}
-            />
-            <input
-              className="input-field" placeholder="Phone" value={contact.phone || ""}
-              onChange={(e) => updateContact(i, "phone", e.target.value)}
-              style={{ fontSize: 12 }}
-            />
-            <input
-              className="input-field" placeholder="Relation" value={contact.relation || ""}
-              onChange={(e) => updateContact(i, "relation", e.target.value)}
-              style={{ fontSize: 12 }}
-            />
-            <button
-              onClick={() => removeContact(i)}
-              style={{
-                background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 10, width: 36, height: 36,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "#ef4444", fontSize: 18, fontWeight: 700,
-              }}
-            >×</button>
-          </div>
-        ))}
-
-        {form.emergencyContacts.length < 3 && (
-          <button
-            onClick={addEmergencyContact}
-            style={{
-              width: "100%", padding: "10px", borderRadius: 12,
-              border: "1px dashed rgba(255,255,255,0.1)",
-              background: "rgba(15,23,42,0.2)", color: "#64748b",
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >
-            + Add Emergency Contact
-          </button>
-        )}
-      </Section>
-
-
-      {/* ══ SAVE BUTTON ══ */}
-      <button onClick={onSave} disabled={saving} className="btn-primary" style={{ width: "100%", padding: "14px", fontSize: 15 }}>
-        {saving
-          ? <><Loader2 style={{ width: 17, height: 17, animation: "spin 1s linear infinite" }} /> Saving...</>
-          : <><Save style={{ width: 17, height: 17 }} /> Save All Changes</>}
-      </button>
+      {/* Helper CSS */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (max-width: 768px) {
+          .profile-tabs { width: 100% !important; position: static !important; display: flex; overflow-x: auto; padding: 8px !important; }
+          .profile-tabs button { white-space: nowrap; padding: 10px 16px !important; }
+        }
+      `}} />
     </div>
   );
 }

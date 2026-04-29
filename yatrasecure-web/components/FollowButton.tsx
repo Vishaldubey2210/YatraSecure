@@ -99,18 +99,18 @@ export default function FollowButton({
 
   const variants = {
     primary: {
-      background: isFollowing ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #f97316, #fbbf24)',
-      color: isFollowing ? '#94a3b8' : 'white',
+      background: isFollowing ? 'var(--border)' : 'linear-gradient(135deg, #f97316, #fbbf24)',
+      color: isFollowing ? 'var(--text2)' : 'var(--text)',
       border: isFollowing ? '1px solid rgba(255,255,255,0.08)' : 'none',
     },
     outline: {
       background: 'transparent',
-      border: `1px solid ${isFollowing ? 'rgba(255,255,255,0.1)' : '#f97316'}`,
-      color: isFollowing ? '#94a3b8' : '#f97316',
+      border: `1px solid ${isFollowing ? 'var(--border)' : '#f97316'}`,
+      color: isFollowing ? 'var(--text2)' : '#f97316',
     },
     ghost: {
       background: 'transparent',
-      color: isFollowing ? '#94a3b8' : '#3b82f6',
+      color: isFollowing ? 'var(--text2)' : '#3b82f6',
     }
   };
 
